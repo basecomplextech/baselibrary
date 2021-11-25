@@ -38,6 +38,9 @@ type FileSystem interface {
 	// Remove removes a file or an empty directory.
 	Remove(filename string) error
 
+	// RemoveAll removes a path and any children it contains.
+	RemoveAll(filename string) error
+
 	// Rename renames a file or a directory.
 	Rename(src string, dst string) error
 
@@ -144,6 +147,11 @@ func (fs *fs) OpenFile(filename string, flag int, perm os.FileMode) (File, error
 // Remove removes a file or an empty directory.
 func (fs *fs) Remove(filename string) error {
 	return os.Remove(filename)
+}
+
+// RemoveAll removes a path and any children it contains.
+func (fs *fs) RemoveAll(filename string) error {
+	return os.RemoveAll(filename)
 }
 
 // Rename renames a file or a directory.

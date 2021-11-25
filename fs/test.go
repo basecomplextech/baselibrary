@@ -215,8 +215,8 @@ func (b *testBuf) read(p []byte) (n int, err error) {
 	n = copy(p, b.buf[b.off:])
 	b.off += n
 
-	if n < len(p) {
-		return n, io.ErrUnexpectedEOF
+	if n == 0 {
+		return 0, io.EOF
 	}
 	return n, nil
 }
