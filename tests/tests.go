@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"io/ioutil"
 	"os"
+
+	mrand "math/rand"
 )
 
 type T interface {
@@ -33,4 +35,30 @@ func TestBytes(t T, size int) []byte {
 		t.Fatal(err)
 	}
 	return b
+}
+
+func TestBytesN(t T, size int, n int) [][]byte {
+	result := make([][]byte, 0, n)
+	for i := 0; i < n; i++ {
+		data := TestBytes(t, size)
+		result = append(result, data)
+	}
+	return result
+}
+
+func TestRandomSize(t T, maxSize int) []byte {
+	size := mrand.Intn(maxSize)
+	if size == 0 {
+		size = maxSize
+	}
+	return TestBytes(t, size)
+}
+
+func TestRandomSizeN(t T, maxSize int, n int) [][]byte {
+	result := make([][]byte, 0, n)
+	for i := 0; i < n; i++ {
+		data := TestRandomSize(t, maxSize)
+		result = append(result, data)
+	}
+	return result
 }
