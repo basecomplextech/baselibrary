@@ -10,6 +10,9 @@ import (
 )
 
 var (
+	ErrExist    = os.ErrExist
+	ErrNotExist = os.ErrNotExist
+
 	ErrClosed           = errors.New("operation on a closed file")
 	ErrClosedFileWriter = errors.New("operation on a closed file writer")
 )
