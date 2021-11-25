@@ -31,9 +31,9 @@ func Random() U128 {
 	return global.RandomU128()
 }
 
-// Time returns a time-random U128.
-func Time() U128 {
-	return global.TimeU128()
+// TimeRandom returns a time-random U128.
+func TimeRandom() U128 {
+	return global.TimeRandom128()
 }
 
 // Equal returns true if ids are equal.

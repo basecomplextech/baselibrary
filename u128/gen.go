@@ -12,8 +12,8 @@ type Generator interface {
 	// RandomU128 returns a random U128.
 	RandomU128() U128
 
-	// TimeU128 returns a time-random U128.
-	TimeU128() U128
+	// TimeRandom128 returns a time-random U128.
+	TimeRandom128() U128
 }
 
 var global Generator = newGenerator()
@@ -39,8 +39,8 @@ func (g *generator) RandomU128() U128 {
 	return u
 }
 
-// TimeU128 returns a time-random U128.
-func (g *generator) TimeU128() U128 {
+// TimeRandom128 returns a time-random U128.
+func (g *generator) TimeRandom128() U128 {
 	u := U128{}
 
 	ts := g.timestamp()
