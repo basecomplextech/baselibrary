@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 )
 
 const (
@@ -26,75 +25,6 @@ func FromInt64(v int64) U128 {
 	return u
 }
 
-// Random returns a random U128.
-func Random() U128 {
-	return global.RandomU128()
-}
-
-// TimeRandom returns a time-random U128.
-func TimeRandom() U128 {
-	return global.TimeRandom128()
-}
-
-// Equal returns true if ids are equal.
-func Equal(u0 U128, u1 U128) bool {
-	return u0 == u1
-}
-
-// ToZero returns a zero U128 if nil.
-func ToZero(u *U128) U128 {
-	if u == nil {
-		return U128{}
-	}
-	return *u
-}
-
-// Parse parses a U128 ID from a 16-byte array.
-func Parse(b []byte) (U128, error) {
-	switch {
-	case b == nil:
-		return U128{}, nil
-	case len(b) == 0:
-		return U128{}, nil
-	case len(b) != byteLen:
-		return U128{}, errors.New("u128: invalid U128 length")
-	}
-
-	u := U128{}
-	copy(u[:], b)
-	return u, nil
-}
-
-// ParseString parses a U128 from 33-char string.
-func ParseString(s string) (U128, error) {
-	return ParseByteString([]byte(s))
-}
-
-// ParseString parses a U128 from 32-char string.
-func ParseByteString(s []byte) (U128, error) {
-	switch {
-	case s == nil:
-		return U128{}, nil
-	case len(s) == 0:
-		return U128{}, nil
-	case len(s) != charLen:
-		return U128{}, errors.New("u128: invalid U128 string length")
-	}
-
-	u := U128{}
-	_, err := hex.Decode(u[:8], s[:16])
-	if err != nil {
-		return u, err
-	}
-	_, err = hex.Decode(u[8:], s[17:])
-	return u, err
-}
-
-// Equal returns whether two IDs are equal.
-func (u0 U128) Equal(u1 U128) bool {
-	return Equal(u0, u1)
-}
-
 // Compare compares two IDs.
 func (u0 U128) Compare(u1 U128) int {
 	return bytes.Compare(u0[:], u1[:])
@@ -102,7 +32,7 @@ func (u0 U128) Compare(u1 U128) int {
 
 // IsZero returns if the id is zero.
 func (u U128) IsZero() bool {
-	return Equal(u, U128{})
+	return u == U128{}
 }
 
 // Less returns whether the current ID is less than another.

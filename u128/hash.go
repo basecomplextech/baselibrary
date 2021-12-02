@@ -1,16 +1,17 @@
-package u256
+package u128
 
 import "github.com/zeebo/blake3"
 
-// Hash returns a Blake3 hash as U256.
-func Hash(b []byte) U256 {
-	out := blake3.Sum256(b)
-	u := U256{}
-	copy(u[:], out[:])
+// Hash returns a Blake3 hash truncated to U128.
+func Hash(b []byte) U128 {
+	sum := blake3.Sum256(b)
+
+	u := U128{}
+	copy(u[:], sum[:])
 	return u
 }
 
-// Hasher computes Blake3 hash as U256.
+// Hasher computes Blake3 hash truncated to U128.
 type Hasher struct {
 	h *blake3.Hasher
 }
@@ -34,12 +35,12 @@ func (h *Hasher) WriteString(p string) (int, error) {
 	return len(p), nil
 }
 
-// Sum returns a hash as U256.
-func (h *Hasher) Sum() U256 {
+// Sum returns a hash as U128.
+func (h *Hasher) Sum() U128 {
 	sum := [32]byte{}
 	h.h.Sum(sum[:0])
 
-	u := U256{}
+	u := U128{}
 	copy(u[:], sum[:])
 	return u
 }

@@ -1,4 +1,4 @@
-package u256
+package u128
 
 import (
 	"testing"
@@ -12,8 +12,8 @@ func TestHash__should_calc_blake3_hash(t *testing.T) {
 	h := blake3.Sum256(b)
 	u := Hash(b)
 
-	assert.Equal(t, h[:], u[:])
-	assert.NotEqual(t, U256{}, u)
+	assert.Equal(t, h[:16], u[:])
+	assert.NotEqual(t, U128{}, u)
 }
 
 func TestHasher__should_calc_blake3_hash(t *testing.T) {
@@ -24,6 +24,6 @@ func TestHasher__should_calc_blake3_hash(t *testing.T) {
 	hasher.Write(b)
 	u := hasher.Sum()
 
-	assert.Equal(t, h[:], u[:])
-	assert.NotEqual(t, U256{}, u)
+	assert.Equal(t, h[:16], u[:])
+	assert.NotEqual(t, U128{}, u)
 }
