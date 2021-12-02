@@ -47,7 +47,13 @@ type FileSystem interface {
 	// Stat returns a file info.
 	Stat(filename string) (FileInfo, error)
 
-	// Temp creates a new temporary file in the directory dir, see ioutil.TempFile.
+	// MkdirTemp creates a new temporary directory in the directory dir
+	// and returns the pathname of the new directory.
+	TempDir(dir, pattern string) (name string, err error)
+
+	
+	// TempFile creates a new temporary file in the directory dir,
+	// opens the file for reading and writing, and returns the resulting *os.File.
 	TempFile(dir, pattern string) (File, error)
 }
 
@@ -94,8 +100,7 @@ type FileWriter interface {
 }
 
 // New returns a disk file system.
-func New(logging logging.Logging) FileSystem {
-	logger := logging.Logger("fs")
+func New(logger logging.Logger) FileSystem {
 	return newFileSystem(logger)
 }
 
@@ -164,7 +169,14 @@ func (fs *fs) Stat(filename string) (FileInfo, error) {
 	return os.Stat(filename)
 }
 
-// Temp creates a new temporary file in the directory dir, see ioutil.TempFile.
+// MkdirTemp creates a new temporary directory in the directory dir
+// and returns the pathname of the new directory.
+func (fs *fs) TempDir(dir, pattern string) (name string, err error) {
+	return os.MkdirTemp(dir, pattern)
+}
+
+// TempFile creates a new temporary file in the directory dir,
+// opens the file for reading and writing, and returns the resulting *os.File.
 func (fs *fs) TempFile(dir, pattern string) (File, error) {
 	f, err := ioutil.TempFile(dir, pattern)
 	if err != nil {
