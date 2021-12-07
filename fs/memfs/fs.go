@@ -3,7 +3,7 @@ package memfs
 import (
 	"os"
 
-	"github.com/complex1io/library/fs"
+	"github.com/baseone-run/library/fs"
 	"github.com/spf13/afero"
 )
 

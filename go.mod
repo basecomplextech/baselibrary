@@ -1,4 +1,4 @@
-module github.com/complex1io/library
+module github.com/baseone-run/library
 
 go 1.17
 

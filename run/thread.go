@@ -4,7 +4,7 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/complex1io/library/async"
+	"github.com/baseone-run/library/async"
 )
 
 // Thread runs a function in a separate goroutine and returns its result as a future.

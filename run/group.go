@@ -3,8 +3,8 @@ package run
 import (
 	"sync"
 
-	"github.com/complex1io/library/async"
-	"github.com/complex1io/library/errs"
+	"github.com/baseone-run/library/async"
+	"github.com/baseone-run/library/errs"
 )
 
 var _ Group = (*group)(nil)
