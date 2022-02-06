@@ -1,23 +1,24 @@
-package run
+package async
 
 import (
 	"errors"
 	"testing"
 	"time"
 
+	"github.com/baseone-run/library/try"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRun__should_run_and_stop(t *testing.T) {
-	th := Run(func(stop <-chan struct{}) error {
+	r := Run(func(stop <-chan struct{}) error {
 		return nil
 	})
-	th.Stop()
+	r.Stop()
 
 	select {
-	case <-th.Done():
-		err := th.Err()
+	case <-r.Wait():
+		err := r.Err()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -29,14 +30,14 @@ func TestRun__should_run_and_stop(t *testing.T) {
 
 func TestRun__should_run_and_return_error(t *testing.T) {
 	err := errors.New("test")
-	th := Run(func(stop <-chan struct{}) error {
+	r := Run(func(stop <-chan struct{}) error {
 		return err
 	})
-	th.Stop()
+	r.Stop()
 
 	select {
-	case <-th.Done():
-		err1 := th.Err()
+	case <-r.Wait():
+		err1 := r.Err()
 		assert.Equal(t, err, err1)
 
 	case <-time.After(100 * time.Millisecond):
@@ -45,16 +46,16 @@ func TestRun__should_run_and_return_error(t *testing.T) {
 }
 
 func TestRun__should_run_and_recover(t *testing.T) {
-	th := Run(func(stop <-chan struct{}) error {
+	r := Run(func(stop <-chan struct{}) error {
 		panic("test")
 	})
-	th.Stop()
+	r.Stop()
 
 	select {
-	case <-th.Done():
-		err := th.Err()
-		require.IsType(t, &Panic{}, err)
-		assert.EqualValues(t, "test", err.(*Panic).E)
+	case <-r.Wait():
+		err := r.Err()
+		require.IsType(t, &try.Panic{}, err)
+		assert.EqualValues(t, "test", err.(*try.Panic).E)
 
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("timeout")

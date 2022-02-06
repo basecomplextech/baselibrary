@@ -5,168 +5,119 @@ import (
 )
 
 // Promise is a completable future.
-type Promise interface {
-	Future
+type Promise[T any] interface {
+	Future[T]
 
-	// Stop returns a channel which is closed on a cancellation request.
-	Stop() <-chan struct{}
+	// Reject sets a promise error, returns false when already completed.
+	Reject(err error) bool
 
-	// Utility
+	// Resolve sets a promise result, returns false when already completed.
+	Resolve(result T) bool
 
-	// OK tries to complete the promise with a result.
-	OK(result interface{}) bool
-
-	// Fail tries to complete the promise with an error.
-	Fail(err error) bool
-
-	// Exit tries to complete the promise as cancelled.
-	Exit() bool
-
-	// Complete fails the future if err is not nil, otherwise, completes the future.
-	Complete(result interface{}, err error) bool
+	// Complete completes the promise, returns false when already completed.
+	Complete(result T, err error) bool
 }
 
-// NewPromise returns a pending promise.
-func NewPromise() Promise {
-	return newPromise()
+// Pending returns a pending promise.
+func Pending[T any]() Promise[T] {
+	return newPromise[T]()
 }
 
-// OK returns a completed promise.
-func OK(result interface{}) Promise {
-	p := newPromise()
-	p.OK(result)
+// Resolved returns a resolved promise.
+func Resolved[T any](result T) Promise[T] {
+	p := newPromise[T]()
+	p.Resolve(result)
 	return p
 }
 
-// Failed returns a failed promise.
-func Failed(err error) Promise {
-	p := newPromise()
-	p.Fail(err)
+// Rejected returns a rejected promise.
+func Rejected[T any](err error) Promise[T] {
+	p := newPromise[T]()
+	p.Reject(err)
 	return p
 }
 
-// Cancelled returns a cancelled promise.
-func Cancelled() Promise {
-	p := newPromise()
-	p.Cancel()
-	p.Exit()
-	return p
-}
+var _ Promise[any] = (*promise[any])(nil)
 
-var _ Promise = (*promise)(nil)
-
-type promise struct {
+type promise[T any] struct {
 	mu sync.Mutex
 
-	status Status
-	result interface{}
+	done   bool
+	result T
 	err    error
 
-	done chan struct{}
-	stop chan struct{}
-
-	cancelled bool
+	wait chan struct{}
 }
 
-func newPromise() *promise {
-	return &promise{
-		status: StatusPending,
-
-		done: make(chan struct{}),
-		stop: make(chan struct{}),
+func newPromise[T any]() *promise[T] {
+	return &promise[T]{
+		wait: make(chan struct{}),
 	}
 }
 
-// Future
-
 // Err returns the future error or nil.
-func (p *promise) Err() error {
+func (p *promise[T]) Err() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	return p.err
 }
 
-// Done awaits the completion.
-func (p *promise) Done() <-chan struct{} {
-	return p.done
+// Wait returns a channel which is closed on a future completion.
+func (p *promise[T]) Wait() <-chan struct{} {
+	return p.wait
 }
 
-// Result returns the current status, result and error.
-func (p *promise) Result() (Status, interface{}, error) {
+// Result returns a future result and an error.
+func (p *promise[T]) Result() (T, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	return p.status, p.result, p.err
+	return p.result, p.err
 }
 
-// Cancel tries to cancel the future.
-func (p *promise) Cancel() bool {
+// Reject sets a promise error, returns false when already completed.
+func (p *promise[T]) Reject(err error) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	switch {
-	case p.status != StatusPending:
+	if p.done {
 		return false
-	case p.cancelled:
-		return true
 	}
 
-	p.cancelled = true
-	close(p.stop)
+	p.err = err
+
+	close(p.wait)
 	return true
 }
 
-// Promise
-
-// Stop returns a channel which is closed on a cancellation request.
-func (p *promise) Stop() <-chan struct{} {
-	return p.stop
-}
-
-// Utility
-
-// OK tries to complete the promise with a result.
-func (p *promise) OK(result interface{}) bool {
-	return p.complete(StatusOK, result, nil)
-}
-
-// Fail tries to complete the promise with an error.
-func (p *promise) Fail(err error) bool {
-	return p.complete(StatusError, nil, err)
-}
-
-// Exit tries to complete the promise as cancelled.
-func (p *promise) Exit() bool {
-	return p.complete(StatusExit, nil, nil)
-}
-
-// Complete fails the future if err is not nil, otherwise, completes the future.
-func (p *promise) Complete(result interface{}, err error) bool {
-	status := StatusOK
-	if err != nil {
-		status = StatusError
-	}
-	return p.complete(status, result, err)
-}
-
-// private
-
-func (p *promise) complete(status Status, result interface{}, err error) bool {
+// Resolve sets a promise result, returns false when already completed.
+func (p *promise[T]) Resolve(result T) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	switch {
-	case status == StatusPending:
-		panic("invalid pending status")
-	case p.status != StatusPending:
+	if p.done {
 		return false
 	}
 
-	p.status = status
+	p.result = result
+
+	close(p.wait)
+	return true
+}
+
+// Complete completes the promise, returns false when already completed.
+func (p *promise[T]) Complete(result T, err error) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.done {
+		return false
+	}
+
 	p.result = result
 	p.err = err
 
-	close(p.done)
+	close(p.wait)
 	return true
 }

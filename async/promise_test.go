@@ -8,72 +8,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPromise_Cancel__should_close_stop_channel(t *testing.T) {
-	p := NewPromise()
-	ok := p.Cancel()
+func TestPromise_Resolve__should_complete_future(t *testing.T) {
+	p := Pending[string]()
+
+	ok := p.Resolve("hello")
 	require.True(t, ok)
 
-	ch := p.Stop()
-	select {
-	case <-ch:
-	default:
-		t.Fatal("stop channel not closed")
-	}
-}
-
-func TestPromise_OK__should_complete_future(t *testing.T) {
-	p := NewPromise()
-	ok := p.OK("hello")
-	require.True(t, ok)
-
-	status, result, err := p.Result()
-	assert.Equal(t, StatusOK, status)
+	result, err := p.Result()
 	assert.Equal(t, "hello", result)
 	assert.Nil(t, err)
 }
 
-func TestPromise_Fail__should_fail_future(t *testing.T) {
-	p := NewPromise()
+func TestPromise_Reject__should_fail_future(t *testing.T) {
+	p := Pending[string]()
 	err := errors.New("test")
-	ok := p.Fail(err)
+
+	ok := p.Reject(err)
 	require.True(t, ok)
 
-	status, result, err1 := p.Result()
-	assert.Equal(t, StatusError, status)
-	assert.Nil(t, result)
+	result, err1 := p.Result()
+	assert.Equal(t, "", result)
 	assert.Equal(t, err, err1)
 }
 
-func TestPromise_Exit__should_cancel_future(t *testing.T) {
-	p := NewPromise()
-	ok := p.Exit()
-	require.True(t, ok)
+func TestPromise_Complete__should_resolve_promise(t *testing.T) {
+	p := Pending[string]()
 
-	status, result, err := p.Result()
-	assert.Equal(t, StatusExit, status)
-	assert.Nil(t, result)
-	assert.Nil(t, err)
-}
-
-func TestPromise_Complete__should_complete_future_when_error_nil(t *testing.T) {
-	p := NewPromise()
 	ok := p.Complete("hello", nil)
 	require.True(t, ok)
 
-	status, result, err := p.Result()
-	assert.Equal(t, StatusOK, status)
+	result, err := p.Result()
 	assert.Equal(t, "hello", result)
 	assert.Nil(t, err)
 }
 
-func TestPromise_Complete__should_fail_future_when_error_nonnil(t *testing.T) {
-	p := NewPromise()
+func TestPromise_Complete__should_reject_promise(t *testing.T) {
+	p := Pending[string]()
 	err := errors.New("test")
+
 	ok := p.Complete("failed", err)
 	require.True(t, ok)
 
-	status, result, err1 := p.Result()
-	assert.Equal(t, StatusError, status)
+	result, err1 := p.Result()
 	assert.Equal(t, "failed", result)
 	assert.Equal(t, err, err1)
 }
