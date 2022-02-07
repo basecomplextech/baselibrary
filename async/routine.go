@@ -57,6 +57,12 @@ func Call[T any](fn func(stop <-chan struct{}) (T, error)) Routine[T] {
 	return r
 }
 
+// StopWait stops a routine and waits for it and returns its error.
+func StopWait[T any](r Routine[T]) error {
+	<-r.Stop()
+	return r.Err()
+}
+
 type routine[T any] struct {
 	Promise[T]
 
