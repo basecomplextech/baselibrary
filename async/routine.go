@@ -19,6 +19,9 @@ type Routine[T any] interface {
 	Stop() <-chan struct{}
 }
 
+// VoidRoutine is a type alias for Routine[Void].
+type VoidRoutine = Routine[Void]
+
 // Run runs a function in a routine.
 func Run(fn func(stop <-chan struct{}) error) Routine[Void] {
 	r := newRoutine[Void]()
