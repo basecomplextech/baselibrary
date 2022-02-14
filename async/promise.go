@@ -85,6 +85,7 @@ func (p *promise[T]) Reject(err error) bool {
 		return false
 	}
 
+	p.done = true
 	p.err = err
 
 	close(p.wait)
@@ -100,6 +101,7 @@ func (p *promise[T]) Resolve(result T) bool {
 		return false
 	}
 
+	p.done = true
 	p.result = result
 
 	close(p.wait)
@@ -115,6 +117,7 @@ func (p *promise[T]) Complete(result T, err error) bool {
 		return false
 	}
 
+	p.done = true
 	p.result = result
 	p.err = err
 
