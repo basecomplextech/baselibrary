@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/baseone-run/library/errs"
+	"github.com/baseone-run/library/errors2"
 	"github.com/edsrzf/mmap-go"
 )
 
@@ -36,7 +36,7 @@ func (f *file) Close() error {
 	}
 
 	err1 := f.File.Close()
-	return errs.Combine(err0, err1)
+	return errors2.Combine(err0, err1)
 }
 
 // Filename returns a file name, not a path as in *os.File.

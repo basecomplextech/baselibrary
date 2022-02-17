@@ -1,18 +1,22 @@
-package errs
+package errors2
 
 import (
 	"fmt"
 	"strings"
 )
 
-const multiErrorFormat = "%v"
+// MultiError wraps multiple nonnil errors into one error.
+type MultiError struct {
+	Errors []error
+	Format string
+}
 
-// Combines combines nonnil errors into a multi error and returns it or nil.
+// Combines combines multiple nonnil errors into a *MultiError and returns it or nil.
 func Combine(err ...error) error {
 	return Combinef("%v", err...)
 }
 
-// Combines combines nonnil errors into a multi error and returns it or nil.
+// Combines combines multiple nonnil errors into a *MultiError and returns it or nil.
 func Combinef(format string, err ...error) error {
 	if len(err) == 0 {
 		return nil
@@ -42,12 +46,6 @@ func Combinef(format string, err ...error) error {
 	}
 }
 
-// MultiError wraps multiple nonnil errors into one error.
-type MultiError struct {
-	Errors []error
-	Format string
-}
-
 func (e *MultiError) Error() string {
 	ss := make([]string, 0, len(e.Errors))
 	for _, err := range e.Errors {
@@ -56,7 +54,7 @@ func (e *MultiError) Error() string {
 
 	format := e.Format
 	if format == "" {
-		format = multiErrorFormat
+		format = "%v"
 	}
 
 	s := strings.Join(ss, ", ")
