@@ -1,4 +1,4 @@
-module github.com/baseone-run/library
+module github.com/complexl/library
 
 go 1.18
 

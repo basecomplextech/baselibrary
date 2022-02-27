@@ -1,7 +1,7 @@
 package blake3
 
 import (
-	"github.com/baseone-run/library/u128"
+	"github.com/complexl/library/u128"
 	"github.com/zeebo/blake3"
 )
 

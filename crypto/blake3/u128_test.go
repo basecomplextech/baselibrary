@@ -3,7 +3,7 @@ package blake3
 import (
 	"testing"
 
-	"github.com/baseone-run/library/u128"
+	"github.com/complexl/library/u128"
 	"github.com/stretchr/testify/assert"
 	"github.com/zeebo/blake3"
 )

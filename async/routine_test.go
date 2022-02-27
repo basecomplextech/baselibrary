@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/baseone-run/library/try"
+	"github.com/complexl/library/try"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
