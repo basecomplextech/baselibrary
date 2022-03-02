@@ -8,7 +8,7 @@ import (
 var (
 	Stdout Logger = stdLogger("stdout", os.Stdout)
 	Stderr Logger = stdLogger("stderr", os.Stderr)
-	Null   Logger = Stdout
+	Null   Logger = nullLogger{}
 )
 
 type Logging interface {
