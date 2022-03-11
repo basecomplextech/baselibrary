@@ -17,6 +17,12 @@ type Ref interface {
 	Refcount() int32
 }
 
+// Releaser is called when a reference is released.
+type Releaser interface {
+	Released()
+}
+
+// New returns a new reference.
 func New(r Releaser) Ref {
 	return &refImpl{
 		r:     r,
@@ -24,17 +30,23 @@ func New(r Releaser) Ref {
 	}
 }
 
+// Empty returns a new empty reference.
 func Empty() Ref {
 	return New(nil)
 }
 
-func NewEmpty() Ref {
-	return New(nil)
+// Swap releases an old reference and returns a new one.
+//
+// Usage:
+//	new := table.Clone()
+//	s.table = Swap(s.table, new)
+//
+func Swap[R Ref](old R, new R) R {
+	old.Release()
+	return new
 }
 
-type Releaser interface {
-	Released()
-}
+// private
 
 type refImpl struct {
 	r     Releaser
@@ -49,7 +61,7 @@ func (r *refImpl) Acquire() bool {
 func (r *refImpl) Retain() int32 {
 	v := atomic.AddInt32(&r.count, 1)
 	if v <= 1 {
-		panic("cannot retain an already released reference")
+		panic("cannot retain already released reference")
 	}
 	return v
 }
@@ -60,7 +72,7 @@ func (r *refImpl) Release() int32 {
 	case v > 0:
 		return v
 	case v < 0:
-		panic("cannot release an already released reference")
+		panic("cannot release already released reference")
 	}
 
 	if r.r != nil {
