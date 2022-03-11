@@ -35,6 +35,16 @@ func Empty() Ref {
 	return New(nil)
 }
 
+// Retain retains and returns a reference.
+//
+// Usage:
+//	tree.table = Retain(table)
+//
+func Retain[R Ref](ref R) R {
+	ref.Retain()
+	return ref
+}
+
 // Swap releases an old reference and returns a new one.
 //
 // Usage:
