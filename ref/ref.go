@@ -45,6 +45,20 @@ func Retain[R Ref](ref R) R {
 	return ref
 }
 
+// RetainAll retains all references.
+func RetainAll[R Ref](refs ...R) {
+	for _, ref := range refs {
+		ref.Retain()
+	}
+}
+
+// ReleaseAll releases all references.
+func ReleaseAll[R Ref](refs ...R) {
+	for _, ref := range refs {
+		ref.Release()
+	}
+}
+
 // Swap releases an old reference and returns a new one.
 //
 // Usage:
