@@ -2,37 +2,35 @@ package ref
 
 import "sync/atomic"
 
-// Ref is an atomic countable reference.
-type Ref interface {
-	// Acquire increments the count and returns true on success.
-	Acquire() bool
-
-	// Retain increments the count, panics when the count was 0.
-	Retain() int32
-
-	// Release decrements the count and releases the object when the count is 0.
-	Release() int32
-
-	// Refcount returns the current reference count.
-	Refcount() int32
+// Ref is an atomic reference which implements the Counter interface.
+type Ref struct {
+	r    Releaser
+	refs int32
 }
 
-// Releaser is called when a reference is released.
-type Releaser interface {
-	Released()
-}
-
-// New returns a new reference.
+// New returns a new atomic reference.
 func New(r Releaser) Ref {
-	return &refImpl{
-		r:     r,
-		count: 1,
+	return Ref{
+		r:    r,
+		refs: 1,
 	}
 }
 
-// Empty returns a new empty reference.
-func Empty() Ref {
-	return New(nil)
+// Counter represents an object which supports reference counting.
+type Counter interface {
+	// Retain increments refcount, panics when count is 0.
+	Retain() int32
+
+	// Release decrements refcount and releases the object if the count is 0.
+	Release() int32
+
+	// Refcount returns the current refcount.
+	Refcount() int32
+}
+
+// Releaser is called when reference count reaches zero.
+type Releaser interface {
+	Released()
 }
 
 // Retain retains and returns a reference.
@@ -40,22 +38,22 @@ func Empty() Ref {
 // Usage:
 //	tree.table = Retain(table)
 //
-func Retain[R Ref](ref R) R {
-	ref.Retain()
-	return ref
+func Retain[C Counter](counter C) C {
+	counter.Retain()
+	return counter
 }
 
 // RetainAll retains all references.
-func RetainAll[R Ref](refs ...R) {
-	for _, ref := range refs {
-		ref.Retain()
+func RetainAll[C Counter](counters ...C) {
+	for _, counter := range counters {
+		counter.Retain()
 	}
 }
 
 // ReleaseAll releases all references.
-func ReleaseAll[R Ref](refs ...R) {
-	for _, ref := range refs {
-		ref.Release()
+func ReleaseAll[C Counter](counters ...C) {
+	for _, counter := range counters {
+		counter.Release()
 	}
 }
 
@@ -65,33 +63,25 @@ func ReleaseAll[R Ref](refs ...R) {
 //	new := table.Clone()
 //	s.table = Swap(s.table, new)
 //
-func Swap[R Ref](old R, new R) R {
+func Swap[C Counter](old C, new C) C {
 	old.Release()
 	return new
 }
 
-// private
+var _ Counter = (*Ref)(nil)
 
-type refImpl struct {
-	r     Releaser
-	count int32
-}
-
-func (r *refImpl) Acquire() bool {
-	v := atomic.AddInt32(&r.count, 1)
-	return v > 1
-}
-
-func (r *refImpl) Retain() int32 {
-	v := atomic.AddInt32(&r.count, 1)
+// Retain increments refcount, panics when count is 0.
+func (a *Ref) Retain() int32 {
+	v := atomic.AddInt32(&a.refs, 1)
 	if v <= 1 {
 		panic("cannot retain already released reference")
 	}
 	return v
 }
 
-func (r *refImpl) Release() int32 {
-	v := atomic.AddInt32(&r.count, -1)
+// Release decrements refcount and releases the object if the count is 0.
+func (a *Ref) Release() int32 {
+	v := atomic.AddInt32(&a.refs, -1)
 	switch {
 	case v > 0:
 		return v
@@ -99,12 +89,13 @@ func (r *refImpl) Release() int32 {
 		panic("cannot release already released reference")
 	}
 
-	if r.r != nil {
-		r.r.Released()
+	if a.r != nil {
+		a.r.Released()
 	}
 	return v
 }
 
-func (r *refImpl) Refcount() int32 {
-	return atomic.LoadInt32(&r.count)
+// Refcount returns the current refcount.
+func (a *Ref) Refcount() int32 {
+	return atomic.LoadInt32(&a.refs)
 }
