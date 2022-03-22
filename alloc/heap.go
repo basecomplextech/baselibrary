@@ -11,9 +11,6 @@ type heap struct {
 }
 
 func newHeap() *heap {
-	bc := blockClassSizes
-	println(len(bc))
-
 	pools := make([]*sync.Pool, 0, len(blockClassSizes))
 	for _, size := range blockClassSizes {
 		pool := makeHeapPool(size)

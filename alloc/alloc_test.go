@@ -35,7 +35,7 @@ func TestAlloc__should_allocate_struct(t *testing.T) {
 
 // AllocBytes
 
-func TestAllocBytes__should_allocate_byte_slice(t *testing.T) {
+func TestAllocBytes__should_allocate_bytes(t *testing.T) {
 	a := newArena()
 	buf := AllocBytes(a, 16)
 
@@ -45,6 +45,14 @@ func TestAllocBytes__should_allocate_byte_slice(t *testing.T) {
 
 	assert.Equal(t, 16, len(buf))
 	assert.Equal(t, 16, cap(buf))
+}
+
+func TestCopyBytes__should_allocate_bytes_copy(t *testing.T) {
+	a := newArena()
+	b := []byte("hello, world")
+	buf := CopyBytes(a, b)
+
+	assert.Equal(t, b, buf)
 }
 
 // AllocSlice
@@ -69,7 +77,7 @@ func TestAllocSlice__should_allocate_slice(t *testing.T) {
 	assert.Equal(t, 16, cap(s))
 }
 
-// AllocString
+// String
 
 func TestAllocString__should_return_string_copy(t *testing.T) {
 	a := newArena()

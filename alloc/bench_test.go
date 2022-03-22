@@ -7,7 +7,7 @@ import (
 	"unsafe"
 )
 
-func BenchmarkAlloc_int64(b *testing.B) {
+func BenchmarkAllocInt64(b *testing.B) {
 	a := newArena()
 	size := unsafe.Sizeof(int64(0))
 
@@ -20,23 +20,23 @@ func BenchmarkAlloc_int64(b *testing.B) {
 	var v *int64
 	for i := 0; i < b.N; i++ {
 		v = Alloc[int64](a)
+	}
 
-		*v = math.MaxInt64
-		if *v != math.MaxInt64 {
-			b.Fatal()
-		}
+	*v = math.MaxInt64
+	if *v != math.MaxInt64 {
+		b.Fatal()
 	}
 
 	sec := time.Since(t0).Seconds()
-	rps := float64(b.N) / float64(sec)
-	total := a.total
+	ops := float64(b.N) / float64(sec)
+	capacity := a.size / (1024 * 1024)
 
-	b.ReportMetric(rps, "rps")
+	b.ReportMetric(ops, "ops")
 	b.ReportMetric(float64(size), "size")
-	b.ReportMetric(float64(total), "total")
+	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
-func BenchmarkAlloc_struct(b *testing.B) {
+func BenchmarkAllocStruct(b *testing.B) {
 	type Struct struct {
 		Int8  int8
 		Int16 int16
@@ -63,12 +63,12 @@ func BenchmarkAlloc_struct(b *testing.B) {
 	}
 
 	sec := time.Since(t0).Seconds()
-	rps := float64(b.N) / float64(sec)
-	total := a.total
+	ops := float64(b.N) / float64(sec)
+	capacity := a.size / (1024 * 1024)
 
-	b.ReportMetric(rps, "rps")
+	b.ReportMetric(ops, "ops")
 	b.ReportMetric(float64(size), "size")
-	b.ReportMetric(float64(total), "total")
+	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
 func BenchmarkAllocBytes(b *testing.B) {
@@ -84,18 +84,18 @@ func BenchmarkAllocBytes(b *testing.B) {
 	var v []byte
 	for i := 0; i < b.N; i++ {
 		v = AllocBytes(a, size)
-		if len(v) != 16 {
+		if len(v) != size {
 			b.Fatal()
 		}
 	}
 
 	sec := time.Since(t0).Seconds()
-	rps := float64(b.N) / float64(sec)
-	total := a.total
+	ops := float64(b.N) / float64(sec)
+	capacity := a.size / (1024 * 1024)
 
-	b.ReportMetric(rps, "rps")
+	b.ReportMetric(ops, "ops")
 	b.ReportMetric(float64(size), "size")
-	b.ReportMetric(float64(total), "total")
+	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
 func BenchmarkAllocSlice(b *testing.B) {
@@ -118,17 +118,17 @@ func BenchmarkAllocSlice(b *testing.B) {
 	}
 
 	sec := time.Since(t0).Seconds()
-	rps := float64(b.N) / float64(sec)
-	total := a.total
+	ops := float64(b.N) / float64(sec)
+	capacity := a.size / (1024 * 1024)
 
-	b.ReportMetric(rps, "rps")
+	b.ReportMetric(ops, "ops")
 	b.ReportMetric(float64(size), "size")
-	b.ReportMetric(float64(total), "total")
+	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
 func BenchmarkArena_Alloc(b *testing.B) {
 	a := newArena()
-	size := 16
+	size := 8
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -145,12 +145,12 @@ func BenchmarkArena_Alloc(b *testing.B) {
 	}
 
 	sec := time.Since(t0).Seconds()
-	rps := float64(b.N) / float64(sec)
-	total := a.total
+	ops := float64(b.N) / float64(sec)
+	capacity := a.size / (1024 * 1024)
 
-	b.ReportMetric(rps, "rps")
+	b.ReportMetric(ops, "ops")
 	b.ReportMetric(float64(size), "size")
-	b.ReportMetric(float64(total), "total")
+	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
 func BenchmarkGetBlockClass(b *testing.B) {
@@ -167,6 +167,6 @@ func BenchmarkGetBlockClass(b *testing.B) {
 	}
 
 	sec := time.Since(t0).Seconds()
-	rps := float64(b.N) / float64(sec)
-	b.ReportMetric(rps, "rps")
+	ops := float64(b.N) / float64(sec)
+	b.ReportMetric(ops, "ops")
 }

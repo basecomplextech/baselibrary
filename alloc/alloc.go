@@ -31,7 +31,7 @@ func AllocBytes(a Arena, cap int) []byte {
 	return unsafe.Slice((*byte)(ptr), cap)
 }
 
-// AllocBytes allocates a byte slice copy in the arena.
+// CopyBytes allocates a byte slice copy in the arena.
 func CopyBytes(a Arena, b []byte) []byte {
 	b1 := AllocBytes(a, len(b))
 	copy(b1, b)
