@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestArena_Alloc__should_allocate_data(t *testing.T) {
+func TestArena_alloc__should_allocate_data(t *testing.T) {
 	a := newArena()
-	d := a.Alloc(8)
+	d := a.alloc(8)
 
 	v := (*int64)(d)
 	*v = math.MaxInt64

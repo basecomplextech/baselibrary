@@ -12,7 +12,7 @@ const (
 
 // FreeList keeps a linked list of free objects in the arena.
 type FreeList[T any] struct {
-	arena Arena
+	arena *Arena
 	size  uintptr
 	free  uintptr // last free item
 }
@@ -21,7 +21,7 @@ type freeListItem struct {
 	next uintptr // next free item
 }
 
-func newFreeList[T any](arena Arena) *FreeList[T] {
+func newFreeList[T any](arena *Arena) *FreeList[T] {
 	var zero T
 	size := unsafe.Sizeof(zero)
 

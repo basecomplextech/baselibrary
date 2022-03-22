@@ -138,10 +138,35 @@ func BenchmarkArena_Alloc(b *testing.B) {
 
 	var v unsafe.Pointer
 	for i := 0; i < b.N; i++ {
-		v = a.Alloc(size)
+		v = a.alloc(size)
 		if uintptr(v) == 0 {
 			b.Fatal()
 		}
+	}
+
+	sec := time.Since(t0).Seconds()
+	ops := float64(b.N) / float64(sec)
+	capacity := a.size / (1024 * 1024)
+
+	b.ReportMetric(ops, "ops")
+	b.ReportMetric(float64(size), "size")
+	b.ReportMetric(float64(capacity), "cap,mb")
+}
+
+func BenchmarkFreeList_Alloc_Dealloc(b *testing.B) {
+	a := newArena()
+	list := newFreeList[int64](a)
+	size := 8
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.SetBytes(int64(size))
+
+	t0 := time.Now()
+
+	for i := 0; i < b.N; i++ {
+		v := list.Alloc()
+		list.Dealloc(v)
 	}
 
 	sec := time.Since(t0).Seconds()
