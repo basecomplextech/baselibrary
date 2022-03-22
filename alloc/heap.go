@@ -35,14 +35,14 @@ func (h *heap) allocBlock(size int) (*block, int) {
 func (h *heap) freeBlocks(blocks ...*block) {
 	for _, block := range blocks {
 		// get block class
-		cls := getBlockClass(block.size())
+		cls := getBlockClass(block.cap())
 		if cls < 0 {
 			continue
 		}
 
 		// skip blocks of nonstandard sizes
 		size := blockClassSizes[cls]
-		if block.size() != size {
+		if block.cap() != size {
 			continue
 		}
 

@@ -55,7 +55,7 @@ func (a *Arena) Used() int64 {
 
 	total := int64(0)
 	for _, block := range a.blocks {
-		total += int64(block.allocated())
+		total += int64(block.len())
 	}
 	return total
 }
@@ -84,7 +84,7 @@ func (a *Arena) Free() {
 // internal
 
 // alloc allocates data and returns a pointer to it.
-func (a *Arena) alloc(size int) unsafe.Pointer {
+func (a *Arena) alloc(n int) unsafe.Pointer {
 	a.lock()
 	defer a.unlock()
 
@@ -93,30 +93,35 @@ func (a *Arena) alloc(size int) unsafe.Pointer {
 	}
 
 	if a.block != nil {
-		free := a.block.free()
-		if free >= size {
-			return a.block.alloc(size)
+		p, ok := a.block.alloc(n)
+		if ok {
+			return p
 		}
 	}
 
 	// double last block size
 	// limit it to maxBlockSize
-	blockSize := 0
+	size := 0
 	if a.block != nil {
-		blockSize = a.block.size() * 2
+		size = a.block.cap() * 2
 	}
-	if blockSize > maxBlockSize {
-		blockSize = maxBlockSize
+	if size > maxBlockSize {
+		size = maxBlockSize
 	}
-	if size > blockSize {
-		blockSize = size
+	if n > size {
+		size = n
 	}
 
-	a.block, _ = a.heap.allocBlock(blockSize)
+	a.block, _ = a.heap.allocBlock(size)
 	a.blocks = append(a.blocks, a.block)
-	a.size += a.block.size()
+	a.size += a.block.cap()
 
-	return a.block.alloc(size)
+	p, ok := a.block.alloc(n)
+	if !ok {
+		// unreachable
+		panic("allocation failure")
+	}
+	return p
 }
 
 // allocFreeList allocates a new free list or returns an existing one.

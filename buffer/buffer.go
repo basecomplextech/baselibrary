@@ -5,26 +5,12 @@ type Buffer interface {
 	// Len returns the number of bytes in the buffer; b.Len() == len(b.Bytes()).
 	Len() int
 
-	// Bytes returns a slice of with the written bytes.
-	// The slice is valid for use only until the next buffer mutation.
+	// Bytes returns a byte slice with the buffer bytes.
+	// It is valid for use only until the next buffer mutation.
 	Bytes() []byte
 
-	// Mutation
-
-	// Alloc grows an internal buffer `capacity` and returns an n-byte slice.
-	// The slice is intended to be passed to an immediately succeeding Write call.
-	// The slice is only valid until the next buffer mutation.
-	//
-	// Usage:
-	//
-	//	p := b.Alloc(10)
-	//	n := varint.PutUint64(p, 1234)
-	//	b.Write(p[:n])
-	//
-	// Alloc(n int) []byte
-
-	// Grow grows and internal buffer `length` and returns an n-byte slice.
-	// The slice be should be used directly is only valid until the next buffer mutation.
+	// Grow grows the buffer and returns an n-byte slice.
+	// It be should be used directly and is only valid until the next buffer mutation.
 	//
 	// Usage:
 	//
@@ -42,7 +28,7 @@ type Buffer interface {
 	//
 	Write(p []byte) (n int, err error)
 
-	// Reset resets the buffer to be empty, but retains its internal byte slice.
+	// Reset resets the buffer to be empty, but can retain its internal buffer.
 	Reset()
 }
 
@@ -71,19 +57,17 @@ func (b *buffer) Len() int {
 	return len(b.buf)
 }
 
-// Bytes returns a slice of with the written bytes.
+// Bytes returns a byte slice with the buffer bytes.
 func (b *buffer) Bytes() []byte {
 	return b.buf
 }
 
-// Mutation
-
-// Alloc grows an internal buffer capacity and returns an n-byte slice.
-func (b *buffer) Alloc(n int) []byte {
+// Grow grows the buffer and returns an n-byte slice.
+func (b *buffer) Grow(n int) []byte {
 	cp := cap(b.buf)
 	ln := len(b.buf)
 
-	// increase capacity
+	// realloc
 	free := cp - ln
 	if free < n {
 		size := (cp * 2) + n
@@ -92,17 +76,12 @@ func (b *buffer) Alloc(n int) []byte {
 		b.buf = buf
 	}
 
-	// return slice
+	// grow buffer
 	size := ln + n
+	b.buf = b.buf[:size]
+
+	// return slice
 	return b.buf[ln:size]
-}
-
-// Grow grows and internal buffer length and returns an n-byte slice.
-func (b *buffer) Grow(n int) []byte {
-	p := b.Alloc(n)
-
-	b.buf = b.buf[:len(b.buf)+n]
-	return p
 }
 
 // Write appends bytes from p to the buffer.
@@ -113,7 +92,7 @@ func (b *buffer) Write(p []byte) (n int, err error) {
 	return
 }
 
-// Reset resets the buffer to be empty, but retains its internal byte slice.
+// Reset resets the buffer to be empty, but can retain its internal buffer.
 func (b *buffer) Reset() {
 	b.buf = b.buf[:0]
 }

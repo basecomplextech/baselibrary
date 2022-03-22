@@ -25,7 +25,7 @@ func TestHeap_allocBlock__should_allocate_block(t *testing.T) {
 
 	for _, c := range cases {
 		block, cls := h.allocBlock(c.size)
-		require.Equal(t, c.blockSize, block.size())
+		require.Equal(t, c.blockSize, block.cap())
 		require.Equal(t, c.cls, cls)
 	}
 }

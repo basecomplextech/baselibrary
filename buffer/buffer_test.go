@@ -8,17 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBuffer_Alloc__should_allocate_scratch_slice(t *testing.T) {
+func TestBuffer_Grow__should_grow_buffer_and_return_slice(t *testing.T) {
 	buf := newBuffer(nil)
 
-	b := buf.Alloc(8)
+	b := buf.Grow(8)
 	binary.BigEndian.PutUint64(b, math.MaxUint64)
-
-	n, err := buf.Write(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, 8, n)
 
 	bytes := buf.Bytes()
 	i := binary.BigEndian.Uint64(bytes)

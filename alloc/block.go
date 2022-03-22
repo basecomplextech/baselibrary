@@ -1,67 +1,64 @@
 package alloc
 
 import (
-	"fmt"
 	"unsafe"
 )
 
 const alignment = 8
 
 type block struct {
-	data []byte
+	buf []byte
 }
 
 func newBlock(size int) *block {
 	return &block{
-		data: make([]byte, 0, size),
+		buf: make([]byte, 0, size),
 	}
 }
 
-// allocated returns the number of allocated bytes in the block.
-func (b *block) allocated() int {
-	return len(b.data)
+// len returns the number of used bytes in the block.
+func (b *block) len() int {
+	return len(b.buf)
+}
+
+// cap returns the block size in bytes.
+func (b *block) cap() int {
+	return cap(b.buf)
 }
 
 // free returns a free space in bytes.
 func (b *block) free() int {
-	return cap(b.data) - len(b.data)
+	return cap(b.buf) - len(b.buf)
 }
 
-// size returns the block size in bytes.
-func (b *block) size() int {
-	return cap(b.data)
-}
+// alloc grows an internal buffer and returns an aligned pointer to a memory of `size`.
+func (b *block) alloc(size int) (unsafe.Pointer, bool) {
+	// calc padding
+	start := len(b.buf)
+	start += (alignment - (start % alignment)) % alignment
 
-// alloc returns a pointer to memory of size.
-func (b *block) alloc(size int) unsafe.Pointer {
-	free := cap(b.data) - len(b.data)
+	// return when not enough space
+	free := cap(b.buf) - start
 	if free < size {
-		panic(fmt.Sprintf("block out of memory, free=%d, requested size=%d", free, size))
+		return nil, false
 	}
 
-	// calc range
-	start := len(b.data)
+	// grow buffer
 	end := start + size
-
-	// grow buffer, add padding
-	pad := (alignment - (end % alignment)) % alignment
-	ln := end + pad
-	if ln > cap(b.data) {
-		ln = cap(b.data)
-	}
-	b.data = b.data[:ln]
+	b.buf = b.buf[:end]
 
 	// slice buffer
-	out := b.data[start:end:end] // start:end:max (cap=max-start)
-
-	// zero out
-	for i := range out {
-		out[i] = 0
-	}
-	return unsafe.Pointer(&out[0])
+	p := b.buf[start:end:end] // start:end:max (cap=max-start)
+	ptr := unsafe.Pointer(&p[0])
+	return ptr, true
 }
 
 // reset resets the block.
 func (b *block) reset() {
-	b.data = b.data[:0]
+	// zero out
+	for i := range b.buf {
+		b.buf[i] = 0
+	}
+
+	b.buf = b.buf[:0]
 }
