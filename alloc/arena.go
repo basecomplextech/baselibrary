@@ -7,6 +7,8 @@ import (
 	"unsafe"
 )
 
+const alignment = 8
+
 // Arena allocates objects in internal byte blocks.
 // It is goroutine-safe, but operations on a free arena panic.
 type Arena struct {
@@ -14,12 +16,10 @@ type Arena struct {
 
 	spinlock int32
 	free     bool
-	size     int // total allocated size
+	size     int64 // total allocated size
 
-	block  *block   // current block
-	blocks []*block // all blocks
-
-	freeLists map[reflect.Type]unsafe.Pointer
+	blocks []*block
+	lists  map[reflect.Type]unsafe.Pointer
 }
 
 // NewArena returns a new arena with a global heap.
@@ -35,8 +35,8 @@ func newArena() *Arena {
 // newArenaHeap returns a new arena with a given heap.
 func newArenaHeap(heap *heap) *Arena {
 	return &Arena{
-		heap:      heap,
-		freeLists: make(map[reflect.Type]unsafe.Pointer),
+		heap:  heap,
+		lists: make(map[reflect.Type]unsafe.Pointer),
 	}
 }
 
@@ -45,7 +45,7 @@ func (a *Arena) Size() int64 {
 	a.lock()
 	defer a.unlock()
 
-	return int64(a.size)
+	return a.size
 }
 
 // Used returns the allocated arena memory size in bytes.
@@ -73,10 +73,8 @@ func (a *Arena) Free() {
 	a.size = 0
 
 	blocks := a.blocks
-	a.block = nil
 	a.blocks = nil
-
-	a.freeLists = make(map[reflect.Type]unsafe.Pointer)
+	a.lists = make(map[reflect.Type]unsafe.Pointer)
 
 	a.heap.freeBlocks(blocks...)
 }
@@ -92,36 +90,30 @@ func (a *Arena) alloc(n int) unsafe.Pointer {
 		panic("operation on a free arena")
 	}
 
-	if a.block != nil {
-		p, ok := a.block.alloc(n)
-		if ok {
-			return p
-		}
+	// maybe allocate block
+	last := a.last()
+	if last == nil || last.free() < n {
+		last = a.allocBlock(n)
 	}
 
-	// double last block size
-	// limit it to maxBlockSize
-	size := 0
-	if a.block != nil {
-		size = a.block.cap() * 2
-	}
-	if size > maxBlockSize {
-		size = maxBlockSize
-	}
-	if n > size {
-		size = n
+	// grow buffer, add end padding for alignement
+	start := len(last.buf)
+	end := start + n
+	if end > last.cap() {
+		panic("allocation out of block range") // unreachable
 	}
 
-	a.block, _ = a.heap.allocBlock(size)
-	a.blocks = append(a.blocks, a.block)
-	a.size += a.block.cap()
-
-	p, ok := a.block.alloc(n)
-	if !ok {
-		// unreachable
-		panic("allocation failure")
+	end += (alignment - (end % alignment)) % alignment
+	if end > last.cap() {
+		end = last.cap()
 	}
-	return p
+
+	last.buf = last.buf[:end]
+
+	// slice buffer
+	p := last.buf[start:end:end] // start:end:max, cap=max-start
+	ptr := unsafe.Pointer(&p[0])
+	return ptr
 }
 
 // allocFreeList allocates a new free list or returns an existing one.
@@ -137,14 +129,14 @@ func allocFreeList[T any](a *Arena) *FreeList[T] {
 	}
 
 	// get existing list
-	uptr, ok := a.freeLists[typ]
+	uptr, ok := a.lists[typ]
 	if ok {
 		return (*FreeList[T])(uptr)
 	}
 
 	// init new list
 	list := newFreeList[T](a)
-	a.freeLists[typ] = (unsafe.Pointer)(list)
+	a.lists[typ] = (unsafe.Pointer)(list)
 	return list
 }
 
@@ -163,11 +155,31 @@ func (a *Arena) unlock() {
 	atomic.StoreInt32(&a.spinlock, 0)
 }
 
-func (a *Arena) loadBlock() *block {
-	ptr := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&a.block)))
-	if ptr == nil {
+func (a *Arena) last() *block {
+	if len(a.blocks) == 0 {
 		return nil
 	}
+	return a.blocks[len(a.blocks)-1]
+}
 
-	return (*block)(ptr)
+func (a *Arena) allocBlock(n int) *block {
+	// double last block size
+	// limit it to maxBlockSize
+	size := 0
+	last := a.last()
+
+	if last != nil {
+		size = last.cap() * 2
+	}
+	if size > maxBlockSize {
+		size = maxBlockSize
+	}
+	if n > size {
+		size = n
+	}
+
+	block, _ := a.heap.allocBlock(size)
+	a.blocks = append(a.blocks, block)
+	a.size += int64(block.cap())
+	return block
 }
