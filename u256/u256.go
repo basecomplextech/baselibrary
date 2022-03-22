@@ -2,6 +2,7 @@ package u256
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 )
@@ -14,6 +15,15 @@ const (
 
 // U256 is a 32 byte value.
 type U256 [byteLen]byte
+
+// FromInt64 converts an int64 into a big endian U256.
+func FromInt64(v int64) U256 {
+	u := U256{}
+	b := u[24:]
+
+	binary.BigEndian.PutUint64(b, uint64(v))
+	return u
+}
 
 // Bytes marshals an id to bytes.
 func (u U256) Bytes() []byte {
