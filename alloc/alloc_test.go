@@ -77,7 +77,28 @@ func TestAllocSlice__should_allocate_slice(t *testing.T) {
 	assert.Equal(t, 16, cap(s))
 }
 
-// String
+// CopySlice
+
+func TestCopySlice__should_copy_existing_slice_into_arena(t *testing.T) {
+	type Value struct {
+		A int64
+		B int64
+		C int64
+	}
+
+	v0 := []Value{
+		{1, 2, 3},
+		{10, 20, 30},
+		{100, 200, 300},
+	}
+
+	a := newArena()
+	v1 := CopySlice(a, v0)
+
+	assert.Equal(t, v0, v1)
+}
+
+// AllocString
 
 func TestAllocString__should_return_string_copy(t *testing.T) {
 	a := newArena()
@@ -86,4 +107,38 @@ func TestAllocString__should_return_string_copy(t *testing.T) {
 
 	assert.Equal(t, s0, s1)
 	assert.NotSame(t, s0, s1)
+}
+
+// AllocFreeList
+
+func TestAllocFreeList__should_allocate_free_list(t *testing.T) {
+	a := newArena()
+	list := AllocFreeList[int64](a)
+
+	v0 := list.Get()
+	*v0 = math.MaxInt64
+	list.Put(v0)
+
+	v1 := list.Get()
+	assert.Zero(t, *v1)
+}
+
+func TestAllocFreeList__should_return_same_free_list_for_same_type(t *testing.T) {
+	a := newArena()
+	list0 := AllocFreeList[int64](a)
+	list1 := allocFreeList[int64](a)
+
+	assert.Same(t, list0, list1)
+}
+
+func TestAllocFreeList__should_return_different_lists_for_different_types_with_same_size(t *testing.T) {
+	type Value struct {
+		V int64
+	}
+
+	a := newArena()
+	list0 := AllocFreeList[int64](a)
+	list1 := allocFreeList[Value](a)
+
+	assert.NotSame(t, list0, list1)
 }

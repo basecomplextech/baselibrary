@@ -30,11 +30,12 @@ func AllocBytes(a *Arena, cap int) []byte {
 	return unsafe.Slice((*byte)(ptr), cap)
 }
 
-// CopyBytes allocates a byte slice copy in the arena.
-func CopyBytes(a *Arena, b []byte) []byte {
-	b1 := AllocBytes(a, len(b))
-	copy(b1, b)
-	return b1
+// CopyBytes allocates a byte slice and copies items from src into it.
+// The slice capacity is len(src).
+func CopyBytes(a *Arena, src []byte) []byte {
+	dst := AllocBytes(a, len(src))
+	copy(dst, src)
+	return dst
 }
 
 // AllocSlice allocates a new slice of a generic type.
@@ -54,13 +55,14 @@ func AllocSlice[T any](a *Arena, cap int) []T {
 	ptr := a.alloc(size)
 
 	return unsafe.Slice((*T)(ptr), cap)
+}
 
-	// // set slice header
-	// header := (*reflect.SliceHeader)(unsafe.Pointer(&result))
-	// header.Data = uintptr(ptr)
-	// header.Len = cap
-	// header.Cap = cap
-	// return result
+// CopySlice allocates a new slice and copies items from src into it.
+// The slice capacity is len(src).
+func CopySlice[T any](a *Arena, src []T) []T {
+	dst := AllocSlice[T](a, len(src))
+	copy(dst, src)
+	return dst
 }
 
 // AllocString returns a string copy allocated in the arena.
@@ -72,6 +74,12 @@ func AllocString(a *Arena, s string) string {
 	b := AllocBytes(a, len(s))
 	copy(b, s)
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+// AllocFreeList allocates and returns a free list in the arena.
+// The method returns the same free list for the same type.
+func AllocFreeList[T any](a *Arena) *FreeList[T] {
+	return allocFreeList[T](a)
 }
 
 // internal

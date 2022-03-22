@@ -1,6 +1,7 @@
 package alloc
 
 import (
+	"reflect"
 	"runtime"
 	"sync/atomic"
 	"unsafe"
@@ -17,6 +18,8 @@ type Arena struct {
 
 	block  *block   // current block
 	blocks []*block // all blocks
+
+	freeLists map[reflect.Type]unsafe.Pointer
 }
 
 // NewArena returns a new arena with a global heap.
@@ -26,12 +29,15 @@ func NewArena() *Arena {
 
 // newArena returns a new arena with a new heap, for tests only.
 func newArena() *Arena {
-	return &Arena{heap: newHeap()}
+	return newArenaHeap(newHeap())
 }
 
 // newArenaHeap returns a new arena with a given heap.
 func newArenaHeap(heap *heap) *Arena {
-	return &Arena{heap: heap}
+	return &Arena{
+		heap:      heap,
+		freeLists: make(map[reflect.Type]unsafe.Pointer),
+	}
 }
 
 // Size returns the total arena memory size in bytes.
@@ -70,6 +76,8 @@ func (a *Arena) Free() {
 	a.block = nil
 	a.blocks = nil
 
+	a.freeLists = make(map[reflect.Type]unsafe.Pointer)
+
 	a.heap.freeBlocks(blocks...)
 }
 
@@ -81,7 +89,7 @@ func (a *Arena) alloc(size int) unsafe.Pointer {
 	defer a.unlock()
 
 	if a.free {
-		panic("allocation in a free arena")
+		panic("operation on a free arena")
 	}
 
 	if a.block != nil {
@@ -109,6 +117,30 @@ func (a *Arena) alloc(size int) unsafe.Pointer {
 	a.size += a.block.size()
 
 	return a.block.alloc(size)
+}
+
+// allocFreeList allocates a new free list or returns an existing one.
+func allocFreeList[T any](a *Arena) *FreeList[T] {
+	var zero T
+	typ := reflect.TypeOf(zero)
+
+	a.lock()
+	defer a.unlock()
+
+	if a.free {
+		panic("operation on a free arena")
+	}
+
+	// get existing list
+	uptr, ok := a.freeLists[typ]
+	if ok {
+		return (*FreeList[T])(uptr)
+	}
+
+	// init new list
+	list := newFreeList[T](a)
+	a.freeLists[typ] = (unsafe.Pointer)(list)
+	return list
 }
 
 // private

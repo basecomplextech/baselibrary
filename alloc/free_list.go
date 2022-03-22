@@ -25,6 +25,7 @@ func newFreeList[T any](arena *Arena) *FreeList[T] {
 	var zero T
 	size := unsafe.Sizeof(zero)
 
+	// increase size to hold item
 	itemSize := unsafe.Sizeof(freeListItem{})
 	if size < itemSize {
 		size = itemSize
@@ -36,8 +37,8 @@ func newFreeList[T any](arena *Arena) *FreeList[T] {
 	}
 }
 
-// Alloc allocates a zero object from the free list or from an arena.
-func (l *FreeList[T]) Alloc() *T {
+// Get returns a free object from the list or allocates a new one in the arena.
+func (l *FreeList[T]) Get() *T {
 	var zero T
 
 	for i := 0; i < freeListAllocAttempts; i++ {
@@ -64,8 +65,8 @@ func (l *FreeList[T]) Alloc() *T {
 	return Alloc[T](l.arena)
 }
 
-// Dealloc tries to put an object back into the free list.
-func (l *FreeList[T]) Dealloc(ptr *T) {
+// Put puts an object back into the free list.
+func (l *FreeList[T]) Put(ptr *T) {
 	// reset object
 	var zero T
 	*ptr = zero

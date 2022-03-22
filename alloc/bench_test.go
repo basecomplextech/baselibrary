@@ -153,7 +153,7 @@ func BenchmarkArena_Alloc(b *testing.B) {
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
-func BenchmarkFreeList_Alloc_Dealloc(b *testing.B) {
+func BenchmarkFreeList_Get_Put(b *testing.B) {
 	a := newArena()
 	list := newFreeList[int64](a)
 	size := 8
@@ -165,8 +165,8 @@ func BenchmarkFreeList_Alloc_Dealloc(b *testing.B) {
 	t0 := time.Now()
 
 	for i := 0; i < b.N; i++ {
-		v := list.Alloc()
-		list.Dealloc(v)
+		v := list.Get()
+		list.Put(v)
 	}
 
 	sec := time.Since(t0).Seconds()
