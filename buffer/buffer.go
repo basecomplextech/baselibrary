@@ -1,5 +1,7 @@
 package buffer
 
+const DefaultSize = 128
+
 // Buffer is a general purpose byte buffer interface.
 type Buffer interface {
 	// Len returns the number of bytes in the buffer; b.Len() == len(b.Bytes()).
@@ -32,13 +34,19 @@ type Buffer interface {
 	Reset()
 }
 
-// New returns a new buffer and initializes it with a byte slice.
-// The new buffer takes the ownership of the slice.
-func New(buf []byte) Buffer {
+// New buffer returns a new buffer of a default size.
+func New() Buffer {
+	buf := make([]byte, 0, DefaultSize)
 	return newBuffer(buf)
 }
 
-// NewSize returns a new buffer and initializes it with a byte slice.
+// New returns a new buffer and initializes it with a byte slice.
+// The new buffer takes the ownership of the slice.
+func NewBytes(buf []byte) Buffer {
+	return newBuffer(buf)
+}
+
+// NewSize returns a new buffer with an initial capacity.
 func NewSize(size int) Buffer {
 	buf := make([]byte, 0, size)
 	return newBuffer(buf)
