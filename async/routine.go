@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/complexl/library/try"
+	"github.com/baseblck/library/try"
 )
 
 // Stopped is the error which can be used to indicate that a routine has been stopped.

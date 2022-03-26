@@ -3,7 +3,7 @@ package fs
 import (
 	"testing"
 
-	"github.com/complexl/library/logging"
+	"github.com/baseblck/library/logging"
 )
 
 func TestFileSystem_TempFile__should_create_temp_file(t *testing.T) {

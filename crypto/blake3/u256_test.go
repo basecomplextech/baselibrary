@@ -3,7 +3,7 @@ package blake3
 import (
 	"testing"
 
-	"github.com/complexl/library/u256"
+	"github.com/baseblck/library/u256"
 	"github.com/stretchr/testify/assert"
 	"github.com/zeebo/blake3"
 )

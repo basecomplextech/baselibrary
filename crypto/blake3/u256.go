@@ -1,7 +1,7 @@
 package blake3
 
 import (
-	"github.com/complexl/library/u256"
+	"github.com/baseblck/library/u256"
 	"github.com/zeebo/blake3"
 )
 

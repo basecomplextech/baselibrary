@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/complexl/library/logging"
+	"github.com/baseblck/library/logging"
 )
 
 var (

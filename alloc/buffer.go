@@ -1,6 +1,6 @@
 package alloc
 
-import "github.com/complexl/library/buffer"
+import "github.com/baseblck/library/buffer"
 
 var _ buffer.Buffer = (*Buffer)(nil)
 

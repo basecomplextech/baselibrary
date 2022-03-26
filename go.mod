@@ -1,4 +1,4 @@
-module github.com/complexl/library
+module github.com/baseblck/library
 
 go 1.18
 

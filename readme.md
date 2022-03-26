@@ -1,5 +1,5 @@
-ComplexL Library
-================
+Non-standard Go Library
+=======================
 
 ---
 
