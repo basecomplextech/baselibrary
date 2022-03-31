@@ -55,6 +55,30 @@ func TestCopyBytes__should_allocate_bytes_copy(t *testing.T) {
 	assert.Equal(t, b, buf)
 }
 
+// AllocRaw
+
+func TestAllocRaw__should_allocate_raw_memory_segment(t *testing.T) {
+	a := newArena()
+	b := []byte("hello, world")
+
+	raw := AllocRaw(a, len(b))
+	b1 := raw.Bytes()
+	copy(b1, b)
+
+	assert.Equal(t, b, b1)
+}
+
+// CopyRaw
+
+func TestCopyRaw__should_allocate_raw_bytes_copy(t *testing.T) {
+	a := newArena()
+	b := []byte("hello, world")
+
+	raw := CopyRaw(a, b)
+	b1 := raw.Bytes()
+	assert.Equal(t, b, b1)
+}
+
 // AllocSlice
 
 func TestAllocSlice__should_allocate_slice(t *testing.T) {

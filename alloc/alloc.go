@@ -38,6 +38,28 @@ func CopyBytes(a *Arena, src []byte) []byte {
 	return dst
 }
 
+// AllocRaw allocates a raw memory segment.
+func AllocRaw(a *Arena, size int) Raw {
+	ptr := a.alloc(size)
+	return Raw{
+		Ptr:  uintptr(ptr),
+		Size: size,
+	}
+}
+
+// CopyRaw allocates a raw memory segment and copies its contents from another slice.
+// The segment size is len(src).
+func CopyRaw(a *Arena, src []byte) Raw {
+	n := len(src)
+	ptr := a.alloc(n)
+	dst := unsafe.Slice((*byte)(ptr), n)
+	copy(dst, src)
+	return Raw{
+		Ptr:  uintptr(ptr),
+		Size: n,
+	}
+}
+
 // AllocSlice allocates a new slice of a generic type.
 //
 // Usage:
