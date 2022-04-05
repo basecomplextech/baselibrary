@@ -50,6 +50,10 @@ func TestUint64__should_read_write_uvarint(t *testing.T) {
 		255,
 		256,
 		257,
+		math.MaxUint16 - 1,
+		math.MaxUint16,
+		math.MaxUint32 - 1,
+		math.MaxUint32,
 		math.MaxUint64 - 1,
 		math.MaxUint64,
 	}

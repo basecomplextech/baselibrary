@@ -14,21 +14,40 @@ package compactint
 
 import (
 	"encoding/binary"
-	"math"
 )
 
 const MaxLen = 9
 
 // Uint32 returns a uint32 value and the number of bytes read.
 func Uint32(b []byte) (uint32, int) {
-	v, n := Uint64(b)
-	if n <= 0 {
-		return 0, n
+	if len(b) == 0 {
+		return 0, 0
 	}
-	if v > math.MaxUint32 {
+
+	f := b[0]
+	switch f {
+	default:
+		return uint32(f), 1
+
+	case 0xfd:
+		if len(b) < 3 {
+			return 0, 0
+		}
+
+		v := binary.BigEndian.Uint16(b[1:3])
+		return uint32(v), 3
+
+	case 0xfe:
+		if len(b) < 5 {
+			return 0, 0
+		}
+
+		v := binary.BigEndian.Uint32(b[1:5])
+		return uint32(v), 5
+
+	case 0xff:
 		return 0, -1
 	}
-	return uint32(v), n
 }
 
 // Uint64 returns a uint64 value and the number of bytes read.
@@ -70,10 +89,24 @@ func Uint64(b []byte) (uint64, int) {
 
 // PutUint32 appends a uint32 to b and returns the number of bytes written.
 func PutUint32(b []byte, v uint32) int {
-	return PutUint64(b, uint64(v))
+	switch {
+	case v <= 0xfc:
+		b[0] = byte(v)
+		return 1
+
+	case v <= 0xffff:
+		b[0] = 0xfd
+		binary.BigEndian.PutUint16(b[1:3], uint16(v))
+		return 3
+
+	default:
+		b[0] = 0xfe
+		binary.BigEndian.PutUint32(b[1:5], uint32(v))
+		return 5
+	}
 }
 
-// PutUint32 appends a uint64 to b and returns the number of bytes written.
+// PutUint64 appends a uint64 to b and returns the number of bytes written.
 func PutUint64(b []byte, v uint64) int {
 	switch {
 	case v <= 0xfc:
