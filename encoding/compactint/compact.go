@@ -16,9 +16,55 @@ import (
 	"encoding/binary"
 )
 
-const MaxLen = 9
+const (
+	MaxLen   = 9
+	MaxLen32 = 5
+	MaxLen64 = 9
+)
 
-// Uint32 returns a uint32 value and the number of bytes read.
+// Signed
+
+// Int32 decodes an int32 value and the number of bytes read.
+func Int32(b []byte) (int32, int) {
+	ux, off := Uint32(b) // ok to continue in presence of error
+	x := int32(ux >> 1)
+	if ux&1 != 0 {
+		x = ^x
+	}
+	return x, off
+}
+
+// Int64 decodes an int64 value and the number of bytes read.
+func Int64(b []byte) (int64, int) {
+	ux, off := Uint64(b) // ok to continue in presence of error
+	x := int64(ux >> 1)
+	if ux&1 != 0 {
+		x = ^x
+	}
+	return x, off
+}
+
+// PutInt32 encodes an int32 into b and returns the number of bytes written.
+func PutInt32(buf []byte, x int32) int {
+	ux := uint32(x) << 1
+	if x < 0 {
+		ux = ^ux
+	}
+	return PutUint32(buf, ux)
+}
+
+// PutInt64 encodes an int64 into b and returns the number of bytes written.
+func PutInt64(buf []byte, x int64) int {
+	ux := uint64(x) << 1
+	if x < 0 {
+		ux = ^ux
+	}
+	return PutUint64(buf, ux)
+}
+
+// Unsigned
+
+// Uint32 decodes a uint32 value and the number of bytes read.
 func Uint32(b []byte) (uint32, int) {
 	if len(b) == 0 {
 		return 0, 0
@@ -50,7 +96,7 @@ func Uint32(b []byte) (uint32, int) {
 	}
 }
 
-// Uint64 returns a uint64 value and the number of bytes read.
+// Uint64 decodes a uint64 value and the number of bytes read.
 func Uint64(b []byte) (uint64, int) {
 	if len(b) == 0 {
 		return 0, 0
@@ -87,7 +133,7 @@ func Uint64(b []byte) (uint64, int) {
 	}
 }
 
-// PutUint32 appends a uint32 to b and returns the number of bytes written.
+// PutUint32 encodes a uint32 into b and returns the number of bytes written.
 func PutUint32(b []byte, v uint32) int {
 	switch {
 	case v <= 0xfc:
@@ -106,7 +152,7 @@ func PutUint32(b []byte, v uint32) int {
 	}
 }
 
-// PutUint64 appends a uint64 to b and returns the number of bytes written.
+// PutUint64 encodes a uint64 into b and returns the number of bytes written.
 func PutUint64(b []byte, v uint64) int {
 	switch {
 	case v <= 0xfc:

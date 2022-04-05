@@ -4,6 +4,48 @@ import (
 	"encoding/binary"
 )
 
+// Signed
+
+// ReverseInt32 decodes an int32 value from the b end and the number of bytes read.
+func ReverseInt32(b []byte) (int32, int) {
+	ux, off := ReverseUint32(b) // ok to continue in presence of error
+	x := int32(ux >> 1)
+	if ux&1 != 0 {
+		x = ^x
+	}
+	return x, off
+}
+
+// ReverseInt64 decodes an int64 value from the b end and the number of bytes read.
+func ReverseInt64(b []byte) (int64, int) {
+	ux, off := ReverseUint64(b) // ok to continue in presence of error
+	x := int64(ux >> 1)
+	if ux&1 != 0 {
+		x = ^x
+	}
+	return x, off
+}
+
+// PutReverseInt32 encodes an int32 into the b end and returns the number of bytes written.
+func PutReverseInt32(buf []byte, x int32) int {
+	ux := uint32(x) << 1
+	if x < 0 {
+		ux = ^ux
+	}
+	return PutReverseUint32(buf, ux)
+}
+
+// PutReverseInt64 encodes an int64 into the b end and returns the number of bytes written.
+func PutReverseInt64(buf []byte, x int64) int {
+	ux := uint64(x) << 1
+	if x < 0 {
+		ux = ^ux
+	}
+	return PutReverseUint64(buf, ux)
+}
+
+// Unsigned
+
 // ReverseUint32 returns a uint32 value and the number of bytes read.
 func ReverseUint32(b []byte) (uint32, int) {
 	if len(b) == 0 {
@@ -78,7 +120,7 @@ func ReverseUint64(b []byte) (uint64, int) {
 	}
 }
 
-// PutReverseUint32 appends a uint32 to b and returns the number of bytes written.
+// PutReverseUint32 encodes a uint32 into the b end and returns the number of bytes written.
 func PutReverseUint32(b []byte, v uint32) int {
 	switch {
 	case v <= 0xfc:
@@ -100,7 +142,7 @@ func PutReverseUint32(b []byte, v uint32) int {
 	}
 }
 
-// PutReverseUint64 appends a uint64 to b and returns the number of bytes written.
+// PutReverseUint64 encodes a uint64 into the b end and returns the number of bytes written.
 func PutReverseUint64(b []byte, v uint64) int {
 	switch {
 	case v <= 0xfc:
