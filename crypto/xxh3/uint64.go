@@ -11,7 +11,7 @@ func Sum64(b []byte) uint64 {
 
 // Hash64 computes an XXH3 hash and returns it as uint64.
 type Hash64 struct {
-	h *xxh3.Hasher
+	h xxh3.Hasher
 }
 
 // Write adds more data to the running hash.
