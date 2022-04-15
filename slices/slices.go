@@ -28,3 +28,11 @@ func Sort[T constraints.Ordered](s []T) {
 		return a < b
 	})
 }
+
+// SortCompare sorts a slice.
+func SortCompare[T any](s []T, compare func(a, b T) bool) {
+	sort.Slice(s, func(i, j int) bool {
+		a, b := s[i], s[j]
+		return compare(a, b)
+	})
+}
