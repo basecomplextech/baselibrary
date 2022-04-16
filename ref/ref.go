@@ -9,9 +9,6 @@ type Count interface {
 
 	// Release decrements refcount and releases the object if the count is 0.
 	Release() int32
-
-	// Refcount returns the current refcount.
-	Refcount() int32
 }
 
 // Ref is an atomic reference which implements the Count interface.
