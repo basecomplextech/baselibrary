@@ -5,10 +5,10 @@ import "sync/atomic"
 // Count represents an object which supports reference counting.
 type Count interface {
 	// Retain increments refcount, panics when count is 0.
-	Retain() int32
+	Retain()
 
 	// Release decrements refcount and releases the object if the count is 0.
-	Release() int32
+	Release()
 }
 
 // Ref is an atomic reference which implements the Count interface.
@@ -57,10 +57,36 @@ func ReleaseAll[C Count](counts ...C) {
 // Swap releases an old reference and returns a new one.
 //
 // Usage:
-//	new := table.Clone()
-//	s.table = Swap(s.table, new)
+//	tbl := table.Clone()
+//	s.table = Swap(s.table, tbl)
 //
 func Swap[C Count](old C, new C) C {
+	old.Release()
+	return new
+}
+
+// Swap releases an old reference, and retains and returns a new one.
+//
+// Usage:
+//	tbl := table.Clone()
+//  defer tbl.Release()
+//  ...
+//	s.table = SwapRetain(s.table, tbl)
+//
+func SwapRetain[C Count](old C, new C) C {
+	new.Retain()
+	old.Release()
+	return new
+}
+
+// Swap releases an old reference, and returns a new one.
+//
+// Usage:
+//	tbl := newTable()
+//  ...
+//	s.table = SwapNoRetain(s.table, tbl)
+//
+func SwapNoRetain[C Count](old C, new C) C {
 	old.Release()
 	return new
 }
@@ -68,20 +94,20 @@ func Swap[C Count](old C, new C) C {
 var _ Count = (*Ref)(nil)
 
 // Retain increments refcount, panics when count is 0.
-func (r *Ref) Retain() int32 {
+func (r *Ref) Retain() {
 	v := atomic.AddInt32(&r.refs, 1)
 	if v <= 1 {
 		panic("cannot retain already released reference")
 	}
-	return v
+	return
 }
 
 // Release decrements refcount and releases the object if the count is 0.
-func (r *Ref) Release() int32 {
+func (r *Ref) Release() {
 	v := atomic.AddInt32(&r.refs, -1)
 	switch {
 	case v > 0:
-		return v
+		return
 	case v < 0:
 		panic("cannot release already released reference")
 	}
@@ -89,7 +115,7 @@ func (r *Ref) Release() int32 {
 	if r.r != nil {
 		r.r.Released()
 	}
-	return v
+	return
 }
 
 // Refcount returns the current refcount.
