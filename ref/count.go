@@ -40,9 +40,9 @@ func ReleaseAll[C Count](counts ...C) {
 //	tbl := table.Clone()
 //  defer tbl.Release()
 //  ...
-//	s.table = SwapRetain(s.table, tbl)
+//	s.table = Swap(s.table, tbl)
 //
-func SwapRetain[C Count](old C, new C) C {
+func Swap[C Count](old C, new C) C {
 	new.Retain()
 	old.Release()
 	return new

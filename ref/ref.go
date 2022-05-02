@@ -55,7 +55,8 @@ func (r *R[T]) Release() {
 
 // Unwrap returns the object or panics if the refcount is 0.
 func (r *R[T]) Unwrap() T {
-	if r.refs <= 0 {
+	refs := atomic.LoadInt32(&r.refs)
+	if refs <= 0 {
 		panic(fmt.Sprintf("unwrap: %T already released", r.obj))
 	}
 
