@@ -1,4 +1,4 @@
-module github.com/baseblck/library
+module github.com/sideblock/library
 
 go 1.18
 

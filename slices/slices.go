@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/baseblck/library/constraints"
+	"github.com/sideblock/library/constraints"
 )
 
 // Reverse reverse the slice in place.

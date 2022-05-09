@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/baseblck/library/errors2"
 	"github.com/edsrzf/mmap-go"
+	"github.com/sideblock/library/errors2"
 )
 
 var _ File = (*file)(nil)

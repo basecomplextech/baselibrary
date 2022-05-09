@@ -1,7 +1,7 @@
 package blake3
 
 import (
-	"github.com/baseblck/library/u128"
+	"github.com/sideblock/library/u128"
 	"github.com/zeebo/blake3"
 )
 
