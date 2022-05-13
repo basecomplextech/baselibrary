@@ -1,14 +1,17 @@
 package logging
 
-func Test() Logging {
-	return New(TestConfig())
+import "github.com/sideblock/library/tests"
+
+func Test(t tests.T) Logging {
+	config := TestConfig(t)
+	return New(config)
 }
 
-func TestLogger() Logger {
+func TestLogger(t tests.T) Logger {
 	return Stderr
 }
 
-func TestConfig() *Config {
+func TestConfig(t tests.T) *Config {
 	return &Config{
 		Console: &ConsoleConfig{
 			Enabled: true,
