@@ -1,9 +1,9 @@
 package async
 
 import (
-	"errors"
 	"testing"
 
+	"github.com/sideblock/library/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,42 +14,43 @@ func TestPromise_Resolve__should_complete_future(t *testing.T) {
 	ok := p.Resolve("hello")
 	require.True(t, ok)
 
-	result, err := p.Result()
+	result, st := p.Result()
 	assert.Equal(t, "hello", result)
-	assert.Nil(t, err)
+	assert.Equal(t, status.CodeOK, st.Code)
+	assert.Nil(t, st.Error)
 }
 
 func TestPromise_Reject__should_fail_future(t *testing.T) {
 	p := Pending[string]()
-	err := errors.New("test")
+	st := status.Error("test")
 
-	ok := p.Reject(err)
+	ok := p.Reject(st)
 	require.True(t, ok)
 
-	result, err1 := p.Result()
+	result, st1 := p.Result()
 	assert.Equal(t, "", result)
-	assert.Equal(t, err, err1)
+	assert.Equal(t, st, st1)
 }
 
 func TestPromise_Complete__should_resolve_promise(t *testing.T) {
 	p := Pending[string]()
 
-	ok := p.Complete("hello", nil)
+	ok := p.Complete("hello", status.OK)
 	require.True(t, ok)
 
-	result, err := p.Result()
+	result, st := p.Result()
 	assert.Equal(t, "hello", result)
-	assert.Nil(t, err)
+	assert.True(t, st.OK())
 }
 
 func TestPromise_Complete__should_reject_promise(t *testing.T) {
 	p := Pending[string]()
-	err := errors.New("test")
+	st := status.Error("test")
 
-	ok := p.Complete("failed", err)
+	ok := p.Complete("failed", st)
 	require.True(t, ok)
 
-	result, err1 := p.Result()
+	result, st1 := p.Result()
 	assert.Equal(t, "failed", result)
-	assert.Equal(t, err, err1)
+	assert.Equal(t, st, st1)
 }

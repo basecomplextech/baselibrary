@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/sideblock/library/status"
 	"github.com/sideblock/library/try"
 )
 
@@ -23,47 +24,50 @@ type Routine[T any] interface {
 type VoidRoutine = Routine[Void]
 
 // Run runs a function in a routine.
-func Run(fn func(stop <-chan struct{}) error) Routine[Void] {
+func Run(fn func(stop <-chan struct{}) status.Status) Routine[Void] {
 	r := newRoutine[Void]()
 
 	go func() {
 		defer func() {
 			if e := recover(); e != nil {
 				err := try.Recover(e)
-				r.Reject(err)
+				st := status.WrapError(err)
+				r.Reject(st)
 			}
 		}()
 
-		err := fn(r.stopCh)
-		r.Reject(err)
+		st := fn(r.stopCh)
+		r.Reject(st)
 	}()
 
 	return r
 }
 
 // Call calls a function in a routine and returns its result.
-func Call[T any](fn func(stop <-chan struct{}) (T, error)) Routine[T] {
+func Call[T any](fn func(stop <-chan struct{}) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
 
 	go func() {
 		defer func() {
 			if e := recover(); e != nil {
 				err := try.Recover(e)
-				r.Reject(err)
+				st := status.WrapError(err)
+				r.Reject(st)
 			}
 		}()
 
-		result, err := fn(r.stopCh)
-		r.Complete(result, err)
+		result, st := fn(r.stopCh)
+		r.Complete(result, st)
 	}()
 
 	return r
 }
 
 // StopWait stops a routine and waits for it and returns its error.
-func StopWait[T any](r Routine[T]) error {
+func StopWait[T any](r Routine[T]) status.Status {
 	<-r.Stop()
-	return r.Err()
+	_, st := r.Result()
+	return st
 }
 
 type routine[T any] struct {

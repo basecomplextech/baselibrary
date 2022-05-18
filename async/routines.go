@@ -1,14 +1,18 @@
 package async
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/sideblock/library/status"
+)
 
 // Any awaits and returns the index and the result of any routine or -1 when no more routines.
 func Any[T any](
 	stop <-chan struct{},
 	routines ...Routine[T],
-) (index int, result Result[T], err error) {
+) (index int, result Result[T], st status.Status) {
 	if len(routines) == 0 {
-		return -1, result, nil
+		return -1, result, status.OK
 	}
 
 	// make stop case
@@ -32,19 +36,19 @@ func Any[T any](
 	// select case
 	i, _, _ := reflect.Select(cases)
 	if i == 0 {
-		return 0, result, Stopped
+		return 0, result, status.Stopped
 	}
 
 	// make result
 	index = i - 1
 	routine := routines[index]
-	value, err := routine.Result()
+	value, st := routine.Result()
 
 	result = Result[T]{
-		Err:   err,
-		Value: value,
+		Value:  value,
+		Status: st,
 	}
-	return index, result, nil
+	return index, result, st
 }
 
 // All awaits and returns the results of all routines in order.
@@ -71,29 +75,29 @@ func All[T any](
 // Combine combines multiple routines into one routine and a result channel.
 func Combine[T any](routines ...Routine[T]) (Routine[Void], <-chan Result[T]) {
 	ch := make(chan Result[T])
-	fn := func(stop <-chan struct{}) error {
+	fn := func(stop <-chan struct{}) status.Status {
 		defer close(ch)
 		defer StopAll(routines...)
 
 		for len(routines) > 0 {
 			// await any routine
-			index, result, err := Any(stop, routines...)
-			if err != nil {
-				return err
+			index, result, st := Any(stop, routines...)
+			if !st.OK() {
+				return st
 			}
 
 			// send result
 			select {
 			case ch <- result:
 			case <-stop:
-				return Stopped
+				return status.Stopped
 			}
 
 			// delete routine
 			routines = append(routines[:index], routines[index+1:]...)
 		}
 
-		return nil
+		return status.OK
 	}
 
 	r := Run(fn)

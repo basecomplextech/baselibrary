@@ -3,20 +3,21 @@ package async
 import (
 	"testing"
 
+	"github.com/sideblock/library/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAll__should_await_all_results(t *testing.T) {
 	rr := []Routine[int]{
-		Call(func(stop <-chan struct{}) (int, error) {
-			return 1, nil
+		Call(func(stop <-chan struct{}) (int, status.Status) {
+			return 1, status.OK
 		}),
-		Call(func(stop <-chan struct{}) (int, error) {
-			return 2, nil
+		Call(func(stop <-chan struct{}) (int, status.Status) {
+			return 2, status.OK
 		}),
-		Call(func(stop <-chan struct{}) (int, error) {
-			return 3, nil
+		Call(func(stop <-chan struct{}) (int, status.Status) {
+			return 3, status.OK
 		}),
 	}
 
