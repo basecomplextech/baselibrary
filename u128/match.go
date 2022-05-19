@@ -2,7 +2,7 @@ package u128
 
 import "regexp"
 
-var Pattern = regexp.MustCompile(`^[0-9A-Za-z]{16}-[0-9A-Za-z]{16}$`)
+var Pattern = regexp.MustCompile(`^[0-9A-Za-z]{32}$`)
 
 // Match returns true if a byte string matches a U128 pattern.
 func Match(s []byte) bool {

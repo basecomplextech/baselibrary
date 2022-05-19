@@ -12,7 +12,7 @@ func Parse(b []byte) (U128, error) {
 		return U128{}, nil
 	case len(b) == 0:
 		return U128{}, nil
-	case len(b) != byteLen:
+	case len(b) != ByteLen:
 		return U128{}, errors.New("u128: invalid U128 length")
 	}
 
@@ -33,15 +33,14 @@ func ParseByteString(s []byte) (U128, error) {
 		return U128{}, nil
 	case len(s) == 0:
 		return U128{}, nil
-	case len(s) != charLen:
+	case len(s) != CharLen:
 		return U128{}, errors.New("u128: invalid U128 string length")
 	}
 
 	u := U128{}
-	_, err := hex.Decode(u[:8], s[:16])
+	_, err := hex.Decode(u[:], s)
 	if err != nil {
 		return u, err
 	}
-	_, err = hex.Decode(u[8:], s[17:])
-	return u, err
+	return u, nil
 }

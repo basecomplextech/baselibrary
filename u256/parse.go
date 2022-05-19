@@ -12,7 +12,7 @@ func Parse(b []byte) (U256, error) {
 		return U256{}, nil
 	case len(b) == 0:
 		return U256{}, nil
-	case len(b) != byteLen:
+	case len(b) != ByteLen:
 		return U256{}, errors.New("u256: invalid U256 length")
 	}
 
@@ -21,33 +21,28 @@ func Parse(b []byte) (U256, error) {
 	return u, nil
 }
 
-// ParseString parses a U256 from 32-char string.
+// ParseString parses a U256 from 64-char string.
 func ParseString(s string) (U256, error) {
 	return ParseByteString([]byte(s))
 }
 
-// ParseByteString parses a U256 from 64-char string.
+// ParseByteString parses a U256 from 64-char byte string.
 func ParseByteString(s []byte) (U256, error) {
 	switch {
 	case s == nil:
 		return U256{}, nil
 	case len(s) == 0:
 		return U256{}, nil
-	case len(s) != charLen:
+	case len(s) != CharLen:
 		return U256{}, errors.New("u256: invalid U256 length")
 	}
 
 	u := U256{}
-	_, err := hex.Decode(u[:8], s[:16])
+	_, err := hex.Decode(u[:], s)
 	if err != nil {
 		return u, err
 	}
-	_, err = hex.Decode(u[8:16], s[17:33])
-	if err != nil {
-		return u, err
-	}
-	_, err = hex.Decode(u[16:], s[34:])
-	return u, err
+	return u, nil
 }
 
 // MustParseString parses a U256 from 32-char string or panics.

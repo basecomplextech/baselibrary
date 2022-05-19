@@ -8,13 +8,14 @@ import (
 )
 
 const (
-	byteLen     = 32
+	ByteLen = 32
+	CharLen = (ByteLen * 2)
+
 	byteTimeLen = 8
-	charLen     = (byteLen * 2) + 2 // 46d706492a2cd221-8b33e1dd3ab9bc98-a52898502c59bbb151644322f638df47
 )
 
 // U256 is a 32 byte value.
-type U256 [byteLen]byte
+type U256 [ByteLen]byte
 
 // FromInt64 converts an int64 into a big endian U256.
 func FromInt64(v int64) U256 {
@@ -54,19 +55,13 @@ func (u0 U256) Less(u1 U256) bool {
 
 // Size returns 32 bytes.
 func (u U256) Size() int {
-	return byteLen
+	return ByteLen
 }
 
 // String returns a 32-char lower-case hex-encoded string.
 func (u U256) String() string {
-	b := make([]byte, charLen)
-
-	// 46d706492a2cd221-8b33e1dd3ab9bc98-a52898502c59bbb151644322f638df47
-	hex.Encode(b[:16], u[:8])
-	b[16] = '-'
-	hex.Encode(b[17:33], u[8:16])
-	b[33] = '-'
-	hex.Encode(b[34:], u[16:])
+	b := make([]byte, CharLen)
+	hex.Encode(b, u[:])
 	return string(b)
 }
 

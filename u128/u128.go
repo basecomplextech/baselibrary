@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	byteLen     = 16
+	ByteLen     = 16
+	CharLen     = (ByteLen * 2) // 341a7d60bc5893a64bda3de06721534c
 	byteTimeLen = 8
-	charLen     = (byteLen * 2) + 1 // 341a7d60bc5893a6-4bda3de06721534c
 )
 
 // U128 is a 16 byte random or time-random unique value.
-type U128 [byteLen]byte
+type U128 [ByteLen]byte
 
 // FromInt64 converts an int64 into a big endian U128.
 func FromInt64(v int64) U128 {
@@ -42,15 +42,13 @@ func (u0 U128) Less(u1 U128) bool {
 
 // Size returns 16 bytes.
 func (u U128) Size() int {
-	return byteLen
+	return ByteLen
 }
 
-// String returns a 33-char lower-case hex-encoded string.
+// String returns a 32-char lower-case hex-encoded string.
 func (u U128) String() string {
-	b := make([]byte, charLen)
-	hex.Encode(b[:16], u[:8])
-	b[16] = '-'
-	hex.Encode(b[17:], u[8:])
+	b := make([]byte, CharLen)
+	hex.Encode(b, u[:])
 	return string(b)
 }
 

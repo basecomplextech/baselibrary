@@ -9,8 +9,8 @@ import (
 func TestMatch__should_match_byte_string(t *testing.T) {
 	s0 := (U256{}).String()
 	s1 := Random().String()
-	s2 := "341a7d60bc5893a64bda3de06721534c-341a7d60bc5893a64bda3de06721534c"
-	s3 := " 341a7d60bc5893a6-4bda3de06721534c-341a7d60bc5893a64bda3de06721534c "
+	s2 := " 341a7d60bc5893a64bda3de06721534c341a7d60bc5893a64bda3de06721534c "
+	s3 := "341a7d60bc5893a64bda3de06721534c-341a7d60bc5893a64bda3de06721534c"
 
 	m0 := Match([]byte(s0))
 	m1 := Match([]byte(s1))
@@ -26,8 +26,8 @@ func TestMatch__should_match_byte_string(t *testing.T) {
 func TestMatchString__should_match_string(t *testing.T) {
 	s0 := (U256{}).String()
 	s1 := Random().String()
-	s2 := "341a7d60bc5893a64bda3de06721534c-341a7d60bc5893a64bda3de06721534c"
-	s3 := " 341a7d60bc5893a6-4bda3de06721534c-341a7d60bc5893a64bda3de06721534c "
+	s2 := " 341a7d60bc5893a64bda3de06721534c341a7d60bc5893a64bda3de06721534c "
+	s3 := "341a7d60bc5893a64bda3de06721534c-341a7d60bc5893a64bda3de06721534c"
 
 	m0 := MatchString(s0)
 	m1 := MatchString(s1)
