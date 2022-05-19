@@ -8,6 +8,7 @@ var (
 	Timeout = New(CodeTimeout, "timeout")
 )
 
+// Status represents an operation status.
 type Status struct {
 	Code  Code
 	Text  string
@@ -30,26 +31,52 @@ func (s Status) OK() bool {
 	return s.Code == CodeOK
 }
 
-// IsError returns true if the status code is error.
-func (s Status) IsError() bool {
-	return s.Code == CodeError
-}
-
 // String returns "code: text".
 func (s Status) String() string {
 	return fmt.Sprintf("%s: %s", s.Code, s.Text)
 }
 
-// Wrap wraps an existing status into a new message.
-func (s Status) Wrap(text string) Status {
-	text1 := text + ": " + s.Text
-	return Status{Code: s.Code, Text: text1, Error: s.Error}
+// Is methods
+
+// IsError returns true if the status code is error.
+func (s Status) IsError() bool {
+	return s.Code == CodeError
 }
 
-// Wrapf wraps an existing status into a new message.
-func (s Status) Wrapf(format string, a ...interface{}) Status {
+// IsTerminal returns true if the status code is terminal.
+func (s Status) IsTerminal() bool {
+	return s.Code == CodeTerminal
+}
+
+// With methods
+
+// WithCode returns a status clone with a new code.
+func (s Status) WithCode(code Code) Status {
+	s1 := s
+	s1.Code = code
+	return s1
+}
+
+// WithError returns a status clone with a new error.
+func (s Status) WithError(err error) Status {
+	s1 := s
+	s1.Error = err
+	return s1
+}
+
+// WrapText returns a status clone with a new text and an appended previous text.
+func (s Status) WrapText(text string) Status {
+	s1 := s
+	s1.Text = text + ": " + s.Text
+	return s1
+}
+
+// WrapTextf returns a status clone with a new text and an appended previous text.
+func (s Status) WrapTextf(format string, a ...interface{}) Status {
 	text := fmt.Sprintf(format, a...)
-	return s.Wrap(text)
+	s1 := s
+	s1.Text = text + ": " + s.Text
+	return s1
 }
 
 // Utility constructors
@@ -88,6 +115,35 @@ func Timeoutf(format string, a ...interface{}) Status {
 	return Status{Code: CodeTimeout, Text: text}
 }
 
+// Terminal returns a terminal status.
+func Terminal(text string) Status {
+	return Status{Code: CodeTerminal, Text: text}
+}
+
+// Terminalf returns a terminal status and formats its message.
+func Terminalf(format string, a ...interface{}) Status {
+	text := fmt.Sprintf(format, a...)
+	return Status{Code: CodeTerminal, Text: text}
+}
+
+// TerminalError wraps an error and returns a terminal status.
+func TerminalError(err error) Status {
+	text := "terminated"
+	if err != nil {
+		text = err.Error()
+	}
+	return Status{Code: CodeTerminal, Text: text, Error: err}
+}
+
+// TerminalErrorf wraps an error, formats a message and returns a terminal status.
+func TerminalErrorf(err error, format string, a ...interface{}) Status {
+	text := fmt.Sprintf(format, a...)
+	if err != nil {
+		text += ": " + err.Error()
+	}
+	return Status{Code: CodeTerminal, Text: text, Error: err}
+}
+
 // Unavailable returns an unavailable status.
 func Unavailable(text string) Status {
 	return Status{Code: CodeUnavailable, Text: text}
@@ -99,7 +155,7 @@ func Unavailablef(format string, a ...interface{}) Status {
 	return Status{Code: CodeUnavailable, Text: text}
 }
 
-// WrapError wraps an error into a status or returns ok if err is nil.
+// WrapError wraps an error into an error status, or returns ok if the error is nil.
 func WrapError(err error) Status {
 	if err == nil {
 		return OK
@@ -109,12 +165,14 @@ func WrapError(err error) Status {
 	return Status{Code: CodeError, Text: text, Error: err}
 }
 
-// WrapErrorf wraps an error into a status or returns ok if err is nil.
+// WrapErrorf wraps an error, formats a message and returns an error status,
+// or returns ok if the error is nil.
 func WrapErrorf(err error, format string, a ...interface{}) Status {
 	if err == nil {
 		return OK
 	}
 
 	text := fmt.Sprintf(format, a...)
+	text += ": " + err.Error()
 	return Status{Code: CodeError, Text: text, Error: err}
 }
