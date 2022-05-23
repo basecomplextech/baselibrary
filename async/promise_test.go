@@ -3,7 +3,7 @@ package async
 import (
 	"testing"
 
-	"github.com/sideblock/library/status"
+	"github.com/epochtimeout/library/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

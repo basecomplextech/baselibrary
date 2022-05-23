@@ -3,7 +3,7 @@ package async
 import (
 	"reflect"
 
-	"github.com/sideblock/library/status"
+	"github.com/epochtimeout/library/status"
 )
 
 // Any awaits and returns the index and the result of any routine or -1 when no more routines.

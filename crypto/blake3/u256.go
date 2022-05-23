@@ -1,7 +1,7 @@
 package blake3
 
 import (
-	"github.com/sideblock/library/u256"
+	"github.com/epochtimeout/library/u256"
 	"github.com/zeebo/blake3"
 )
 

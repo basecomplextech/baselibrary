@@ -1,4 +1,4 @@
-module github.com/sideblock/library
+module github.com/epochtimeout/library
 
 go 1.18
 

@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/sideblock/library/logging"
+	"github.com/epochtimeout/library/logging"
 )
 
 var (

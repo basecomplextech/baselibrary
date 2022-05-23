@@ -43,6 +43,11 @@ func (s Status) IsError() bool {
 	return s.Code == CodeError
 }
 
+// IsStopped returns true if the status code is stopped.
+func (s Status) IsStopped() bool {
+	return s.Code == CodeStopped
+}
+
 // IsTerminal returns true if the status code is terminal.
 func (s Status) IsTerminal() bool {
 	return s.Code == CodeTerminal

@@ -1,6 +1,6 @@
 package async
 
-import "github.com/sideblock/library/status"
+import "github.com/epochtimeout/library/status"
 
 type Result[T any] struct {
 	Value  T

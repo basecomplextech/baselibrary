@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/edsrzf/mmap-go"
-	"github.com/sideblock/library/errors2"
+	"github.com/epochtimeout/library/errors2"
 )
 
 var _ File = (*file)(nil)

@@ -265,6 +265,7 @@ func (b *testBuf) truncate(size int64) error {
 }
 
 func (b *testBuf) write(p []byte) (n int, err error) {
+	// return len(p), nil
 	length := len(b.buf)
 	newLength := length + len(p)
 

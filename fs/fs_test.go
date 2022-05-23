@@ -3,7 +3,7 @@ package fs
 import (
 	"testing"
 
-	"github.com/sideblock/library/logging"
+	"github.com/epochtimeout/library/logging"
 )
 
 func TestFileSystem_TempFile__should_create_temp_file(t *testing.T) {

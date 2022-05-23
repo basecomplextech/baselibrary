@@ -1,6 +1,6 @@
 package async
 
-import "github.com/sideblock/library/status"
+import "github.com/epochtimeout/library/status"
 
 // Future returns an async result in the future.
 type Future[T any] interface {

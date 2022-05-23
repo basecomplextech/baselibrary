@@ -3,7 +3,7 @@ package async
 import (
 	"sync"
 
-	"github.com/sideblock/library/status"
+	"github.com/epochtimeout/library/status"
 )
 
 // Promise is a completable future.
