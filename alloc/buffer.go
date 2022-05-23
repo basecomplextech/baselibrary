@@ -1,6 +1,6 @@
 package alloc
 
-import "github.com/epochtimeout/library/buffer"
+import "github.com/epochtimeout/basekit/buffer"
 
 var _ buffer.Buffer = (*Buffer)(nil)
 

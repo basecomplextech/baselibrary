@@ -4,8 +4,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/epochtimeout/library/status"
-	"github.com/epochtimeout/library/try"
+	"github.com/epochtimeout/basekit/status"
+	"github.com/epochtimeout/basekit/try"
 )
 
 // Stopped is the error which can be used to indicate that a routine has been stopped.

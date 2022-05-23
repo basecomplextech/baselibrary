@@ -3,7 +3,7 @@ package async
 import (
 	"sync"
 
-	"github.com/epochtimeout/library/status"
+	"github.com/epochtimeout/basekit/status"
 )
 
 // Promise is a completable future.

@@ -1,4 +1,4 @@
-module github.com/epochtimeout/library
+module github.com/epochtimeout/basekit
 
 go 1.18
 

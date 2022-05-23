@@ -1,5 +1,5 @@
-Non-standard Go Library
-=======================
+BaseKit: Non-standard Go Library
+================================
 
 ---
 
