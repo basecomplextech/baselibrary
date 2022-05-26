@@ -3,9 +3,9 @@ package status
 import "fmt"
 
 var (
-	OK      = New(CodeOK, "ok")
-	Stopped = New(CodeStopped, "stopped")
-	Timeout = New(CodeTimeout, "timeout")
+	OK        = New(CodeOK, "")
+	Cancelled = New(CodeCancelled, "")
+	Timeout   = New(CodeTimeout, "")
 )
 
 // Status represents an operation status.
@@ -33,6 +33,9 @@ func (s Status) OK() bool {
 
 // String returns "code: text".
 func (s Status) String() string {
+	if len(s.Text) == 0 {
+		return string(s.Code)
+	}
 	return fmt.Sprintf("%s: %s", s.Code, s.Text)
 }
 
@@ -43,9 +46,9 @@ func (s Status) IsError() bool {
 	return s.Code == CodeError
 }
 
-// IsStopped returns true if the status code is stopped.
-func (s Status) IsStopped() bool {
-	return s.Code == CodeStopped
+// IsCancelled returns true if the status code is cancelled.
+func (s Status) IsCancelled() bool {
+	return s.Code == CodeCancelled
 }
 
 // IsTerminal returns true if the status code is terminal.
@@ -111,7 +114,7 @@ func NotFoundf(format string, a ...interface{}) Status {
 // Stoppedf returns a stopped status and formats its message.
 func Stoppedf(format string, a ...interface{}) Status {
 	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeStopped, Text: text}
+	return Status{Code: CodeCancelled, Text: text}
 }
 
 // Timeoutf returns a timeout status and formats its message.

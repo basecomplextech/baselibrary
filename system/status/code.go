@@ -12,8 +12,8 @@ const (
 	// CodeError is a generic error status code.
 	CodeError Code = "error"
 
-	// CodeStopped indicates that an operation was stopped or cancelled on a request.
-	CodeStopped Code = "stopped"
+	// CodeCancelled indicates that an operation was cancelled or stopped on a request.
+	CodeCancelled Code = "cancelled"
 
 	// CodeTimeout indicates that an operation timed out.
 	CodeTimeout Code = "timeout"

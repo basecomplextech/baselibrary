@@ -36,7 +36,7 @@ func Any[T any](
 	// select case
 	i, _, _ := reflect.Select(cases)
 	if i == 0 {
-		return 0, result, status.Stopped
+		return 0, result, status.Cancelled
 	}
 
 	// make result
@@ -90,7 +90,7 @@ func Combine[T any](routines ...Routine[T]) (Routine[Void], <-chan Result[T]) {
 			select {
 			case ch <- result:
 			case <-stop:
-				return status.Stopped
+				return status.Cancelled
 			}
 
 			// delete routine
