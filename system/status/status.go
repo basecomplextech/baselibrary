@@ -4,6 +4,8 @@ import "fmt"
 
 var (
 	OK        = New(CodeOK, "")
+	End       = New(CodeEnd, "")
+	Wait      = New(CodeWait, "")
 	Cancelled = New(CodeCancelled, "")
 	Timeout   = New(CodeTimeout, "")
 )
@@ -109,6 +111,17 @@ func NotFound(text string) Status {
 func NotFoundf(format string, a ...interface{}) Status {
 	text := fmt.Sprintf(format, a...)
 	return Status{Code: CodeNotFound, Text: text}
+}
+
+// Corrupted returns a corrupted status.
+func Corrupted(text string) Status {
+	return Status{Code: CodeCorrupted, Text: text}
+}
+
+// Corruptedf returns a corrupted status and formats its message.
+func Corruptedf(format string, a ...interface{}) Status {
+	text := fmt.Sprintf(format, a...)
+	return Status{Code: CodeCorrupted, Text: text}
 }
 
 // Stoppedf returns a stopped status and formats its message.

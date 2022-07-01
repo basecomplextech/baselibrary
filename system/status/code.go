@@ -9,6 +9,12 @@ const (
 	// CodeOK indicates that an operation completed successfully.
 	CodeOK Code = "ok"
 
+	// CodeEnd indicates a file/channel/stream end.
+	CodeEnd Code = "end"
+
+	// CodeWait indicates that the caller should wait for the next events/messages/etc.
+	CodeWait Code = "wait"
+
 	// CodeError is a generic error status code.
 	CodeError Code = "error"
 
