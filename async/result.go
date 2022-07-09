@@ -1,6 +1,6 @@
 package async
 
-import "github.com/epochtimeout/basekit/system/status"
+import "github.com/epochtimeout/basekit/status"
 
 type Result[T any] struct {
 	Value  T

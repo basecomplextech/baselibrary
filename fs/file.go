@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	"github.com/edsrzf/mmap-go"
-	"github.com/epochtimeout/basekit/library/errors2"
+	"github.com/epochtimeout/basekit/errors2"
 )
 
 var _ File = (*file)(nil)
