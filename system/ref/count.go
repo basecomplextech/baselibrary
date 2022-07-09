@@ -26,6 +26,15 @@ func RetainAll[C Count](counts ...C) {
 	}
 }
 
+// ReleaseNil releases a reference when nonnil, ignores a nil reference.
+func ReleaseNil(c Count) {
+	if c == nil {
+		return
+	}
+
+	c.Release()
+}
+
 // ReleaseAll releases all references.
 func ReleaseAll[C Count](counts ...C) {
 	for _, count := range counts {
