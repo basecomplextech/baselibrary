@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 
 	"github.com/edsrzf/mmap-go"
 	"github.com/epochtimeout/basekit/library/errors2"
@@ -80,4 +81,10 @@ func (f *file) Size() (int64, error) {
 		return 0, err
 	}
 	return info.Size(), nil
+}
+
+// Sync syncs a file to disk.
+func (f *file) Sync() error {
+	fd := f.Fd()
+	return syscall.Fsync(int(fd))
 }
