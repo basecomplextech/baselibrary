@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/epochtimeout/basekit/status"
-	"github.com/epochtimeout/basekit/try"
+	"github.com/epochtimeout/baselibrary/status"
+	"github.com/epochtimeout/baselibrary/try"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

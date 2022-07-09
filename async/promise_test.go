@@ -3,7 +3,7 @@ package async
 import (
 	"testing"
 
-	"github.com/epochtimeout/basekit/status"
+	"github.com/epochtimeout/baselibrary/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

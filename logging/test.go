@@ -1,6 +1,6 @@
 package logging
 
-import "github.com/epochtimeout/basekit/tests"
+import "github.com/epochtimeout/baselibrary/tests"
 
 func Test(t tests.T) Logging {
 	config := TestConfig(t)

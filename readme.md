@@ -1,5 +1,5 @@
-BaseKit: Non-standard Go Library
-================================
+baseLibrary: Non-standard Go Library
+====================================
 
 Core:
 - `alloc`: arena allocator and buffers.

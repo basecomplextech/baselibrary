@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/epochtimeout/basekit/constraints"
+	"github.com/epochtimeout/baselibrary/constraints"
 )
 
 // Reverse reverse the slice in place.

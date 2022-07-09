@@ -3,7 +3,7 @@ package async
 import (
 	"reflect"
 
-	"github.com/epochtimeout/basekit/status"
+	"github.com/epochtimeout/baselibrary/status"
 )
 
 // Any awaits and returns the index and the result of any routine or -1 when no more routines.

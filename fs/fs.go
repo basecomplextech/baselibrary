@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/epochtimeout/basekit/logging"
+	"github.com/epochtimeout/baselibrary/logging"
 )
 
 var (

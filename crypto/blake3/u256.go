@@ -1,7 +1,7 @@
 package blake3
 
 import (
-	"github.com/epochtimeout/basekit/u256"
+	"github.com/epochtimeout/baselibrary/u256"
 	"github.com/zeebo/blake3"
 )
 
