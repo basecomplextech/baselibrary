@@ -11,10 +11,10 @@ var (
 )
 
 type FileSystem interface {
-	// Create creates a file in the fstem.
+	// Create creates a file in the file system.
 	Create(name string) (File, error)
 
-	// MakeDir creates a directory in the fstem.
+	// MakeDir creates a directory in the file system.
 	MakeDir(name string, perm os.FileMode) error
 
 	// MakePath creates a directory path and all parents that does not exist.

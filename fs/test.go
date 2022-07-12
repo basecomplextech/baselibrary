@@ -69,7 +69,7 @@ func (f *testFile) Map() ([]byte, error) {
 	defer f.mu.Unlock()
 
 	if f.closed {
-		return nil, ErrClosed
+		return nil, os.ErrClosed
 	}
 	return f.buf.buf, nil
 }
