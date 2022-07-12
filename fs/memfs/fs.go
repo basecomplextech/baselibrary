@@ -14,6 +14,11 @@ import (
 
 var _ fs.FileSystem = (*memFS)(nil)
 
+// New returns a new in-memory file system.
+func New() fs.FileSystem {
+	return newMemFS()
+}
+
 type memFS struct {
 	mu   sync.RWMutex
 	root *memDir
@@ -33,12 +38,24 @@ func (fs *memFS) Create(path string) (fs.File, error) {
 	return fs.create(path)
 }
 
+// Exists returns true if the file/directory exists.
+func (fs *memFS) Exists(name string) (bool, error) {
+	_, err := os.Stat(name)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 // MakeDir creates a directory in the file system.
 func (fs *memFS) MakeDir(path string, perm os.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	names := filepath.SplitList(path)
+	names := splitPath(path)
 	if len(names) == 0 {
 		return os.ErrInvalid
 	}
@@ -61,7 +78,7 @@ func (fs *memFS) MakePath(path string, perm os.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	names := filepath.SplitList(path)
+	names := splitPath(path)
 	_, err := fs.root.makePath(names...)
 	return err
 }
@@ -71,7 +88,7 @@ func (fs *memFS) Open(path string) (fs.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	names := filepath.SplitList(path)
+	names := splitPath(path)
 	f, ok := fs.root.findPath(names...)
 	if !ok {
 		return nil, os.ErrNotExist
@@ -87,7 +104,8 @@ func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (fs.File, err
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	f, ok := fs.root.find(path)
+	names := splitPath(path)
+	f, ok := fs.root.findPath(names...)
 	if !ok {
 		if flag&os.O_CREATE != 0 {
 			return fs.create(path)
@@ -105,7 +123,29 @@ func (fs *memFS) Remove(path string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	return fs.root.remove(path)
+	names := splitPath(path)
+	parent, ok, err := fs.findParent(names...)
+	switch {
+	case err != nil:
+		return err
+	case !ok:
+		return nil
+	}
+
+	name := names[len(names)-1]
+	e, ok := parent.find(name)
+	if !ok {
+		return nil
+	}
+
+	if e.isDir() {
+		dir := e.(*memDir)
+		if !dir.isEmpty() {
+			return errors.New("directory not empty")
+		}
+	}
+
+	return parent.remove(name)
 }
 
 // RemoveAll removes a path and any children it contains.
@@ -113,8 +153,17 @@ func (fs *memFS) RemoveAll(path string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	names := filepath.SplitList(path)
-	return fs.root.removePath(names...)
+	names := splitPath(path)
+	parent, ok, err := fs.findParent(names...)
+	switch {
+	case err != nil:
+		return err
+	case !ok:
+		return nil
+	}
+
+	name := names[len(names)-1]
+	return parent.remove(name)
 }
 
 // Rename renames a file or a directory.
@@ -123,18 +172,18 @@ func (fs *memFS) Rename(srcPath string, dstPath string) error {
 	defer fs.mu.Unlock()
 
 	// get source and its parent
-	srcNames := filepath.SplitList(srcPath)
+	srcNames := splitPath(srcPath)
 	if len(srcNames) == 0 {
 		return os.ErrInvalid
 	}
-	src, ok := fs.root.find(srcPath)
+	src, ok := fs.root.findPath(srcNames...)
 	if !ok {
 		return os.ErrNotExist
 	}
 	srcParent := src.getParent()
 
 	// get dest parent
-	dstNames := filepath.SplitList(dstPath)
+	dstNames := splitPath(dstPath)
 	if len(dstNames) == 0 {
 		return os.ErrInvalid
 	}
@@ -158,7 +207,7 @@ func (fs *memFS) Stat(path string) (fs.FileInfo, error) {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
 
-	names := filepath.SplitList(path)
+	names := splitPath(path)
 	f, ok := fs.root.findPath(names...)
 	if !ok {
 		return nil, os.ErrNotExist
@@ -174,14 +223,14 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	if len(filepath.SplitList(pattern)) != 1 {
+	if len(splitPath(pattern)) != 1 {
 		return "", os.ErrInvalid
 	}
 
 	// find dir
 	parent := fs.root
 	if dir != "" {
-		names := filepath.SplitList(dir)
+		names := splitPath(dir)
 		entry, ok := fs.root.findPath(names...)
 		if !ok {
 			return "", os.ErrNotExist
@@ -218,14 +267,14 @@ func (fs *memFS) TempFile(dir, pattern string) (fs.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	if len(filepath.SplitList(pattern)) != 1 {
+	if len(splitPath(pattern)) != 1 {
 		return nil, os.ErrInvalid
 	}
 
 	// find dir
 	parent := fs.root
 	if dir != "" {
-		names := filepath.SplitList(dir)
+		names := splitPath(dir)
 		entry, ok := fs.root.findPath(names...)
 		if !ok {
 			return nil, os.ErrNotExist
@@ -255,7 +304,7 @@ func (fs *memFS) TempFile(dir, pattern string) (fs.File, error) {
 // internal
 
 func (fs *memFS) create(path string) (fs.File, error) {
-	names := filepath.SplitList(path)
+	names := splitPath(path)
 	if len(names) == 0 {
 		return nil, os.ErrInvalid
 	}

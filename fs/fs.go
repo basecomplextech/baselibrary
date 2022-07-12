@@ -14,6 +14,9 @@ type FileSystem interface {
 	// Create creates a file in the file system.
 	Create(name string) (File, error)
 
+	// Exists returns true if the file/directory exists.
+	Exists(name string) (bool, error)
+
 	// MakeDir creates a directory in the file system.
 	MakeDir(name string, perm os.FileMode) error
 
@@ -65,6 +68,18 @@ func (fs *fs) Create(name string) (File, error) {
 		return nil, err
 	}
 	return newFile(f), nil
+}
+
+// Exists returns true if the file/directory exists.
+func (fs *fs) Exists(name string) (bool, error) {
+	_, err := os.Stat(name)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
 // MakeDir creates a directory in the fstem.

@@ -247,6 +247,14 @@ func (f *memFile) WriteString(s string) (ret int, err error) {
 
 // entry
 
+func (f *memFile) isDir() bool {
+	return false
+}
+
+func (f *memFile) isEmpty() bool {
+	return f.buffer.Len() == 0
+}
+
 func (f *memFile) getInfo() *memInfo {
 	size := f.buffer.Len()
 	return &memInfo{

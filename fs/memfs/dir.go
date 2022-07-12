@@ -143,7 +143,7 @@ func (d *memDir) Seek(offset int64, whence int) (int64, error) {
 
 // Stat returns a file info.
 func (d *memDir) Stat() (os.FileInfo, error) {
-	d.fs.mu.RUnlock()
+	d.fs.mu.RLock()
 	defer d.fs.mu.RUnlock()
 
 	if !d.opened {
@@ -186,6 +186,14 @@ func (d *memDir) WriteString(s string) (ret int, err error) {
 }
 
 // entry
+
+func (d *memDir) isDir() bool {
+	return true
+}
+
+func (d *memDir) isEmpty() bool {
+	return len(d.entries) == 0
+}
 
 func (d *memDir) getInfo() *memInfo {
 	return &memInfo{
@@ -314,10 +322,6 @@ func (d *memDir) remove(name string) error {
 
 	delete(d.entries, name)
 	return e.delete()
-}
-
-func (d *memDir) removePath(names ...string) error {
-	return nil
 }
 
 func (d *memDir) addEntry(entry memEntry, name string) {
