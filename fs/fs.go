@@ -1,33 +1,24 @@
 package fs
 
 import (
-	"errors"
-	"io"
 	"io/ioutil"
 	"os"
-
-	"github.com/epochtimeout/baselibrary/logging"
 )
 
 var (
 	ErrExist    = os.ErrExist
 	ErrNotExist = os.ErrNotExist
-
-	ErrClosed           = errors.New("operation on a closed file")
-	ErrClosedFileWriter = errors.New("operation on a closed file writer")
 )
-
-type FileInfo = os.FileInfo
 
 type FileSystem interface {
 	// Create creates a file in the fstem.
 	Create(name string) (File, error)
 
-	// Mkdir creates a directory in the fstem.
-	Mkdir(name string, perm os.FileMode) error
+	// MakeDir creates a directory in the fstem.
+	MakeDir(name string, perm os.FileMode) error
 
-	// MkdirAll creates a directory path and all parents that does not exist.
-	MkdirAll(path string, perm os.FileMode) error
+	// MakePath creates a directory path and all parents that does not exist.
+	MakePath(path string, perm os.FileMode) error
 
 	// Open opens the named file for reading, see os.Open.
 	Open(filename string) (File, error)
@@ -56,59 +47,15 @@ type FileSystem interface {
 	TempFile(dir, pattern string) (File, error)
 }
 
-// File is an extended file interface for *os.File.
-type File interface {
-	// Filename returns a file name, not a path as in *os.File.
-	Filename() string
-
-	// Ext returns a file extension.
-	Ext() string
-
-	// Path returns *os.File.Name() as presented to Open.
-	Path() string
-
-	// Map maps the file into memory and returns its data.
-	Map() ([]byte, error)
-
-	// Size returns the file size in bytes.
-	Size() (int64, error)
-
-	// os.File methods
-
-	io.Closer
-	io.Reader
-	io.ReaderAt
-	io.Seeker
-	io.Writer
-	io.WriterAt
-
-	Name() string
-	Readdir(count int) ([]os.FileInfo, error)
-	Readdirnames(n int) ([]string, error)
-	Stat() (os.FileInfo, error)
-	Sync() error
-	Truncate(size int64) error
-	WriteString(s string) (ret int, err error)
-}
-
-// FileWriter writes a single file.
-type FileWriter interface {
-	io.Closer
-	io.Writer
-	Done() (File, error)
-}
-
 // New returns a disk file system.
-func New(logger logging.Logger) FileSystem {
-	return newFileSystem(logger)
+func New() FileSystem {
+	return newFS()
 }
 
-type fs struct {
-	logger logging.Logger
-}
+type fs struct{}
 
-func newFileSystem(logger logging.Logger) *fs {
-	return &fs{logger: logger}
+func newFS() *fs {
+	return &fs{}
 }
 
 // Create creates a file in the fstem.
@@ -120,13 +67,13 @@ func (fs *fs) Create(name string) (File, error) {
 	return newFile(f), nil
 }
 
-// Mkdir creates a directory in the fstem.
-func (fs *fs) Mkdir(name string, perm os.FileMode) error {
+// MakeDir creates a directory in the fstem.
+func (fs *fs) MakeDir(name string, perm os.FileMode) error {
 	return os.Mkdir(name, perm)
 }
 
-// MkdirAll creates a directory path and all parents that does not exist.
-func (fs *fs) MkdirAll(path string, perm os.FileMode) error {
+// MakePath creates a directory path and all parents that does not exist.
+func (fs *fs) MakePath(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 

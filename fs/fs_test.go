@@ -2,13 +2,10 @@ package fs
 
 import (
 	"testing"
-
-	"github.com/epochtimeout/baselibrary/logging"
 )
 
 func TestFileSystem_TempFile__should_create_temp_file(t *testing.T) {
-	logger := logging.Stderr
-	fs := newFileSystem(logger)
+	fs := newFS()
 
 	f, err := fs.TempFile("", "tmp-*")
 	if err != nil {
