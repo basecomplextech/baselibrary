@@ -1,7 +1,9 @@
-package fs
+package memfs
+
+import "github.com/epochtimeout/baselibrary/fs"
 
 type memEntry interface {
-	File
+	fs.File
 
 	getInfo() *memInfo
 	getName() string

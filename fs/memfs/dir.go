@@ -1,11 +1,13 @@
-package fs
+package memfs
 
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/epochtimeout/baselibrary/fs"
 )
 
-var _ File = (*memDir)(nil)
+var _ fs.File = (*memDir)(nil)
 
 type memDir struct {
 	fs *memFS

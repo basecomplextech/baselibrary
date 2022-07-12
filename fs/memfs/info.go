@@ -1,11 +1,13 @@
-package fs
+package memfs
 
 import (
 	"os"
 	"time"
+
+	"github.com/epochtimeout/baselibrary/fs"
 )
 
-var _ FileInfo = (*memInfo)(nil)
+var _ fs.FileInfo = (*memInfo)(nil)
 
 type memInfo struct {
 	name string

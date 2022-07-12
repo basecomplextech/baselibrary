@@ -1,4 +1,4 @@
-package fs
+package memfs
 
 import (
 	"errors"
@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/epochtimeout/baselibrary/buffer"
+	"github.com/epochtimeout/baselibrary/fs"
 )
 
-var _ File = (*memFile)(nil)
+var _ fs.File = (*memFile)(nil)
 
 type memFile struct {
 	fs *memFS

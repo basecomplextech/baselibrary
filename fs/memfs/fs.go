@@ -1,4 +1,4 @@
-package fs
+package memfs
 
 import (
 	"errors"
@@ -8,9 +8,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/epochtimeout/baselibrary/fs"
 )
 
-var _ FileSystem = (*memFS)(nil)
+var _ fs.FileSystem = (*memFS)(nil)
 
 type memFS struct {
 	mu   sync.RWMutex
@@ -24,7 +26,7 @@ func newMemFS() *memFS {
 }
 
 // Create creates a file in the file system.
-func (fs *memFS) Create(path string) (File, error) {
+func (fs *memFS) Create(path string) (fs.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -65,7 +67,7 @@ func (fs *memFS) MakePath(path string, perm os.FileMode) error {
 }
 
 // Open opens the named file for reading, see os.Open.
-func (fs *memFS) Open(path string) (File, error) {
+func (fs *memFS) Open(path string) (fs.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -81,7 +83,7 @@ func (fs *memFS) Open(path string) (File, error) {
 }
 
 // OpenFile is the generalized open call, see os.OpenFile.
-func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (File, error) {
+func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (fs.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -152,7 +154,7 @@ func (fs *memFS) Rename(srcPath string, dstPath string) error {
 }
 
 // Stat returns a file info.
-func (fs *memFS) Stat(path string) (FileInfo, error) {
+func (fs *memFS) Stat(path string) (fs.FileInfo, error) {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
 
@@ -212,7 +214,7 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 
 // TempFile creates a new temporary file in the directory dir,
 // opens the file for reading and writing, and returns the resulting *os.File.
-func (fs *memFS) TempFile(dir, pattern string) (File, error) {
+func (fs *memFS) TempFile(dir, pattern string) (fs.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -252,7 +254,7 @@ func (fs *memFS) TempFile(dir, pattern string) (File, error) {
 
 // internal
 
-func (fs *memFS) create(path string) (File, error) {
+func (fs *memFS) create(path string) (fs.File, error) {
 	names := filepath.SplitList(path)
 	if len(names) == 0 {
 		return nil, os.ErrInvalid
