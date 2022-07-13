@@ -12,20 +12,22 @@ import (
 	"github.com/epochtimeout/baselibrary/fs"
 )
 
-var _ fs.FileSystem = (*memFS)(nil)
-
 // New returns a new in-memory file system.
 func New() fs.FileSystem {
 	return newMemFS()
 }
 
+var _ fs.FileSystem = (*memFS)(nil)
+
 type memFS struct {
-	mu   sync.RWMutex
+	mu   *sync.RWMutex
 	root *memDir
 }
 
 func newMemFS() *memFS {
-	fs := &memFS{}
+	fs := &memFS{
+		mu: new(sync.RWMutex),
+	}
 	fs.root = newMemDir(fs, "", nil)
 	return fs
 }

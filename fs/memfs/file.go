@@ -4,17 +4,23 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/epochtimeout/baselibrary/fs"
 )
 
+// NewFile returns a new in-memory file detached from a file system.
+func NewFile() fs.File {
+	return newMemFile(nil, "", nil)
+}
+
 var _ fs.File = (*memFile)(nil)
 
 type memFile struct {
-	fs *memFS
+	mu     *sync.RWMutex // shared fs.mu or new mutex when detached
+	parent *memDir       // nil when detached
 
 	name   string
-	parent *memDir
 	buffer *memBuffer
 
 	refs    int
@@ -25,10 +31,22 @@ type memFile struct {
 
 func newMemFile(fs *memFS, name string, parent *memDir) *memFile {
 	return &memFile{
-		fs: fs,
+		mu:     fs.mu,
+		parent: parent,
 
 		name:   name,
-		parent: parent,
+		buffer: newMemBuffer(),
+
+		opened: true,
+	}
+}
+
+func newDetachedFile() *memFile {
+	return &memFile{
+		mu:     new(sync.RWMutex),
+		parent: nil,
+
+		name:   "",
 		buffer: newMemBuffer(),
 
 		opened: true,
@@ -42,24 +60,24 @@ func (f *memFile) Filename() string {
 
 // Name returns a file path as in *os.File.
 func (f *memFile) Name() string {
-	f.fs.mu.RLock()
-	defer f.fs.mu.RUnlock()
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 
 	return f.getPath()
 }
 
 // Path returns *os.File.Name() as presented to Open.
 func (f *memFile) Path() string {
-	f.fs.mu.RLock()
-	defer f.fs.mu.RUnlock()
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 
 	return f.getPath()
 }
 
 // Size returns the file size in bytes.
 func (f *memFile) Size() (int64, error) {
-	f.fs.mu.RUnlock()
-	defer f.fs.mu.RUnlock()
+	f.mu.RUnlock()
+	defer f.mu.RUnlock()
 
 	size := f.buffer.size()
 	return int64(size), nil
@@ -69,8 +87,8 @@ func (f *memFile) Size() (int64, error) {
 
 // Close closes the file.
 func (f *memFile) Close() error {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return os.ErrClosed
@@ -87,8 +105,8 @@ func (f *memFile) Close() error {
 
 // Map maps the file into memory and returns its data.
 func (f *memFile) Map() ([]byte, error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return nil, os.ErrClosed
@@ -100,8 +118,8 @@ func (f *memFile) Map() ([]byte, error) {
 
 // Read reads data from the file into p.
 func (f *memFile) Read(p []byte) (n int, err error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return 0, os.ErrClosed
@@ -114,8 +132,8 @@ func (f *memFile) Read(p []byte) (n int, err error) {
 
 // ReadAt reads data from the file at an offset into p.
 func (f *memFile) ReadAt(p []byte, off int64) (n int, err error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return 0, os.ErrClosed
@@ -136,8 +154,8 @@ func (f *memFile) Readdirnames(n int) ([]string, error) {
 
 // Seek sets the file offset.
 func (f *memFile) Seek(offset int64, whence int) (int64, error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return 0, os.ErrClosed
@@ -157,8 +175,8 @@ func (f *memFile) Seek(offset int64, whence int) (int64, error) {
 
 // Stat returns a file info.
 func (f *memFile) Stat() (os.FileInfo, error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return nil, os.ErrClosed
@@ -170,8 +188,8 @@ func (f *memFile) Stat() (os.FileInfo, error) {
 
 // Sync syncs the file to disk.
 func (f *memFile) Sync() error {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return os.ErrClosed
@@ -181,8 +199,8 @@ func (f *memFile) Sync() error {
 
 // Truncate truncates the file to a given length.
 func (f *memFile) Truncate(length int64) error {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return os.ErrClosed
@@ -197,8 +215,8 @@ func (f *memFile) Truncate(length int64) error {
 
 // Write writes data to the file at the current offset.
 func (f *memFile) Write(p []byte) (n int, err error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return 0, os.ErrClosed
@@ -209,8 +227,8 @@ func (f *memFile) Write(p []byte) (n int, err error) {
 
 // WriteAt writes data to the file at an offset.
 func (f *memFile) WriteAt(p []byte, off int64) (n int, err error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
 	if !f.opened {
 		return 0, os.ErrClosed
@@ -248,6 +266,10 @@ func (f *memFile) getName() string {
 }
 
 func (f *memFile) getPath() string {
+	if f.parent == nil {
+		return f.name
+	}
+
 	names := []string{f.name}
 	for parent := f.parent; parent != nil; parent = parent.parent {
 		names = append([]string{parent.name}, names...)
@@ -272,6 +294,7 @@ func (f *memFile) open() error {
 
 func (f *memFile) delete() error {
 	f.parent = nil
+	f.buffer = newMemBuffer()
 	f.opened = false
 	f.deleted = true
 	return nil
