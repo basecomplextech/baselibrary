@@ -37,10 +37,10 @@ func TestMemFile_Read__should_read_data_increment_offset(t *testing.T) {
 	}
 
 	var data1 []byte
+	p := make([]byte, 1)
 loop:
 	for {
-		p := [1]byte{}
-		_, err := f.Read(p[:])
+		_, err := f.Read(p)
 		switch {
 		case err == io.EOF:
 			break loop
@@ -48,7 +48,7 @@ loop:
 			t.Fatal(err)
 		}
 
-		data1 = append(data1, p[0])
+		data1 = append(data1, p...)
 	}
 
 	assert.Equal(t, data, data1)

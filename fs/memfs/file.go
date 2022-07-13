@@ -2,11 +2,9 @@ package memfs
 
 import (
 	"errors"
-	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/epochtimeout/baselibrary/buffer"
 	"github.com/epochtimeout/baselibrary/fs"
 )
 
@@ -17,10 +15,10 @@ type memFile struct {
 
 	name   string
 	parent *memDir
-	buffer buffer.Buffer
+	buffer *memBuffer
 
 	refs    int
-	offset  int64
+	offset  int
 	opened  bool
 	deleted bool
 }
@@ -31,7 +29,7 @@ func newMemFile(fs *memFS, name string, parent *memDir) *memFile {
 
 		name:   name,
 		parent: parent,
-		buffer: buffer.New(),
+		buffer: newMemBuffer(),
 
 		opened: true,
 	}
@@ -63,7 +61,7 @@ func (f *memFile) Size() (int64, error) {
 	f.fs.mu.RUnlock()
 	defer f.fs.mu.RUnlock()
 
-	size := f.buffer.Len()
+	size := f.buffer.size()
 	return int64(size), nil
 }
 
@@ -96,7 +94,7 @@ func (f *memFile) Map() ([]byte, error) {
 		return nil, os.ErrClosed
 	}
 
-	b := f.buffer.Bytes()
+	b := f.buffer.bytes()
 	return b, nil
 }
 
@@ -109,15 +107,9 @@ func (f *memFile) Read(p []byte) (n int, err error) {
 		return 0, os.ErrClosed
 	}
 
-	b := f.buffer.Bytes()
-	b = b[f.offset:]
-	if len(b) == 0 {
-		return 0, io.EOF
-	}
-
-	n = copy(p, b)
-	f.offset += int64(n)
-	return n, nil
+	n, err = f.buffer.read(p, f.offset)
+	f.offset += n
+	return n, err
 }
 
 // ReadAt reads data from the file at an offset into p.
@@ -129,16 +121,7 @@ func (f *memFile) ReadAt(p []byte, off int64) (n int, err error) {
 		return 0, os.ErrClosed
 	}
 
-	b := f.buffer.Bytes()
-	if off < 0 || off >= int64(len(b)) {
-		return 0, io.ErrUnexpectedEOF
-	}
-
-	n = copy(p, b[off:])
-	if n < len(p) {
-		return n, io.EOF
-	}
-	return n, nil
+	return f.buffer.read(p, int(off))
 }
 
 // Readdir reads and returns the directory entries, upto n entries if n > 0.
@@ -163,12 +146,12 @@ func (f *memFile) Seek(offset int64, whence int) (int64, error) {
 		panic("unsupported whence, only 0 is supported")
 	}
 
-	size := f.buffer.Len()
+	size := f.buffer.size()
 	if offset < 0 || offset > int64(size) {
 		return 0, errors.New("seek out of range")
 	}
 
-	f.offset = offset
+	f.offset = int(offset)
 	return offset, nil
 }
 
@@ -197,7 +180,7 @@ func (f *memFile) Sync() error {
 }
 
 // Truncate truncates the file to a given length.
-func (f *memFile) Truncate(size int64) error {
+func (f *memFile) Truncate(length int64) error {
 	f.fs.mu.Lock()
 	defer f.fs.mu.Unlock()
 
@@ -205,16 +188,10 @@ func (f *memFile) Truncate(size int64) error {
 		return os.ErrClosed
 	}
 
-	ln := f.buffer.Len()
-	if size < 0 || size > int64(ln) {
-		return errors.New("truncate out of range")
+	f.buffer.truncate(int(length))
+	if f.offset > int(length) {
+		f.offset = int(length)
 	}
-
-	data := f.buffer.Bytes()
-	data1 := make([]byte, size)
-	copy(data1, data)
-
-	f.buffer = buffer.NewBytes(data1)
 	return nil
 }
 
@@ -227,7 +204,7 @@ func (f *memFile) Write(p []byte) (n int, err error) {
 		return 0, os.ErrClosed
 	}
 
-	return f.buffer.Write(p)
+	return f.buffer.write(p)
 }
 
 // WriteAt writes data to the file at an offset.
@@ -239,14 +216,7 @@ func (f *memFile) WriteAt(p []byte, off int64) (n int, err error) {
 		return 0, os.ErrClosed
 	}
 
-	size := f.buffer.Len()
-	if size < 0 || off > int64(size) {
-		return 0, errors.New("write out of range")
-	}
-
-	data := f.buffer.Bytes()
-	n = copy(data[off:], p)
-	return n, nil
+	return f.buffer.writeAt(p, int(off))
 }
 
 // WriteString writes a string to the file at the current offset.
@@ -261,11 +231,11 @@ func (f *memFile) isDir() bool {
 }
 
 func (f *memFile) isEmpty() bool {
-	return f.buffer.Len() == 0
+	return f.buffer.size() == 0
 }
 
 func (f *memFile) getInfo() *memInfo {
-	size := f.buffer.Len()
+	size := f.buffer.size()
 	return &memInfo{
 		name: f.name,
 		size: int64(size),
@@ -302,6 +272,7 @@ func (f *memFile) open() error {
 
 func (f *memFile) delete() error {
 	f.parent = nil
+	f.opened = false
 	f.deleted = true
 	return nil
 }
