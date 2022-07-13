@@ -101,6 +101,9 @@ func (fs *memFS) Open(path string) (fs.File, error) {
 	if !ok {
 		return nil, os.ErrNotExist
 	}
+	if err := f.open(); err != nil {
+		return nil, err
+	}
 
 	h := newMemHandle(path, f)
 	return h, nil
@@ -114,6 +117,10 @@ func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (fs.File, err
 	names := splitPath(path)
 	f, ok := fs.root.findPath(names...)
 	if ok {
+		if err := f.open(); err != nil {
+			return nil, err
+		}
+
 		h := newMemHandle(path, f)
 		return h, nil
 	}

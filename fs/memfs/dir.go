@@ -237,6 +237,10 @@ func (d *memDir) makePath(names ...string) (*memDir, error) {
 	return dir.makePath(names[1:]...)
 }
 
+func (d *memDir) open() error {
+	return nil
+}
+
 func (d *memDir) remove(name string) error {
 	_, ok := d.entries[name]
 	if !ok {

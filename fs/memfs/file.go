@@ -191,6 +191,11 @@ func (f *memFile) getParent() *memDir {
 	return f.parent
 }
 
+func (f *memFile) open() error {
+	f.offset = 0
+	return nil
+}
+
 func (f *memFile) move(newName string, newParent *memDir) error {
 	f.name = newName
 	f.parent = newParent

@@ -26,5 +26,6 @@ type memEntry interface {
 	getName() string
 	getParent() *memDir
 
+	open() error
 	move(newName string, newParent *memDir) error
 }
