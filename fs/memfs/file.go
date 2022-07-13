@@ -135,6 +135,9 @@ func (f *memFile) ReadAt(p []byte, off int64) (n int, err error) {
 	}
 
 	n = copy(p, b[off:])
+	if n < len(p) {
+		return n, io.EOF
+	}
 	return n, nil
 }
 
@@ -184,6 +187,12 @@ func (f *memFile) Stat() (os.FileInfo, error) {
 
 // Sync syncs the file to disk.
 func (f *memFile) Sync() error {
+	f.fs.mu.Lock()
+	defer f.fs.mu.Unlock()
+
+	if !f.opened {
+		return os.ErrClosed
+	}
 	return nil
 }
 

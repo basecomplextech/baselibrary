@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFS_Create__should_create_file(t *testing.T) {
+func TestMemFS_Create__should_create_file(t *testing.T) {
 	fs := newMemFS()
 
 	f, err := fs.Create("file")
@@ -20,7 +20,7 @@ func TestFS_Create__should_create_file(t *testing.T) {
 	assert.Equal(t, "file", name)
 }
 
-func TestFS_Create__should_create_file_from_path(t *testing.T) {
+func TestMemFS_Create__should_create_file_from_path(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 
@@ -35,7 +35,7 @@ func TestFS_Create__should_create_file_from_path(t *testing.T) {
 
 // MakeDir
 
-func TestFS_MakeDir__should_create_directory(t *testing.T) {
+func TestMemFS_MakeDir__should_create_directory(t *testing.T) {
 	fs := newMemFS()
 
 	if err := fs.MakeDir("dir", 0); err != nil {
@@ -52,7 +52,7 @@ func TestFS_MakeDir__should_create_directory(t *testing.T) {
 	assert.True(t, info.IsDir())
 }
 
-func TestFS_MakeDir__should_create_directory_from_path(t *testing.T) {
+func TestMemFS_MakeDir__should_create_directory_from_path(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 
@@ -72,7 +72,7 @@ func TestFS_MakeDir__should_create_directory_from_path(t *testing.T) {
 
 // MakePath
 
-func TestFS_MakePath__should_make_directories(t *testing.T) {
+func TestMemFS_MakePath__should_make_directories(t *testing.T) {
 	fs := newMemFS()
 
 	if err := fs.MakePath("dir/subdir/hello", 0); err != nil {
@@ -91,7 +91,7 @@ func TestFS_MakePath__should_make_directories(t *testing.T) {
 
 // Open
 
-func TestFS_Open__should_open_file(t *testing.T) {
+func TestMemFS_Open__should_open_file(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir/subdir")
 	testFile(t, fs, "dir/subdir/file").Close()
@@ -105,7 +105,7 @@ func TestFS_Open__should_open_file(t *testing.T) {
 	assert.Equal(t, "dir/subdir/file", name)
 }
 
-func TestFS_Open__should_open_directory(t *testing.T) {
+func TestMemFS_Open__should_open_directory(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir/subdir")
 
@@ -125,7 +125,7 @@ func TestFS_Open__should_open_directory(t *testing.T) {
 
 // OpenFile
 
-func TestFS_OpenFile__should_open_file(t *testing.T) {
+func TestMemFS_OpenFile__should_open_file(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 	testFile(t, fs, "dir/file").Close()
@@ -139,7 +139,7 @@ func TestFS_OpenFile__should_open_file(t *testing.T) {
 	assert.Equal(t, "dir/file", name)
 }
 
-func TestFS_OpenFile__should_create_absent_file(t *testing.T) {
+func TestMemFS_OpenFile__should_create_absent_file(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 
@@ -152,7 +152,7 @@ func TestFS_OpenFile__should_create_absent_file(t *testing.T) {
 	assert.Equal(t, "dir/file", name)
 }
 
-func TestFS_OpenFile__should_open_directory(t *testing.T) {
+func TestMemFS_OpenFile__should_open_directory(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 
@@ -167,7 +167,7 @@ func TestFS_OpenFile__should_open_directory(t *testing.T) {
 
 // Remove
 
-func TestFS_Remove__should_delete_file(t *testing.T) {
+func TestMemFS_Remove__should_delete_file(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 	testFile(t, fs, "dir/file").Close()
@@ -180,7 +180,7 @@ func TestFS_Remove__should_delete_file(t *testing.T) {
 	assert.Equal(t, os.ErrNotExist, err)
 }
 
-func TestFS_Remove__should_delete_directory(t *testing.T) {
+func TestMemFS_Remove__should_delete_directory(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 	testFile(t, fs, "dir/file").Close()
@@ -195,7 +195,7 @@ func TestFS_Remove__should_delete_directory(t *testing.T) {
 
 // RemoveAll
 
-func TestFS_RemoveAll__should_remove_directory_with_files(t *testing.T) {
+func TestMemFS_RemoveAll__should_remove_directory_with_files(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir/subdir")
 	testFile(t, fs, "dir/subdir/file").Close()
@@ -210,7 +210,7 @@ func TestFS_RemoveAll__should_remove_directory_with_files(t *testing.T) {
 
 // Rename
 
-func TestFS_Rename__should_rename_file(t *testing.T) {
+func TestMemFS_Rename__should_rename_file(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 	testFile(t, fs, "dir/file").Close()
@@ -231,7 +231,7 @@ func TestFS_Rename__should_rename_file(t *testing.T) {
 	assert.Equal(t, "dir/file2", path)
 }
 
-func TestFS_Rename__should_replace_file(t *testing.T) {
+func TestMemFS_Rename__should_replace_file(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 	testFile(t, fs, "dir/file").Close()
@@ -253,7 +253,7 @@ func TestFS_Rename__should_replace_file(t *testing.T) {
 	assert.Equal(t, "dir/file2", path)
 }
 
-func TestFS_Rename__should_move_file(t *testing.T) {
+func TestMemFS_Rename__should_move_file(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir1")
 	testDir(t, fs, "dir2")
@@ -277,7 +277,7 @@ func TestFS_Rename__should_move_file(t *testing.T) {
 
 // Stat
 
-func TestFS_Stat__should_return_file_info(t *testing.T) {
+func TestMemFS_Stat__should_return_file_info(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 	testFile(t, fs, "dir/file").Close()
@@ -294,7 +294,7 @@ func TestFS_Stat__should_return_file_info(t *testing.T) {
 
 // TempDir
 
-func TestFS_TempDir__should_create_temp_directory(t *testing.T) {
+func TestMemFS_TempDir__should_create_temp_directory(t *testing.T) {
 	fs := newMemFS()
 
 	dir, err := fs.TempDir("", "tmp-*")
@@ -305,7 +305,7 @@ func TestFS_TempDir__should_create_temp_directory(t *testing.T) {
 	assert.True(t, strings.HasPrefix(dir, "tmp-"))
 }
 
-func TestFS_TempDir__should_create_temp_directory_in_custom_directory(t *testing.T) {
+func TestMemFS_TempDir__should_create_temp_directory_in_custom_directory(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "tmp")
 
@@ -319,7 +319,7 @@ func TestFS_TempDir__should_create_temp_directory_in_custom_directory(t *testing
 
 // TempFile
 
-func TestFS_TempFile__should_create_temp_file(t *testing.T) {
+func TestMemFS_TempFile__should_create_temp_file(t *testing.T) {
 	fs := newMemFS()
 
 	f, err := fs.TempFile("", "tmp-*")
@@ -330,7 +330,7 @@ func TestFS_TempFile__should_create_temp_file(t *testing.T) {
 	assert.True(t, strings.HasPrefix(f.Path(), "tmp-"))
 }
 
-func TestFS_TempFile__should_create_temp_file_in_custom_directory(t *testing.T) {
+func TestMemFS_TempFile__should_create_temp_file_in_custom_directory(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "tmp")
 
