@@ -11,7 +11,7 @@ import (
 
 // NewFile returns a new in-memory file detached from a file system.
 func NewFile() fs.File {
-	return newMemFile(nil, "", nil)
+	return newDetachedFile()
 }
 
 var _ fs.File = (*memFile)(nil)
@@ -76,7 +76,7 @@ func (f *memFile) Path() string {
 
 // Size returns the file size in bytes.
 func (f *memFile) Size() (int64, error) {
-	f.mu.RUnlock()
+	f.mu.RLock()
 	defer f.mu.RUnlock()
 
 	size := f.buffer.size()
