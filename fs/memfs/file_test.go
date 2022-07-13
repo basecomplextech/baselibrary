@@ -70,6 +70,7 @@ func TestMemFile_ReadAt__should_read_data_at_offset(t *testing.T) {
 		n, err := f.ReadAt(p[:], int64(i))
 		switch {
 		case err == io.EOF:
+		case err == io.ErrUnexpectedEOF:
 		case err != nil:
 			t.Fatal(err)
 		}
@@ -102,6 +103,28 @@ func TestMemFile_Seek__should_set_file_offset(t *testing.T) {
 	}
 
 	assert.Equal(t, []byte("world"), data1)
+}
+
+// Stat
+
+func TestMemFile_Stat__should_return_file_info(t *testing.T) {
+	fs := newMemFS()
+	testDir(t, fs, "dir")
+	f := testFile(t, fs, "./dir/file")
+
+	data := []byte("hello, world")
+	if _, err := f.Write(data); err != nil {
+		t.Fatal(err)
+	}
+
+	info, err := f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "file", info.Name())
+	assert.False(t, info.IsDir())
+	assert.Equal(t, int64(len(data)), info.Size())
 }
 
 // Truncate

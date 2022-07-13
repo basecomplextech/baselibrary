@@ -72,14 +72,14 @@ func (fs *fs) Create(name string) (File, error) {
 
 // Exists returns true if the file/directory exists.
 func (fs *fs) Exists(name string) (bool, error) {
-	_, err := os.Stat(name)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
+	_, err := os.Lstat(name)
+	switch {
+	case os.IsNotExist(err):
+		return false, nil
+	case err != nil:
 		return false, nil
 	}
-	return false, err
+	return true, nil
 }
 
 // MakeDir creates a directory in the fstem.

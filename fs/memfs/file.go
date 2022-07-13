@@ -3,7 +3,6 @@ package memfs
 import (
 	"errors"
 	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/epochtimeout/baselibrary/fs"
@@ -11,10 +10,9 @@ import (
 
 // NewFile returns a new in-memory file detached from a file system.
 func NewFile() fs.File {
-	return newDetachedFile()
+	f := newDetachedFile()
+	return newMemHandle("", f)
 }
-
-var _ fs.File = (*memFile)(nil)
 
 type memFile struct {
 	mu     *sync.RWMutex // shared fs.mu or new mutex when detached
@@ -22,11 +20,7 @@ type memFile struct {
 
 	name   string
 	buffer *memBuffer
-
-	refs    int
-	offset  int
-	opened  bool
-	deleted bool
+	offset int
 }
 
 func newMemFile(fs *memFS, name string, parent *memDir) *memFile {
@@ -36,8 +30,6 @@ func newMemFile(fs *memFS, name string, parent *memDir) *memFile {
 
 		name:   name,
 		buffer: newMemBuffer(),
-
-		opened: true,
 	}
 }
 
@@ -48,30 +40,7 @@ func newDetachedFile() *memFile {
 
 		name:   "",
 		buffer: newMemBuffer(),
-
-		opened: true,
 	}
-}
-
-// Filename returns a file name, not a path as in *os.File.
-func (f *memFile) Filename() string {
-	return f.name
-}
-
-// Name returns a file path as in *os.File.
-func (f *memFile) Name() string {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-
-	return f.getPath()
-}
-
-// Path returns *os.File.Name() as presented to Open.
-func (f *memFile) Path() string {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-
-	return f.getPath()
 }
 
 // Size returns the file size in bytes.
@@ -87,30 +56,13 @@ func (f *memFile) Size() (int64, error) {
 
 // Close closes the file.
 func (f *memFile) Close() error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	if !f.opened {
-		return os.ErrClosed
-	}
-
-	f.refs--
-	if f.refs > 0 {
-		return nil
-	}
-
-	f.opened = false
-	return nil
+	panic("not implemented")
 }
 
 // Map maps the file into memory and returns its data.
 func (f *memFile) Map() ([]byte, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-
-	if !f.opened {
-		return nil, os.ErrClosed
-	}
 
 	b := f.buffer.bytes()
 	return b, nil
@@ -121,10 +73,6 @@ func (f *memFile) Read(p []byte) (n int, err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if !f.opened {
-		return 0, os.ErrClosed
-	}
-
 	n, err = f.buffer.read(p, f.offset)
 	f.offset += n
 	return n, err
@@ -134,10 +82,6 @@ func (f *memFile) Read(p []byte) (n int, err error) {
 func (f *memFile) ReadAt(p []byte, off int64) (n int, err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-
-	if !f.opened {
-		return 0, os.ErrClosed
-	}
 
 	return f.buffer.read(p, int(off))
 }
@@ -157,9 +101,6 @@ func (f *memFile) Seek(offset int64, whence int) (int64, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if !f.opened {
-		return 0, os.ErrClosed
-	}
 	if whence != 0 {
 		panic("unsupported whence, only 0 is supported")
 	}
@@ -178,10 +119,6 @@ func (f *memFile) Stat() (os.FileInfo, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if !f.opened {
-		return nil, os.ErrClosed
-	}
-
 	info := f.getInfo()
 	return info, nil
 }
@@ -191,9 +128,6 @@ func (f *memFile) Sync() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if !f.opened {
-		return os.ErrClosed
-	}
 	return nil
 }
 
@@ -201,10 +135,6 @@ func (f *memFile) Sync() error {
 func (f *memFile) Truncate(length int64) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-
-	if !f.opened {
-		return os.ErrClosed
-	}
 
 	f.buffer.truncate(int(length))
 	if f.offset > int(length) {
@@ -218,10 +148,6 @@ func (f *memFile) Write(p []byte) (n int, err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if !f.opened {
-		return 0, os.ErrClosed
-	}
-
 	return f.buffer.write(p)
 }
 
@@ -229,10 +155,6 @@ func (f *memFile) Write(p []byte) (n int, err error) {
 func (f *memFile) WriteAt(p []byte, off int64) (n int, err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-
-	if !f.opened {
-		return 0, os.ErrClosed
-	}
 
 	return f.buffer.writeAt(p, int(off))
 }
@@ -265,39 +187,8 @@ func (f *memFile) getName() string {
 	return f.name
 }
 
-func (f *memFile) getPath() string {
-	if f.parent == nil {
-		return f.name
-	}
-
-	names := []string{f.name}
-	for parent := f.parent; parent != nil; parent = parent.parent {
-		names = append([]string{parent.name}, names...)
-	}
-
-	return filepath.Join(names...)
-}
-
 func (f *memFile) getParent() *memDir {
 	return f.parent
-}
-
-func (f *memFile) open() error {
-	if f.deleted {
-		return os.ErrNotExist
-	}
-
-	f.refs++
-	f.opened = true
-	return nil
-}
-
-func (f *memFile) delete() error {
-	f.parent = nil
-	f.buffer = newMemBuffer()
-	f.opened = false
-	f.deleted = true
-	return nil
 }
 
 func (f *memFile) move(newName string, newParent *memDir) error {

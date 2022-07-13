@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMemFS_Create__should_create_file(t *testing.T) {
@@ -31,6 +32,33 @@ func TestMemFS_Create__should_create_file_from_path(t *testing.T) {
 
 	name := f.Name()
 	assert.Equal(t, "dir/file", name)
+}
+
+// Exists
+
+func TestMemFS_Exists__should_return_true_when_entry_exists(t *testing.T) {
+	fs := newMemFS()
+	testDir(t, fs, "dir")
+	testFile(t, fs, "dir/file").Close()
+
+	ok, err := fs.Exists("dir/file")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.True(t, ok)
+}
+
+func TestMemFS_Exists__should_return_false_when_entry_not_found(t *testing.T) {
+	fs := newMemFS()
+	testDir(t, fs, "dir")
+
+	ok, err := fs.Exists("dir/file")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.False(t, ok)
 }
 
 // MakeDir
@@ -320,12 +348,14 @@ func TestMemFS_Stat__should_return_file_info(t *testing.T) {
 func TestMemFS_TempDir__should_create_temp_directory(t *testing.T) {
 	fs := newMemFS()
 
-	dir, err := fs.TempDir("", "tmp-*")
-	if err != nil {
-		t.Fatal(err)
-	}
+	for i := 0; i < 10; i++ {
+		dir, err := fs.TempDir("", "tmp-*")
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	assert.True(t, strings.HasPrefix(dir, "tmp-"))
+		require.True(t, strings.HasPrefix(dir, "tmp-"), i)
+	}
 }
 
 func TestMemFS_TempDir__should_create_temp_directory_in_custom_directory(t *testing.T) {
@@ -345,12 +375,14 @@ func TestMemFS_TempDir__should_create_temp_directory_in_custom_directory(t *test
 func TestMemFS_TempFile__should_create_temp_file(t *testing.T) {
 	fs := newMemFS()
 
-	f, err := fs.TempFile("", "tmp-*")
-	if err != nil {
-		t.Fatal(err)
-	}
+	for i := 0; i < 10; i++ {
+		f, err := fs.TempFile("", "tmp-*")
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	assert.True(t, strings.HasPrefix(f.Path(), "tmp-"))
+		require.True(t, strings.HasPrefix(f.Path(), "tmp-"), i)
+	}
 }
 
 func TestMemFS_TempFile__should_create_temp_file_in_custom_directory(t *testing.T) {

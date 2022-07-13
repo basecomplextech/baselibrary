@@ -67,6 +67,7 @@ func TestDetachedMemFile_ReadAt__should_read_data_at_offset(t *testing.T) {
 		n, err := f.ReadAt(p[:], int64(i))
 		switch {
 		case err == io.EOF:
+		case err == io.ErrUnexpectedEOF:
 		case err != nil:
 			t.Fatal(err)
 		}

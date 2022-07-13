@@ -37,19 +37,25 @@ func (fs *memFS) Create(path string) (fs.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	return fs.create(path)
+	f, err := fs.create(path)
+	if err != nil {
+		return nil, err
+	}
+
+	h := newMemHandle(path, f)
+	return h, nil
 }
 
 // Exists returns true if the file/directory exists.
-func (fs *memFS) Exists(name string) (bool, error) {
-	_, err := os.Stat(name)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
+func (fs *memFS) Exists(path string) (bool, error) {
+	_, err := fs.Stat(path)
+	switch {
+	case os.IsNotExist(err):
+		return false, nil
+	case err != nil:
 		return false, nil
 	}
-	return false, err
+	return true, nil
 }
 
 // MakeDir creates a directory in the file system.
@@ -95,10 +101,9 @@ func (fs *memFS) Open(path string) (fs.File, error) {
 	if !ok {
 		return nil, os.ErrNotExist
 	}
-	if err := f.open(); err != nil {
-		return nil, err
-	}
-	return f, nil
+
+	h := newMemHandle(path, f)
+	return h, nil
 }
 
 // OpenFile is the generalized open call, see os.OpenFile.
@@ -108,16 +113,22 @@ func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (fs.File, err
 
 	names := splitPath(path)
 	f, ok := fs.root.findPath(names...)
-	if !ok {
-		if flag&os.O_CREATE != 0 {
-			return fs.create(path)
-		}
+	if ok {
+		h := newMemHandle(path, f)
+		return h, nil
+	}
+
+	if flag&os.O_CREATE == 0 {
 		return nil, os.ErrNotExist
 	}
-	if err := f.open(); err != nil {
+
+	f, err := fs.create(path)
+	if err != nil {
 		return nil, err
 	}
-	return f, nil
+
+	h := newMemHandle(path, f)
+	return h, nil
 }
 
 // Remove removes a file or an empty directory.
@@ -246,11 +257,13 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 	}
 
 	// create file
-	time := time.Now().UnixMilli()
-	for i := 0; i < 10; i++ {
+	time := time.Now().UnixNano()
+	for i := 0; i < 100; i++ {
 		name := strings.Replace(pattern, "*", fmt.Sprintf("%v", time), -1)
+
 		_, ok := parent.find(name)
 		if ok {
+			time++
 			continue
 		}
 
@@ -291,15 +304,24 @@ func (fs *memFS) TempFile(dir, pattern string) (fs.File, error) {
 	}
 
 	// create file
-	time := time.Now().UnixMilli()
-	for i := 0; i < 10; i++ {
+	time := time.Now().UnixNano()
+	for i := 0; i < 100; i++ {
 		name := strings.Replace(pattern, "*", fmt.Sprintf("%v", time), -1)
+
 		_, ok := parent.find(name)
 		if ok {
+			time++
 			continue
 		}
 
-		return parent.create(name)
+		f, err := parent.create(name)
+		if err != nil {
+			return nil, err
+		}
+
+		path := filepath.Join(dir, name)
+		h := newMemHandle(path, f)
+		return h, nil
 	}
 
 	return nil, errors.New("failed to create temp file, too many attempts")
@@ -307,7 +329,7 @@ func (fs *memFS) TempFile(dir, pattern string) (fs.File, error) {
 
 // internal
 
-func (fs *memFS) create(path string) (fs.File, error) {
+func (fs *memFS) create(path string) (memEntry, error) {
 	names := splitPath(path)
 	if len(names) == 0 {
 		return nil, os.ErrInvalid

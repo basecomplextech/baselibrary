@@ -34,7 +34,7 @@ func (b *memBuffer) read(p []byte, offset int) (int, error) {
 
 	n := copy(p, buf[offset:])
 	if n < len(p) {
-		return n, io.ErrUnexpectedEOF
+		return n, io.EOF
 	}
 	return n, nil
 }

@@ -3,12 +3,7 @@ package memfs
 import (
 	"errors"
 	"os"
-	"path/filepath"
-
-	"github.com/epochtimeout/baselibrary/fs"
 )
-
-var _ fs.File = (*memDir)(nil)
 
 type memDir struct {
 	fs *memFS
@@ -16,10 +11,6 @@ type memDir struct {
 	name    string
 	parent  *memDir
 	entries map[string]memEntry
-
-	refs    int
-	opened  bool
-	deleted bool
 }
 
 func newMemDir(fs *memFS, name string, parent *memDir) *memDir {
@@ -32,51 +23,12 @@ func newMemDir(fs *memFS, name string, parent *memDir) *memDir {
 	}
 }
 
-// Filename returns a file name, not a path as in *os.File.
-func (d *memDir) Filename() string {
-	return d.name
-}
-
-// Name returns a file path as in *os.File.
-func (d *memDir) Name() string {
-	d.fs.mu.RLock()
-	defer d.fs.mu.RUnlock()
-
-	return d.getPath()
-}
-
-// Path returns *os.File.Name() as presented to Open.
-func (d *memDir) Path() string {
-	d.fs.mu.RLock()
-	defer d.fs.mu.RUnlock()
-
-	return d.getPath()
-}
-
 // Size returns the file size in bytes.
 func (d *memDir) Size() (int64, error) {
 	panic("not implemented")
 }
 
 // Methods
-
-// Close closes the file.
-func (d *memDir) Close() error {
-	d.fs.mu.Lock()
-	defer d.fs.mu.Unlock()
-
-	if !d.opened {
-		return os.ErrClosed
-	}
-
-	d.refs--
-	if d.refs > 0 {
-		return nil
-	}
-
-	d.opened = false
-	return nil
-}
 
 // Map maps the file into memory and returns its data.
 func (d *memDir) Map() ([]byte, error) {
@@ -98,10 +50,6 @@ func (d *memDir) Readdir(n int) ([]os.FileInfo, error) {
 	d.fs.mu.RLock()
 	defer d.fs.mu.RUnlock()
 
-	if !d.opened {
-		return nil, os.ErrClosed
-	}
-
 	var infos []os.FileInfo
 	for _, entry := range d.entries {
 		if n > 0 && len(infos) >= n {
@@ -119,10 +67,6 @@ func (d *memDir) Readdir(n int) ([]os.FileInfo, error) {
 func (d *memDir) Readdirnames(n int) ([]string, error) {
 	d.fs.mu.RLock()
 	defer d.fs.mu.RUnlock()
-
-	if !d.opened {
-		return nil, os.ErrClosed
-	}
 
 	var names []string
 	for _, entry := range d.entries {
@@ -147,10 +91,6 @@ func (d *memDir) Stat() (os.FileInfo, error) {
 	d.fs.mu.RLock()
 	defer d.fs.mu.RUnlock()
 
-	if !d.opened {
-		return nil, os.ErrClosed
-	}
-
 	info := d.getInfo()
 	return info, nil
 }
@@ -160,9 +100,6 @@ func (d *memDir) Sync() error {
 	d.fs.mu.Lock()
 	defer d.fs.mu.Unlock()
 
-	if !d.opened {
-		return os.ErrClosed
-	}
 	return nil
 }
 
@@ -208,33 +145,8 @@ func (d *memDir) getName() string {
 	return d.name
 }
 
-func (d *memDir) getPath() string {
-	names := []string{d.name}
-	for parent := d.parent; parent != nil; parent = parent.parent {
-		names = append([]string{parent.name}, names...)
-	}
-
-	return filepath.Join(names...)
-}
-
 func (d *memDir) getParent() *memDir {
 	return d.parent
-}
-
-func (d *memDir) open() error {
-	if d.deleted {
-		return os.ErrNotExist
-	}
-
-	d.refs++
-	d.opened = true
-	return nil
-}
-
-func (d *memDir) delete() error {
-	d.parent = nil
-	d.deleted = true
-	return nil
 }
 
 func (d *memDir) move(newName string, newParent *memDir) error {
@@ -326,21 +238,16 @@ func (d *memDir) makePath(names ...string) (*memDir, error) {
 }
 
 func (d *memDir) remove(name string) error {
-	e, ok := d.entries[name]
+	_, ok := d.entries[name]
 	if !ok {
 		return os.ErrNotExist
 	}
 
 	delete(d.entries, name)
-	return e.delete()
+	return nil
 }
 
 func (d *memDir) addEntry(entry memEntry, name string) {
-	e, ok := d.entries[name]
-	if ok {
-		e.delete()
-	}
-
 	d.entries[name] = entry
 	entry.move(name, d)
 }
