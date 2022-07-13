@@ -33,6 +33,9 @@ func (b *memBuffer) read(p []byte, offset int) (int, error) {
 	}
 
 	n := copy(p, buf[offset:])
+	if n < len(p) {
+		return n, io.ErrUnexpectedEOF
+	}
 	return n, nil
 }
 
@@ -93,7 +96,7 @@ func (b *memBuffer) size() int {
 }
 
 func (b *memBuffer) _merge() {
-	if len(b.bufs) == 0 {
+	if len(b.bufs) <= 1 {
 		return
 	}
 
