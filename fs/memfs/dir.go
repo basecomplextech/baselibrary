@@ -1,6 +1,7 @@
 package memfs
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -301,12 +302,22 @@ func (d *memDir) makePath(names ...string) (*memDir, error) {
 	if len(names) == 0 {
 		return nil, os.ErrInvalid
 	}
-
 	name := names[0]
-	dir, err := d.makeDir(name)
-	if err != nil {
-		return nil, err
+
+	var dir *memDir
+	if e, ok := d.entries[name]; ok {
+		dir, ok = e.(*memDir)
+		if !ok {
+			return nil, errors.New("path is not a directory")
+		}
+	} else {
+		var err error
+		dir, err = d.makeDir(name)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	if len(names) == 1 {
 		return dir, nil
 	}

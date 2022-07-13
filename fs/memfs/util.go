@@ -10,6 +10,14 @@ func splitPath(path string) []string {
 		return []string{}
 	}
 
-	path = strings.TrimLeft(path, string(filepath.Separator))
+	path = cleanPath(path)
 	return strings.Split(path, string(filepath.Separator))
+}
+
+func cleanPath(path string) string {
+	path = filepath.Clean(path)
+	path = strings.TrimLeft(path, ".")
+	path = strings.TrimLeft(path, string(filepath.Separator))
+	path = strings.TrimRight(path, string(filepath.Separator))
+	return path
 }

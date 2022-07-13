@@ -89,6 +89,29 @@ func TestMemFS_MakePath__should_make_directories(t *testing.T) {
 	assert.True(t, info.IsDir())
 }
 
+func TestMemFS_MakePath__should_skip_existing_directories(t *testing.T) {
+	fs := newMemFS()
+
+	if err := fs.MakePath("dir", 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := fs.MakePath("dir/hello", 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := fs.MakePath("dir/subdir/hello/", 0); err != nil {
+		t.Fatal(err)
+	}
+
+	info, err := fs.Stat("dir/subdir/hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	name := info.Name()
+	assert.Equal(t, "hello", name)
+	assert.True(t, info.IsDir())
+}
+
 // Open
 
 func TestMemFS_Open__should_open_file(t *testing.T) {

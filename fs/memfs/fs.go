@@ -228,6 +228,7 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 	if len(splitPath(pattern)) != 1 {
 		return "", os.ErrInvalid
 	}
+	dir = cleanPath(dir)
 
 	// find dir
 	parent := fs.root
@@ -272,6 +273,7 @@ func (fs *memFS) TempFile(dir, pattern string) (fs.File, error) {
 	if len(splitPath(pattern)) != 1 {
 		return nil, os.ErrInvalid
 	}
+	dir = cleanPath(dir)
 
 	// find dir
 	parent := fs.root
