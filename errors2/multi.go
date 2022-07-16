@@ -11,19 +11,23 @@ type MultiError struct {
 	Format string
 }
 
-// Combines combines multiple nonnil errors into a *MultiError and returns it or nil.
+// Combines combines multiple non-nil errors into a *MultiError and returns it or nil.
 func Combine(err ...error) error {
 	return Combinef("%v", err...)
 }
 
-// Combines combines multiple nonnil errors into a *MultiError and returns it or nil.
+// Combines combines multiple non-nil errors into a *MultiError and returns it or nil.
 func Combinef(format string, err ...error) error {
-	if len(err) == 0 {
+	// simple cases
+	switch len(err) {
+	case 0:
 		return nil
+	case 1:
+		return err[0]
 	}
 
-	// filter nonnil errors in place
-	var nonnil = err[:0]
+	// filter nonnil errors
+	nonnil := make([]error, 0, len(err))
 	for _, e := range err {
 		if e == nil {
 			continue
@@ -31,7 +35,7 @@ func Combinef(format string, err ...error) error {
 		nonnil = append(nonnil, e)
 	}
 
-	// return nil or the only error
+	// simple cases
 	switch len(nonnil) {
 	case 0:
 		return nil
@@ -46,6 +50,7 @@ func Combinef(format string, err ...error) error {
 	}
 }
 
+// Error joins the error messages and formats the result message.
 func (e *MultiError) Error() string {
 	ss := make([]string, 0, len(e.Errors))
 	for _, err := range e.Errors {

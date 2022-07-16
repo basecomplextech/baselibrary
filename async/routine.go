@@ -1,43 +1,39 @@
 package async
 
 import (
-	"errors"
 	"sync"
 
+	"github.com/epochtimeout/baselibrary/errors2"
 	"github.com/epochtimeout/baselibrary/status"
 	"github.com/epochtimeout/baselibrary/try"
 )
 
-// Stopped is the error which can be used to indicate that a routine has been stopped.
-var Stopped = errors.New("routine stopped")
-
-// Routine runs a goroutine and returns its result as a future,
-// recovers on a panic and returns a *try.Panic error with a stack trace.
+// Routine executes a function in a goroutine, recovers on panics, and returns a future result.
 type Routine[T any] interface {
-	Future[T]
+	Result[T]
 
-	// Stop requests the routine to stop and returns its wait channel.
+	// Stop requests the routine to stop and returns the wait channel.
 	Stop() <-chan struct{}
 }
 
-// VoidRoutine is a type alias for Routine[Void].
-type VoidRoutine = Routine[Void]
-
 // Run runs a function in a routine.
-func Run(fn func(stop <-chan struct{}) status.Status) Routine[Void] {
-	r := newRoutine[Void]()
+func Run(fn func(stop <-chan struct{}) status.Status) Routine[struct{}] {
+	r := newRoutine[struct{}]()
 
 	go func() {
 		defer func() {
-			if e := recover(); e != nil {
-				err := try.Recover(e)
-				st := status.WrapError(err)
-				r.Reject(st)
+			e := recover()
+			if e == nil {
+				return
 			}
+
+			err := try.Recover(e)
+			st := status.WrapError(err)
+			r.reject(st)
 		}()
 
-		st := fn(r.stopCh)
-		r.Reject(st)
+		st := fn(r.stop)
+		r.complete(struct{}{}, st)
 	}()
 
 	return r
@@ -49,40 +45,76 @@ func Call[T any](fn func(stop <-chan struct{}) (T, status.Status)) Routine[T] {
 
 	go func() {
 		defer func() {
-			if e := recover(); e != nil {
-				err := try.Recover(e)
-				st := status.WrapError(err)
-				r.Reject(st)
+			e := recover()
+			if e == nil {
+				return
 			}
+
+			err := errors2.Recover(e)
+			st := status.WrapError(err)
+			r.reject(st)
 		}()
 
-		result, st := fn(r.stopCh)
-		r.Complete(result, st)
+		result, st := fn(r.stop)
+		r.complete(result, st)
 	}()
 
 	return r
 }
 
-// StopWait stops a routine and waits for it and returns its error.
-func StopWait[T any](r Routine[T]) status.Status {
-	<-r.Stop()
-	_, st := r.Result()
-	return st
+// StopAll stops all routines.
+func StopAll[T any](routines ...Routine[T]) {
+	for _, r := range routines {
+		r.Stop()
+	}
 }
 
-type routine[T any] struct {
-	Promise[T]
+// StopWait stops a routine and awaits its result.
+func StopWait[T any](r Routine[T]) (T, status.Status) {
+	<-r.Stop()
+	return r.Result()
+}
 
-	mu     sync.Mutex
-	stop   bool
-	stopCh chan struct{}
+// internal
+
+type routine[T any] struct {
+	mu sync.Mutex
+
+	done   bool
+	result T
+	status status.Status
+
+	wait    chan struct{}
+	stop    chan struct{}
+	stopped bool
 }
 
 func newRoutine[T any]() *routine[T] {
 	return &routine[T]{
-		Promise: Pending[T](),
-		stopCh:  make(chan struct{}),
+		wait: make(chan struct{}),
+		stop: make(chan struct{}),
 	}
+}
+
+// Wait awaits the result.
+func (r *routine[T]) Wait() <-chan struct{} {
+	return r.wait
+}
+
+// Result returns a value and a status or zero.
+func (r *routine[T]) Result() (T, status.Status) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	return r.result, r.status
+}
+
+// Status returns a status.
+func (r *routine[T]) Status() status.Status {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	return r.status
 }
 
 // Stop requests the routine to stop and returns its wait channel.
@@ -90,11 +122,32 @@ func (r *routine[T]) Stop() <-chan struct{} {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.stop {
-		return r.Wait()
+	if r.done {
+		return r.wait
 	}
 
-	r.stop = true
-	close(r.stopCh)
-	return r.Wait()
+	r.stopped = true
+	close(r.stop)
+	return r.wait
+}
+
+// private
+
+func (r *routine[T]) reject(st status.Status) {
+	var result T
+	r.complete(result, st)
+}
+
+func (r *routine[T]) complete(result T, st status.Status) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.done {
+		return
+	}
+
+	r.done = true
+	r.result = result
+	r.status = st
+	close(r.wait)
 }
