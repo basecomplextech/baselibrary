@@ -6,7 +6,6 @@ import (
 
 	"github.com/epochtimeout/baselibrary/errors2"
 	"github.com/epochtimeout/baselibrary/status"
-	"github.com/epochtimeout/baselibrary/try"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -57,8 +56,8 @@ func TestRun__should_return_recover_on_panic(t *testing.T) {
 	select {
 	case <-r.Wait():
 		_, st := r.Result()
-		require.IsType(t, &try.Panic{}, st.Error)
-		assert.EqualValues(t, "test", st.Error.(*try.Panic).E)
+		require.IsType(t, &errors2.PanicError{}, st.Error)
+		assert.EqualValues(t, "test", st.Error.(*errors2.PanicError).E)
 
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("timeout")
@@ -80,10 +79,10 @@ func TestRun__should_stop_on_request(t *testing.T) {
 	}
 }
 
-// Call
+// Execute
 
-func TestCall__should_return_result_on_success(t *testing.T) {
-	r := Call(func(stop <-chan struct{}) (string, status.Status) {
+func TestExecute__should_return_result_on_success(t *testing.T) {
+	r := Execute(func(stop <-chan struct{}) (string, status.Status) {
 		return "hello, world", status.OK
 	})
 	r.Stop()
@@ -101,9 +100,9 @@ func TestCall__should_return_result_on_success(t *testing.T) {
 	}
 }
 
-func TestCall__should_return_status_on_error(t *testing.T) {
+func TestExecute__should_return_status_on_error(t *testing.T) {
 	st := status.Error("test")
-	r := Call(func(stop <-chan struct{}) (string, status.Status) {
+	r := Execute(func(stop <-chan struct{}) (string, status.Status) {
 		return "", st
 	})
 	r.Stop()
@@ -118,8 +117,8 @@ func TestCall__should_return_status_on_error(t *testing.T) {
 	}
 }
 
-func TestCall__should_return_recover_on_panic(t *testing.T) {
-	r := Call(func(stop <-chan struct{}) (string, status.Status) {
+func TestExecute__should_return_recover_on_panic(t *testing.T) {
+	r := Execute(func(stop <-chan struct{}) (string, status.Status) {
 		panic("test")
 	})
 	r.Stop()
@@ -135,8 +134,8 @@ func TestCall__should_return_recover_on_panic(t *testing.T) {
 	}
 }
 
-func TestCall__should_stop_on_request(t *testing.T) {
-	r := Call(func(stop <-chan struct{}) (string, status.Status) {
+func TestExecute__should_stop_on_request(t *testing.T) {
+	r := Execute(func(stop <-chan struct{}) (string, status.Status) {
 		<-stop
 		return "", status.Cancelled
 	})

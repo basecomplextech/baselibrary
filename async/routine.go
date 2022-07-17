@@ -5,7 +5,6 @@ import (
 
 	"github.com/epochtimeout/baselibrary/errors2"
 	"github.com/epochtimeout/baselibrary/status"
-	"github.com/epochtimeout/baselibrary/try"
 )
 
 // Routine executes a function in a goroutine, recovers on panics, and returns a future result.
@@ -16,7 +15,7 @@ type Routine[T any] interface {
 	Stop() <-chan struct{}
 }
 
-// Run runs a function in a routine.
+// Run runs a function in a routine and returns its status, recovers on panics.
 func Run(fn func(stop <-chan struct{}) status.Status) Routine[struct{}] {
 	r := newRoutine[struct{}]()
 
@@ -27,7 +26,7 @@ func Run(fn func(stop <-chan struct{}) status.Status) Routine[struct{}] {
 				return
 			}
 
-			err := try.Recover(e)
+			err := errors2.Recover(e)
 			st := status.WrapError(err)
 			r.reject(st)
 		}()
@@ -39,8 +38,8 @@ func Run(fn func(stop <-chan struct{}) status.Status) Routine[struct{}] {
 	return r
 }
 
-// Call calls a function in a routine and returns its result.
-func Call[T any](fn func(stop <-chan struct{}) (T, status.Status)) Routine[T] {
+// Execute executes a function in a routine and returns its result and status, recovers on panics.
+func Execute[T any](fn func(stop <-chan struct{}) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
 
 	go func() {
