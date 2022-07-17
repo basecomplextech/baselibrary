@@ -11,7 +11,7 @@ type Future[T any] interface {
 	Result[T]
 
 	// Cancel tries to cancel the future.
-	Cancel() bool
+	Cancel()
 }
 
 // Promise is an async response with a future result.
@@ -109,17 +109,16 @@ func (p *promise[T]) Status() status.Status {
 }
 
 // Cancel tries to cancel the future.
-func (p *promise[T]) Cancel() bool {
+func (p *promise[T]) Cancel() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if p.done {
-		return false
+		return
 	}
 
 	close(p.cancel)
 	p.cancelled = true
-	return true
 }
 
 // Cancelled returns a channel which is closed on a promise cancellation.

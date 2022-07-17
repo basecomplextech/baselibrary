@@ -61,6 +61,11 @@ func Execute[T any](fn func(stop <-chan struct{}) (T, status.Status)) Routine[T]
 	return r
 }
 
+// ToFuture returns a routine as a future.
+func ToFuture[T any](r Routine[T]) Future[T] {
+	return newRoutineFuture(r)
+}
+
 // StopAll stops all routines.
 func StopAll[T any](routines ...Routine[T]) {
 	for _, r := range routines {
@@ -149,4 +154,19 @@ func (r *routine[T]) complete(result T, st status.Status) {
 	r.result = result
 	r.status = st
 	close(r.wait)
+}
+
+// routine future
+
+type routineFuture[T any] struct {
+	Routine[T]
+}
+
+func newRoutineFuture[T any](r Routine[T]) *routineFuture[T] {
+	return &routineFuture[T]{r}
+}
+
+// Cancel tries to cancel the future.
+func (r *routineFuture[T]) Cancel() {
+	r.Routine.Stop()
 }
