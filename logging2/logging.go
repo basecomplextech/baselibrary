@@ -15,7 +15,13 @@ type Logging interface {
 }
 
 // New returns a new logging service.
-func New(config Config) Logging {
+func New(config *Config) Logging {
+	return newLogging(config)
+}
+
+// Default returns a new logging service with the default config.
+func Default() Logging {
+	config := DefaultConfig()
 	return newLogging(config)
 }
 
@@ -31,7 +37,7 @@ type logging struct {
 	loggers map[string]*logger
 }
 
-func newLogging(config Config) *logging {
+func newLogging(config *Config) *logging {
 	l := &logging{
 		loggers: make(map[string]*logger),
 	}
