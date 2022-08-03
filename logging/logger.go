@@ -1,4 +1,4 @@
-package logging2
+package logging
 
 type Logger interface {
 	// Name returns the logger name.
