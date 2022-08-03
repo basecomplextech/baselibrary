@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Config specifies the logging configuration.
@@ -47,4 +49,19 @@ func DefaultConfig() *Config {
 			MaxBackups: 10,
 		},
 	}
+}
+
+// ReadConfig reads a configuration from a YAML file.
+func ReadConfig(path string) (*Config, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	result := DefaultConfig()
+	if err := yaml.NewDecoder(file).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
