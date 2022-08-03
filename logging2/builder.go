@@ -2,8 +2,6 @@ package logging2
 
 import (
 	"fmt"
-
-	"github.com/epochtimeout/baselibrary/status"
 )
 
 type RecordBuilder interface {
@@ -33,9 +31,6 @@ type RecordBuilder interface {
 
 	// Stack adds a stack trace.
 	Stack(stack []byte) RecordBuilder
-
-	// Status adds a status to the record as "status" field.
-	Status(st status.Status) RecordBuilder
 
 	// Utility
 
@@ -139,11 +134,6 @@ func (b *recordBuilder) Fields(keyValuePairs ...any) RecordBuilder {
 func (b *recordBuilder) Stack(stack []byte) RecordBuilder {
 	b.rec.Stack = stack
 	return b
-}
-
-// Status adds a status to the record as "status" field.
-func (b *recordBuilder) Status(st status.Status) RecordBuilder {
-	return b.Field("status", st)
 }
 
 // Utility

@@ -17,36 +17,36 @@ const (
 func (l Level) String() string {
 	switch l {
 	case LevelTrace:
-		return "trace"
+		return "TRACE"
 	case LevelDebug:
-		return "debug"
+		return "DEBUG"
 	case LevelInfo:
-		return "info"
+		return "INFO"
 	case LevelWarn:
-		return "warn"
+		return "WARN"
 	case LevelError:
-		return "error"
+		return "ERROR"
 	case LevelFatal:
-		return "fatal"
+		return "FATAL"
 	}
 	return ""
 }
 
 func LevelFromString(s string) Level {
-	s = strings.ToLower(s)
+	s = strings.ToUpper(s)
 
 	switch s {
-	case "trace":
+	case "TRACE":
 		return LevelTrace
-	case "debug":
+	case "DEBUG":
 		return LevelDebug
-	case "info":
+	case "INFO":
 		return LevelInfo
-	case "warn":
+	case "WARN":
 		return LevelWarn
-	case "error":
+	case "ERROR":
 		return LevelError
-	case "fatal":
+	case "FATAL":
 		return LevelFatal
 	}
 	return LevelUndefined

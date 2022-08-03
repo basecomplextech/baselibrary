@@ -22,15 +22,19 @@ func newTextFormatter() *textFormatter {
 // Format formats the record as "INFO [main] message fields" separated by tabs.
 func (f *textFormatter) Format(rec Record) string {
 	b := strings.Builder{}
+	b.WriteByte('\t')
 
 	// level
-	b.WriteString(rec.Level.String())
+	level := rec.Level.String()
+	b.WriteString(level)
+	f.writePadding(&b, level, 5)
 	b.WriteByte('\t')
 
 	// logger
 	b.WriteByte('[')
 	b.WriteString(rec.Logger)
 	b.WriteByte(']')
+	f.writePadding(&b, rec.Logger, 10)
 	b.WriteByte('\t')
 
 	// message
@@ -41,11 +45,8 @@ func (f *textFormatter) Format(rec Record) string {
 		first := i == 0
 		last := i == len(rec.Fields)-1
 
-		switch {
-		case first:
+		if first {
 			b.WriteByte('\t')
-		case !last:
-			b.WriteByte(' ')
 		}
 
 		key := field.Key
@@ -57,7 +58,24 @@ func (f *textFormatter) Format(rec Record) string {
 		b.WriteString(key)
 		b.WriteByte('=')
 		b.WriteString(value)
+
+		if !last {
+			b.WriteByte(' ')
+		}
+	}
+
+	// stack
+	if len(rec.Stack) > 0 {
+		stack := string(rec.Stack)
+		b.WriteByte('\n')
+		b.WriteString(stack)
 	}
 
 	return b.String()
+}
+
+func (f *textFormatter) writePadding(b *strings.Builder, s string, n int) {
+	for i := len(s); i < n; i++ {
+		b.WriteByte(' ')
+	}
 }
