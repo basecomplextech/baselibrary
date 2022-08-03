@@ -5,6 +5,12 @@ import "sync"
 // Main is the main logger name.
 const Main = "main"
 
+var (
+	Null   Logger = newLogging(LevelDebug, nil)
+	Stdout Logger = newLogging(LevelDebug, []Writer{newStdoutWriter(LevelTrace)})
+	Stderr Logger = newLogging(LevelDebug, []Writer{newStderrWriter(LevelTrace)})
+)
+
 // Logging is a logging service.
 type Logging interface {
 	// Logger is the main logger.
