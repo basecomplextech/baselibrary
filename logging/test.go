@@ -11,7 +11,7 @@ func Test(t tests.T) Logging {
 	return l
 }
 
-func TestLogger() Logger {
+func TestLogger(t tests.T) Logger {
 	return Stdout
 }
 
