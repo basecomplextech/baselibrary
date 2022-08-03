@@ -15,14 +15,18 @@ type Logging interface {
 }
 
 // New returns a new logging service.
-func New(config *Config) Logging {
-	return newLogging(config)
+func New(config *Config) (Logging, error) {
+	return openLogging(config)
 }
 
 // Default returns a new logging service with the default config.
 func Default() Logging {
 	config := DefaultConfig()
-	return newLogging(config)
+	l, err := openLogging(config)
+	if err != nil {
+		panic(err) // unreachable
+	}
+	return l
 }
 
 // internal
@@ -37,10 +41,35 @@ type logging struct {
 	loggers map[string]*logger
 }
 
-func newLogging(config *Config) *logging {
+func openLogging(config *Config) (*logging, error) {
+	level := config.Level
+	var writers []Writer
+
+	if config.Console != nil && config.Console.Enabled {
+		console, err := newConsoleWriter(config.Console)
+		if err != nil {
+			return nil, err
+		}
+		writers = append(writers, console)
+	}
+
+	if config.File != nil && config.File.Enabled {
+		file, err := newFileWriter(config.File)
+		if err != nil {
+			return nil, err
+		}
+		writers = append(writers, file)
+	}
+
+	return newLogging(level, writers), nil
+}
+
+func newLogging(level Level, writers []Writer) *logging {
 	l := &logging{
+		writers: make([]Writer, len(writers)),
 		loggers: make(map[string]*logger),
 	}
+	copy(l.writers, writers)
 
 	main := newLogger(l, Main)
 	main.main = true

@@ -10,7 +10,7 @@ import (
 type Config struct {
 	Level   Level          `json:"level"`
 	Console *ConsoleConfig `json:"console"`
-	File    *FileConfig
+	File    *FileConfig    `json:"file"`
 }
 
 type ConsoleConfig struct {

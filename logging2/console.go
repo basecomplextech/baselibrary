@@ -17,13 +17,13 @@ func newStderrWriter(level Level) *writer {
 	return newWriter(level, logger, formatter)
 }
 
-func newConsoleWriter(config *ConsoleConfig) *writer {
+func newConsoleWriter(config *ConsoleConfig) (*writer, error) {
 	if !config.Enabled {
-		return nil
+		return nil, nil
 	}
 
 	level := config.Level
 	logger := log.New(os.Stdout, "", lflags)
 	formatter := newTextFormatter()
-	return newWriter(level, logger, formatter)
+	return newWriter(level, logger, formatter), nil
 }
