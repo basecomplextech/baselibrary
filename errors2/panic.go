@@ -22,19 +22,16 @@ func Recover(e interface{}) error {
 		return nil
 	}
 
-	return RecoverStack(e, true)
+	return &PanicError{E: e}
 }
 
-// RecoverStack wraps a panic into a *PanicError if e is not nil, and optionally includes the stack trace.
-func RecoverStack(e interface{}, stack bool) error {
+// RecoverStack wraps a panic into a *PanicError if e is not nil, and includes the stack trace.
+func RecoverStack(e interface{}) (err error, stack []byte) {
 	if e == nil {
-		return nil
+		return nil, nil
 	}
 
-	var s []byte
-	if stack {
-		s = debug.Stack()
-	}
-
-	return &PanicError{E: e, Stack: s}
+	stack = debug.Stack()
+	err = &PanicError{E: e, Stack: stack}
+	return
 }
