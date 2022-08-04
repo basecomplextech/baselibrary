@@ -31,9 +31,7 @@ func (f *textFormatter) Format(rec Record) string {
 	b.WriteByte('\t')
 
 	// logger
-	b.WriteByte('[')
 	b.WriteString(rec.Logger)
-	b.WriteByte(']')
 	f.writePadding(&b, rec.Logger, 10)
 	b.WriteByte('\t')
 
@@ -42,9 +40,9 @@ func (f *textFormatter) Format(rec Record) string {
 
 	// fields
 	for i, field := range rec.Fields {
-		first := i == 0
-		last := i == len(rec.Fields)-1
+		b.WriteByte(' ')
 
+		first := i == 0
 		if first {
 			b.WriteByte('\t')
 		}
@@ -58,10 +56,6 @@ func (f *textFormatter) Format(rec Record) string {
 		b.WriteString(key)
 		b.WriteByte('=')
 		b.WriteString(value)
-
-		if !last {
-			b.WriteByte(' ')
-		}
 	}
 
 	// stack

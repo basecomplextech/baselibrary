@@ -26,6 +26,9 @@ type RecordBuilder interface {
 	// Field adds a field to the record.
 	Field(key string, value any) RecordBuilder
 
+	// Fieldf formats a field value and adds a field to the record.
+	Fieldf(key string, format string, a ...any) RecordBuilder
+
 	// Fields adds fields to the record.
 	Fields(keyValuePairs ...any) RecordBuilder
 
@@ -121,6 +124,12 @@ func (b *recordBuilder) Field(key string, value any) RecordBuilder {
 	field := NewField(key, value)
 	b.rec.Fields = append(b.rec.Fields, field)
 	return b
+}
+
+// Fieldf formats a field value and adds a field to the record.
+func (b *recordBuilder) Fieldf(key string, format string, a ...any) RecordBuilder {
+	value := fmt.Sprintf(format, a...)
+	return b.Field(key, value)
 }
 
 // Fields adds fields to the record.
