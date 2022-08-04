@@ -86,7 +86,7 @@ func (l *logger) Logger(name string) Logger {
 	if !l.main {
 		name = l.name + "." + name
 	}
-	return l.l.child(name)
+	return l.l.logger(name)
 }
 
 // Records

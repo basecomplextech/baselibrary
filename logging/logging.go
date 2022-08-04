@@ -6,18 +6,21 @@ import "sync"
 const Main = "main"
 
 var (
-	Null   Logger = newLogging(LevelDebug, nil)
-	Stdout Logger = newLogging(LevelDebug, []Writer{newStdoutWriter(LevelTrace)})
-	Stderr Logger = newLogging(LevelDebug, []Writer{newStderrWriter(LevelTrace)})
+	Null   Logger = newLogging(LevelDebug, nil).Main()
+	Stdout Logger = newLogging(LevelDebug, newStdoutWriter(LevelTrace)).Main()
+	Stderr Logger = newLogging(LevelDebug, newStderrWriter(LevelTrace)).Main()
 )
 
 // Logging is a logging service.
 type Logging interface {
-	// Logger is the main logger.
-	Logger
+	// Main returns the main logger.
+	Main() Logger
 
 	// Send logs the record.
 	Send(rec Record)
+
+	// Logger returns a logger with the given name or creates a new one.
+	Logger(name string) Logger
 }
 
 // New returns a new logging service.
@@ -38,8 +41,7 @@ func Default() Logging {
 // internal
 
 type logging struct {
-	*logger // main logger
-
+	main    *logger // main logger
 	level   Level
 	writers []Writer
 
@@ -67,10 +69,10 @@ func openLogging(config *Config) (*logging, error) {
 		writers = append(writers, file)
 	}
 
-	return newLogging(level, writers), nil
+	return newLogging(level, writers...), nil
 }
 
-func newLogging(level Level, writers []Writer) *logging {
+func newLogging(level Level, writers ...Writer) *logging {
 	l := &logging{
 		writers: make([]Writer, len(writers)),
 		loggers: make(map[string]*logger),
@@ -80,9 +82,14 @@ func newLogging(level Level, writers []Writer) *logging {
 	main := newLogger(l, Main)
 	main.main = true
 
-	l.logger = main
+	l.main = main
 	l.loggers[Main] = main
 	return l
+}
+
+// Main returns the main logger.
+func (l *logging) Main() Logger {
+	return l.main
 }
 
 // Send logs the record.
@@ -90,9 +97,18 @@ func (l *logging) Send(rec Record) {
 	l.send(rec)
 }
 
+// Logger returns a logger with the given name or creates a new one.
+func (l *logging) Logger(name string) Logger {
+	return l.logger(name)
+}
+
 // internal
 
-func (l *logging) child(name string) *logger {
+func (l *logging) enabled(logger string, level Level) bool {
+	return level >= l.level
+}
+
+func (l *logging) logger(name string) *logger {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -104,10 +120,6 @@ func (l *logging) child(name string) *logger {
 	logger = newLogger(l, name)
 	l.loggers[name] = logger
 	return logger
-}
-
-func (l *logging) enabled(logger string, level Level) bool {
-	return level >= l.level
 }
 
 func (l *logging) send(rec Record) {
