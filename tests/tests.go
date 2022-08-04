@@ -9,6 +9,7 @@ import (
 )
 
 type T interface {
+	Cleanup(f func())
 	Fatal(args ...interface{})
 	Helper()
 }
