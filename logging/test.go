@@ -3,7 +3,7 @@ package logging
 import (
 	"os"
 
-	"github.com/epochtimeout/baselibrary/di"
+	"github.com/epochtimeout/baselibrary/build"
 	"github.com/epochtimeout/baselibrary/tests"
 )
 
@@ -36,14 +36,14 @@ func TestLevelEnv() Level {
 	return TestLevel
 }
 
-// TestModule specifies test logging and logger providers.
-func TestModule(t tests.T) func(x *di.X) {
-	return func(x *di.X) {
-		di.Add(x, func() Logging {
+// TestModule is a build module that provides test logging and logger.
+func TestModule(t tests.T) build.Module {
+	return func(x *build.X) {
+		build.Add(x, func() Logging {
 			return Test(t)
 		})
-		di.Add(x, func() Logger {
-			l := di.Get[Logging](x)
+		build.Add(x, func() Logger {
+			l := build.Get[Logging](x)
 			return l.Main()
 		})
 	}

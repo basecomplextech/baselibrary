@@ -1,4 +1,4 @@
-package di
+package build
 
 import (
 	"testing"

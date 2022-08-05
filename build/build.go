@@ -1,11 +1,14 @@
-package di
+package build
 
 import (
 	"fmt"
 	"reflect"
 )
 
-// X is a context which holds providers and initialized objects.
+// Module is a function that adds providers to a context.
+type Module = func(x *X)
+
+// X is a build context which contains providers and initialized objects.
 type X struct {
 	objects   map[reflect.Type]any
 	providers map[reflect.Type]func() any
@@ -31,13 +34,13 @@ func Get[T any](x *X) T {
 }
 
 // Build builds an object from modules.
-func Build[T any](modules ...func(x *X)) T {
+func Build[T any](modules ...Module) T {
 	x := buildContext(modules...)
 	return Get[T](x)
 }
 
 // BuildContext builds a context from modules.
-func BuildContext[T any](modules ...func(*X)) *X {
+func BuildContext[T any](modules ...Module) *X {
 	return buildContext(modules...)
 }
 
