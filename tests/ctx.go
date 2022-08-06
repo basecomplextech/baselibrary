@@ -49,12 +49,19 @@ func Get[T any](x *X) T {
 	}
 
 	o = p()
+	x.objects[typ] = o
 	return (o).(T)
 }
 
 // Add adds a constructor to the context or panics on duplicate constructor.
 // The constructor signature must be `func() T`.
-func (x *X) Add(fn any) {
+func (x *X) Add(fns ...any) {
+	for _, fn := range fns {
+		x.addFn(fn)
+	}
+}
+
+func (x *X) addFn(fn any) {
 	f := reflect.TypeOf(fn)
 	if f.Kind() != reflect.Func {
 		panic(fmt.Sprintf("constructor must be function, %v", f))
