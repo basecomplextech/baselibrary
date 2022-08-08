@@ -74,6 +74,7 @@ func openLogging(config *Config) (*logging, error) {
 
 func newLogging(level Level, writers ...Writer) *logging {
 	l := &logging{
+		level:   level,
 		writers: make([]Writer, len(writers)),
 		loggers: make(map[string]*logger),
 	}
