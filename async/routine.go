@@ -88,9 +88,9 @@ type routine[T any] struct {
 	result T
 	status status.Status
 
-	wait    chan struct{}
-	stop    chan struct{}
-	stopped bool
+	wait  chan struct{}
+	stop  chan struct{}
+	stop_ bool
 }
 
 func newRoutine[T any]() *routine[T] {
@@ -126,11 +126,11 @@ func (r *routine[T]) Stop() <-chan struct{} {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.done {
+	if r.stop_ {
 		return r.wait
 	}
 
-	r.stopped = true
+	r.stop_ = true
 	close(r.stop)
 	return r.wait
 }
