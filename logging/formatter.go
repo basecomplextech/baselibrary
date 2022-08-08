@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"strings"
+	"sync/atomic"
 )
 
 // Formatter formats records.
@@ -13,10 +14,16 @@ type Formatter interface {
 
 // text
 
-type textFormatter struct{}
+const maxLoggerLength = 50
+
+type textFormatter struct {
+	loggerLength int32
+}
 
 func newTextFormatter() *textFormatter {
-	return &textFormatter{}
+	return &textFormatter{
+		loggerLength: 10,
+	}
 }
 
 // Format formats the record as "INFO [main] message fields" separated by tabs.
@@ -27,12 +34,18 @@ func (f *textFormatter) Format(rec Record) string {
 	// level
 	level := rec.Level.String()
 	b.WriteString(level)
-	f.writePadding(&b, level, 5)
+	f.writePadding(&b, level, 6)
 	b.WriteByte('\t')
 
 	// logger
 	b.WriteString(rec.Logger)
-	f.writePadding(&b, rec.Logger, 10)
+	pad := f.loadLoggerLength()
+	if len(rec.Logger) > int(pad) {
+		pad = len(rec.Logger)
+		f.storeLoggerLength(pad)
+	}
+	f.writePadding(&b, rec.Logger, pad)
+	b.WriteByte(' ')
 	b.WriteByte('\t')
 
 	// message
@@ -72,4 +85,20 @@ func (f *textFormatter) writePadding(b *strings.Builder, s string, n int) {
 	for i := len(s); i < n; i++ {
 		b.WriteByte(' ')
 	}
+}
+
+func (f *textFormatter) loadLoggerLength() int {
+	length := atomic.LoadInt32(&f.loggerLength)
+	return int(length)
+}
+
+func (f *textFormatter) storeLoggerLength(length int) {
+	prev := atomic.LoadInt32(&f.loggerLength)
+	if prev == maxLoggerLength {
+		return
+	}
+	if length > maxLoggerLength {
+		length = maxLoggerLength
+	}
+	atomic.CompareAndSwapInt32(&f.loggerLength, prev, int32(length))
 }
