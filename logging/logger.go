@@ -21,6 +21,9 @@ type Logger interface {
 	// Info logs an info record.
 	Info(msg string, keyValues ...any)
 
+	// Notice logs a notice record.
+	Notice(msg string, keyValues ...any)
+
 	// Warn logs a warning record.
 	Warn(msg string, keyValues ...any)
 
@@ -43,6 +46,9 @@ type Logger interface {
 
 	// InfoEnabled returns true if info level is enabled.
 	InfoEnabled() bool
+
+	// NoticeEnabled return true if notice level is enabled.
+	NoticeEnabled() bool
 
 	// WarnEnabled returns true if warn level is enabled.
 	WarnEnabled() bool
@@ -124,6 +130,17 @@ func (l *logger) Info(msg string, keyValues ...any) {
 	l.l.send(rec)
 }
 
+// Notice logs a notice record.
+func (l *logger) Notice(msg string, keyValues ...any) {
+	rec := Record{
+		Level:   LevelNotice,
+		Logger:  l.name,
+		Message: msg,
+		Fields:  NewFields(keyValues...),
+	}
+	l.l.send(rec)
+}
+
 // Warn logs a warning record.
 func (l *logger) Warn(msg string, keyValues ...any) {
 	rec := Record{
@@ -177,6 +194,11 @@ func (l *logger) DebugEnabled() bool {
 // InfoEnabled returns true if info level is enabled.
 func (l *logger) InfoEnabled() bool {
 	return l.l.enabled(l.name, LevelInfo)
+}
+
+// NoticeEnabled return true if notice level is enabled.
+func (l *logger) NoticeEnabled() bool {
+	return l.l.enabled(l.name, LevelNotice)
 }
 
 // WarnEnabled returns true if warn level is enabled.

@@ -55,6 +55,12 @@ type RecordBuilder interface {
 	// Infof sets the level to info and formats the message.
 	Infof(format string, args ...any) RecordBuilder
 
+	// Notice sets the level to notice and adds the message.
+	Notice(msg string) RecordBuilder
+
+	// Noticef sets the level to notice and formats the message.
+	Noticef(format string, args ...any) RecordBuilder
+
 	// Warn sets the level to warn and adds the message.
 	Warn(msg string) RecordBuilder
 
@@ -175,6 +181,16 @@ func (b *recordBuilder) Info(msg string) RecordBuilder {
 // Infof sets the level to info and formats the message.
 func (b *recordBuilder) Infof(format string, args ...any) RecordBuilder {
 	return b.Level(LevelInfo).Messagef(format, args...)
+}
+
+// Notice sets the level to notice and adds the message.
+func (b *recordBuilder) Notice(msg string) RecordBuilder {
+	return b.Level(LevelNotice).Message(msg)
+}
+
+// Noticef sets the level to notice and formats the message.
+func (b *recordBuilder) Noticef(format string, args ...any) RecordBuilder {
+	return b.Level(LevelNotice).Messagef(format, args...)
 }
 
 // Warn sets the level to warn and adds the message.

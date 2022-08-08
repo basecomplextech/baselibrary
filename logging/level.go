@@ -9,6 +9,7 @@ const (
 	LevelTrace
 	LevelDebug
 	LevelInfo
+	LevelNotice
 	LevelWarn
 	LevelError
 	LevelFatal
@@ -22,6 +23,8 @@ func (l Level) String() string {
 		return "DEBUG"
 	case LevelInfo:
 		return "INFO"
+	case LevelNotice:
+		return "NOTICE"
 	case LevelWarn:
 		return "WARN"
 	case LevelError:
@@ -42,6 +45,8 @@ func LevelFromString(s string) Level {
 		return LevelDebug
 	case "INFO":
 		return LevelInfo
+	case "NOTICE":
+		return LevelNotice
 	case "WARN":
 		return LevelWarn
 	case "ERROR":
