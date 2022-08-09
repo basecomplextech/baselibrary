@@ -1,4 +1,4 @@
-package u256
+package bin256
 
 import (
 	"testing"

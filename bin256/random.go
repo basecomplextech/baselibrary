@@ -1,4 +1,4 @@
-package u128
+package bin256
 
 import (
 	"crypto/rand"
@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-// Random returns a random U128.
-func Random() U128 {
+// Random returns a random B256.
+func Random() B256 {
 	return gen.random()
 }
 
-// TimeRandom returns a time-random U128.
-func TimeRandom() U128 {
+// TimeRandom returns a time-random B128.
+func TimeRandom() B256 {
 	return gen.timeRandom()
 }
 
@@ -29,16 +29,16 @@ func newGenerator() *generator {
 	}
 }
 
-func (g *generator) random() U128 {
-	u := U128{}
+func (g *generator) random() B256 {
+	u := B256{}
 	if _, err := g.rand.Read(u[:]); err != nil {
 		panic(err)
 	}
 	return u
 }
 
-func (g *generator) timeRandom() U128 {
-	u := U128{}
+func (g *generator) timeRandom() B256 {
+	u := B256{}
 
 	now := g.timestamp()
 	binary.BigEndian.PutUint64(u[:], now)

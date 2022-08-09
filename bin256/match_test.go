@@ -1,4 +1,4 @@
-package u256
+package bin256
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestMatch__should_match_byte_string(t *testing.T) {
-	s0 := (U256{}).String()
+	s0 := (B256{}).String()
 	s1 := Random().String()
 	s2 := " 341a7d60bc5893a64bda3de06721534c341a7d60bc5893a64bda3de06721534c "
 	s3 := "341a7d60bc5893a64bda3de06721534c-341a7d60bc5893a64bda3de06721534c"
@@ -24,7 +24,7 @@ func TestMatch__should_match_byte_string(t *testing.T) {
 }
 
 func TestMatchString__should_match_string(t *testing.T) {
-	s0 := (U256{}).String()
+	s0 := (B256{}).String()
 	s1 := Random().String()
 	s2 := " 341a7d60bc5893a64bda3de06721534c341a7d60bc5893a64bda3de06721534c "
 	s3 := "341a7d60bc5893a64bda3de06721534c-341a7d60bc5893a64bda3de06721534c"

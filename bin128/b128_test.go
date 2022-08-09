@@ -1,4 +1,4 @@
-package u128
+package bin128
 
 import (
 	"testing"

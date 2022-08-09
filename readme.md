@@ -18,8 +18,8 @@ Extra:
 - `logging`: logging interface.
 - `slices`: slice utilities.
 - `tests`: test interfaces and utilities.
-- `u128`: binary 128-bit value.
-- `u256`: binary 256-bit value.
+- `bin128`: binary 128-bit value.
+- `bin256`: binary 256-bit value.
 
 ---
 

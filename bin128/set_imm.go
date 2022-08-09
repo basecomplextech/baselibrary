@@ -1,18 +1,18 @@
-package u128
+package bin128
 
-// ImmutableSet is an immutable set of u128 values.
+// ImmutableSet is an immutable set of bin128 values.
 type ImmutableSet struct {
 	items Set
 }
 
 // NewImmutableSet returns a new immutable set.
-func NewImmutableSet(uu ...U128) *ImmutableSet {
+func NewImmutableSet(uu ...B128) *ImmutableSet {
 	items := NewSet(uu...)
 	return &ImmutableSet{items}
 }
 
 // Add returns a set clone with added items.
-func (s *ImmutableSet) Add(uu ...U128) *ImmutableSet {
+func (s *ImmutableSet) Add(uu ...B128) *ImmutableSet {
 	items := s.items.Clone()
 	items.Add(uu...)
 
@@ -20,7 +20,7 @@ func (s *ImmutableSet) Add(uu ...U128) *ImmutableSet {
 }
 
 // Remove returns a set clone without removed items.
-func (s *ImmutableSet) Remove(uu ...U128) *ImmutableSet {
+func (s *ImmutableSet) Remove(uu ...B128) *ImmutableSet {
 	items := s.items.Clone()
 	items.Remove(uu...)
 
@@ -28,7 +28,7 @@ func (s *ImmutableSet) Remove(uu ...U128) *ImmutableSet {
 }
 
 // Contains returns whether a value is present in the set.
-func (s *ImmutableSet) Contains(u U128) bool {
+func (s *ImmutableSet) Contains(u B128) bool {
 	return s.items.Contains(u)
 }
 
@@ -44,6 +44,6 @@ func (s *ImmutableSet) ToSet() Set {
 }
 
 // ToSlice returns a slice with this set values.
-func (s *ImmutableSet) ToSlice() []U128 {
+func (s *ImmutableSet) ToSlice() []B128 {
 	return s.items.ToSlice()
 }

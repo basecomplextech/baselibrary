@@ -1,12 +1,12 @@
-package u128
+package bin128
 
 import "sort"
 
-// Set is a set of u128 values.
-type Set map[U128]struct{}
+// Set is a set of bin128 values.
+type Set map[B128]struct{}
 
 // NewSet returns a new set.
-func NewSet(uu ...U128) Set {
+func NewSet(uu ...B128) Set {
 	set := make(Set, len(uu))
 	for _, u := range uu {
 		set.Add(u)
@@ -23,14 +23,14 @@ func cloneSet(s0 Set) Set {
 }
 
 // Add adds values to the set.
-func (s Set) Add(uu ...U128) {
+func (s Set) Add(uu ...B128) {
 	for _, u := range uu {
 		s[u] = struct{}{}
 	}
 }
 
 // Remove removes values from the set.
-func (s Set) Remove(uu ...U128) {
+func (s Set) Remove(uu ...B128) {
 	for _, u := range uu {
 		delete(s, u)
 	}
@@ -42,14 +42,14 @@ func (s Set) Clone() Set {
 }
 
 // Contains returns whether a value is present in the set.
-func (s Set) Contains(u U128) bool {
+func (s Set) Contains(u B128) bool {
 	_, ok := s[u]
 	return ok
 }
 
 // ToSlice returns a slice with this set values.
-func (s Set) ToSlice() []U128 {
-	vv := make([]U128, 0, len(s))
+func (s Set) ToSlice() []B128 {
+	vv := make([]B128, 0, len(s))
 	for v := range s {
 		vv = append(vv, v)
 	}

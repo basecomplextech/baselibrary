@@ -1,11 +1,11 @@
-package u256
+package bin256
 
 import "sort"
 
-// Set is a set of u256 values.
-type Set map[U256]struct{}
+// Set is a set of bin256 values.
+type Set map[B256]struct{}
 
-func NewSet(uu ...U256) Set {
+func NewSet(uu ...B256) Set {
 	set := make(Set, len(uu))
 	for _, u := range uu {
 		set.Add(u)
@@ -21,7 +21,7 @@ func cloneSet(s0 Set) Set {
 	return s1
 }
 
-func (s Set) Add(u U256) {
+func (s Set) Add(u B256) {
 	s[u] = struct{}{}
 }
 
@@ -29,13 +29,13 @@ func (s Set) Clone() Set {
 	return cloneSet(s)
 }
 
-func (s Set) Contains(u U256) bool {
+func (s Set) Contains(u B256) bool {
 	_, ok := s[u]
 	return ok
 }
 
-func (s Set) Intersect(uu ...U256) []U256 {
-	result := make([]U256, 0, len(uu))
+func (s Set) Intersect(uu ...B256) []B256 {
+	result := make([]B256, 0, len(uu))
 
 	for _, u := range uu {
 		if s.Contains(u) {
@@ -46,12 +46,12 @@ func (s Set) Intersect(uu ...U256) []U256 {
 	return result
 }
 
-func (s Set) Delete(u U256) {
+func (s Set) Delete(u B256) {
 	delete(s, u)
 }
 
-func (s Set) Slice() []U256 {
-	vv := make([]U256, 0, len(s))
+func (s Set) Slice() []B256 {
+	vv := make([]B256, 0, len(s))
 	for v := range s {
 		vv = append(vv, v)
 	}
