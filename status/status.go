@@ -3,11 +3,13 @@ package status
 import "fmt"
 
 var (
-	OK = New(CodeOK, "")
+	OK     = New(CodeOK, "")
+	None   = New(CodeNone, "")
+	Wait   = New(CodeWait, "")
+	Closed = New(CodeClosed, "")
 
 	Start = New(CodeStart, "")
 	End   = New(CodeEnd, "")
-	Wait  = New(CodeWait, "")
 
 	Cancelled = New(CodeCancelled, "")
 	Timeout   = New(CodeTimeout, "")

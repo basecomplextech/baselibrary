@@ -8,6 +8,14 @@ func OKf(format string, a ...interface{}) Status {
 	return Status{Code: CodeOK, Text: text}
 }
 
+// None
+
+// Nonef formats a message and returns a none status.
+func Nonef(format string, a ...interface{}) Status {
+	text := fmt.Sprintf(format, a...)
+	return Status{Code: CodeNone, Text: text}
+}
+
 // Terminal
 
 // Terminal returns a terminal status.

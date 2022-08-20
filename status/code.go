@@ -10,6 +10,12 @@ const (
 	// CodeOK indicates that an operation completed successfully.
 	CodeOK Code = "ok"
 
+	// CodeNone indicates that no status code is available.
+	CodeNone Code = "none"
+
+	// CodeClosed indicates that an object is closed and cannot be used anymore.
+	CodeClosed Code = "closed"
+
 	// CodeTerminal indicates that an operation or a state is terminal and cannot be continued.
 	CodeTerminal Code = "terminal"
 )
