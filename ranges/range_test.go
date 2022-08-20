@@ -1,9 +1,9 @@
 package ranges
 
 import (
-	"bytes"
 	"testing"
 
+	"github.com/epochtimeout/baselibrary/compare"
 	"github.com/zeebo/assert"
 )
 
@@ -15,17 +15,14 @@ func TestRange_Contains__should_return_whether_key_is_inside_this_range(t *testi
 		End:   7,
 	}
 
-	compare := func(a, b int) int {
-		return a - b
-	}
-
-	assert.False(t, r.Contains(0, compare))
-	assert.False(t, r.Contains(4, compare))
-	assert.True(t, r.Contains(5, compare))
-	assert.True(t, r.Contains(6, compare))
-	assert.True(t, r.Contains(7, compare))
-	assert.False(t, r.Contains(8, compare))
-	assert.False(t, r.Contains(10, compare))
+	cmp := compare.Int
+	assert.False(t, r.Contains(0, cmp))
+	assert.False(t, r.Contains(4, cmp))
+	assert.True(t, r.Contains(5, cmp))
+	assert.True(t, r.Contains(6, cmp))
+	assert.True(t, r.Contains(7, cmp))
+	assert.False(t, r.Contains(8, cmp))
+	assert.False(t, r.Contains(10, cmp))
 }
 
 // Overlaps
@@ -36,20 +33,17 @@ func TestRange_Overlaps__should_return_whether_another_range_overlaps_this_range
 		End:   8,
 	}
 
-	compare := func(a, b int) int {
-		return a - b
-	}
+	cmp := compare.Int
+	assert.False(t, r0.Overlaps(Range[int]{0, 4}, cmp))
+	assert.True(t, r0.Overlaps(Range[int]{0, 5}, cmp))
+	assert.True(t, r0.Overlaps(Range[int]{5, 5}, cmp))
+	assert.True(t, r0.Overlaps(Range[int]{5, 8}, cmp))
+	assert.True(t, r0.Overlaps(Range[int]{6, 7}, cmp))
+	assert.True(t, r0.Overlaps(Range[int]{8, 10}, cmp))
+	assert.False(t, r0.Overlaps(Range[int]{9, 10}, cmp))
 
-	assert.False(t, r0.Overlaps(Range[int]{0, 4}, compare))
-	assert.True(t, r0.Overlaps(Range[int]{0, 5}, compare))
-	assert.True(t, r0.Overlaps(Range[int]{5, 5}, compare))
-	assert.True(t, r0.Overlaps(Range[int]{5, 8}, compare))
-	assert.True(t, r0.Overlaps(Range[int]{6, 7}, compare))
-	assert.True(t, r0.Overlaps(Range[int]{8, 10}, compare))
-	assert.False(t, r0.Overlaps(Range[int]{9, 10}, compare))
-
-	assert.True(t, r0.Overlaps(Range[int]{0, 10}, compare))
-	assert.True(t, r0.Overlaps(Range[int]{4, 9}, compare))
+	assert.True(t, r0.Overlaps(Range[int]{0, 10}, cmp))
+	assert.True(t, r0.Overlaps(Range[int]{4, 9}, cmp))
 }
 
 // Inside
@@ -60,18 +54,15 @@ func TestRange_Inside(t *testing.T) {
 		End:   7,
 	}
 
-	compare := func(a, b int) int {
-		return a - b
-	}
+	cmp := compare.Int
+	assert.True(t, r0.Inside(Range[int]{3, 7}, cmp))
+	assert.True(t, r0.Inside(Range[int]{2, 8}, cmp))
+	assert.True(t, r0.Inside(Range[int]{0, 10}, cmp))
 
-	assert.True(t, r0.Inside(Range[int]{3, 7}, compare))
-	assert.True(t, r0.Inside(Range[int]{2, 8}, compare))
-	assert.True(t, r0.Inside(Range[int]{0, 10}, compare))
-
-	assert.False(t, r0.Inside(Range[int]{0, 0}, compare))
-	assert.False(t, r0.Inside(Range[int]{4, 6}, compare))
-	assert.False(t, r0.Inside(Range[int]{2, 6}, compare))
-	assert.False(t, r0.Inside(Range[int]{4, 8}, compare))
+	assert.False(t, r0.Inside(Range[int]{0, 0}, cmp))
+	assert.False(t, r0.Inside(Range[int]{4, 6}, cmp))
+	assert.False(t, r0.Inside(Range[int]{2, 6}, cmp))
+	assert.False(t, r0.Inside(Range[int]{4, 8}, cmp))
 }
 
 // Expand
@@ -89,7 +80,7 @@ func TestRange_Expand__should_expand_range(t *testing.T) {
 
 func TestExpandBinary__should_expand_binary_range_skip_nil_values(t *testing.T) {
 	r := Range[[]byte]{[]byte{3}, []byte{7}}
-	cmp := bytes.Compare
+	cmp := compare.Bytes
 
 	assert.Equal(t,
 		Range[[]byte]{[]byte{3}, []byte{7}},
