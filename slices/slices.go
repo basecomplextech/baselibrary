@@ -7,6 +7,13 @@ import (
 	"github.com/epochtimeout/baselibrary/constraints"
 )
 
+// Clone returns a copy of the slice.
+func Clone[T any](s []T) []T {
+	s1 := make([]T, len(s))
+	copy(s1, s)
+	return s1
+}
+
 // Reverse reverse the slice in place.
 func Reverse[T any](s []T) {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
