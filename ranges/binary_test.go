@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/epochtimeout/baselibrary/compare"
-	"github.com/zeebo/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 // ExpandBinary
