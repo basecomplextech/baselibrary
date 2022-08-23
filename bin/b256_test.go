@@ -1,4 +1,4 @@
-package bin128
+package bin
 
 import (
 	"testing"
@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseString(t *testing.T) {
-	u0 := Random()
+func TestParseString256(t *testing.T) {
+	u0 := Random256()
 	s := u0.String()
 
-	u1, err := ParseString(s)
+	u1, err := ParseString256(s)
 	if err != nil {
 		t.Fatal(err)
 	}

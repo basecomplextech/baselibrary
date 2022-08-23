@@ -11,6 +11,7 @@ Core:
 - `try`: try/recover.
 
 Extra:
+- `bin`: binary bin128 and bin256 values.
 - `constraints`: generic constraints.
 - `crypto`: crypto algorithms.
 - `encoding`: binary encodings.
@@ -19,7 +20,6 @@ Extra:
 - `slices`: slice utilities.
 - `tests`: test interfaces and utilities.
 - `bin128`: binary 128-bit value.
-- `bin256`: binary 256-bit value.
 
 ---
 
