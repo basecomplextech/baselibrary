@@ -12,8 +12,8 @@ type Count interface {
 // Retain retains and returns a reference.
 //
 // Usage:
-//	tree.table = Retain(table)
 //
+//	tree.table = Retain(table)
 func Retain[C Count](count C) C {
 	count.Retain()
 	return count
@@ -24,15 +24,6 @@ func RetainAll[C Count](counts ...C) {
 	for _, count := range counts {
 		count.Retain()
 	}
-}
-
-// ReleaseNil releases a reference when nonnil, ignores a nil reference.
-func ReleaseNil(c Count) {
-	if c == nil {
-		return
-	}
-
-	c.Release()
 }
 
 // ReleaseAll releases all references.
@@ -47,10 +38,9 @@ func ReleaseAll[C Count](counts ...C) {
 // Usage:
 //
 //	tbl := table.Clone()
-//  defer tbl.Release()
-//  ...
+//	defer tbl.Release()
+//	...
 //	s.table = Swap(s.table, tbl)
-//
 func Swap[C Count](old C, new C) C {
 	new.Retain()
 	old.Release()
@@ -62,9 +52,8 @@ func Swap[C Count](old C, new C) C {
 // Usage:
 //
 //	tbl := newTable()
-//  ...
+//	...
 //	s.table = SwapNoRetain(s.table, tbl)
-//
 func SwapNoRetain[C Count](old C, new C) C {
 	old.Release()
 	return new
