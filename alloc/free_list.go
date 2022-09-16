@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	freeListAllocAttempts   = 3
-	freeListDeallocAttempts = 3
+	freeListGetAttempts = 5
+	freeListPutAttempts = 5
 )
 
 // FreeList keeps a linked list of free objects in the arena.
@@ -41,7 +41,7 @@ func newFreeList[T any](arena *Arena) *FreeList[T] {
 func (l *FreeList[T]) Get() *T {
 	var zero T
 
-	for i := 0; i < freeListAllocAttempts; i++ {
+	for i := 0; i < freeListGetAttempts; i++ {
 		// load current item
 		free := atomic.LoadUintptr(&l.free)
 		if free == 0 {
@@ -74,7 +74,7 @@ func (l *FreeList[T]) Put(ptr *T) {
 	// cast it into item
 	item := (*freeListItem)(unsafe.Pointer(ptr))
 
-	for i := 0; i < freeListDeallocAttempts; i++ {
+	for i := 0; i < freeListPutAttempts; i++ {
 		// load current item
 		free := atomic.LoadUintptr(&l.free)
 		item.next = free
