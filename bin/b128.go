@@ -24,12 +24,12 @@ func Bin128FromInt64(v int64) Bin128 {
 	return b
 }
 
-// Compare compares two IDs.
+// Compare compares two values.
 func (b0 Bin128) Compare(b1 Bin128) int {
 	return bytes.Compare(b0[:], b1[:])
 }
 
-// Less returns whether the current ID is less than another.
+// Less returns whether the current value is less than another.
 func (b0 Bin128) Less(b1 Bin128) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
 }
@@ -46,12 +46,12 @@ func (b Bin128) String() string {
 	return string(buf)
 }
 
-// Marshal marshals the ID to a 16-byte array.
+// Marshal marshals the value to a 16-byte array.
 func (b Bin128) Marshal() ([]byte, error) {
 	return b[:], nil
 }
 
-// MarshalTo marshals the ID to a 16-byte array.
+// MarshalTo marshals the value to a 16-byte array.
 func (b Bin128) MarshalTo(buf []byte) (n int, err error) {
 	copy(buf, b[:])
 	return len(b), nil
@@ -68,13 +68,13 @@ func (b *Bin128) Unmarshal(buf []byte) error {
 	return nil
 }
 
-// MarshalJSON marshals the ID to a JSON string.
+// MarshalJSON marshals the value to a JSON string.
 func (b Bin128) MarshalJSON() ([]byte, error) {
 	s := b.String()
 	return json.Marshal(s)
 }
 
-// MarshalJSON parses the ID from a JSON string.
+// MarshalJSON parses the value from a JSON string.
 func (b *Bin128) UnmarshalJSON(buf []byte) error {
 	var s string
 	if err := json.Unmarshal(buf, &s); err != nil {

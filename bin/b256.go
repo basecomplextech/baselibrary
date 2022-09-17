@@ -32,17 +32,17 @@ func (b Bin256) Bytes() []byte {
 	return buf
 }
 
-// Compare compares two IDs.
+// Compare compares two values.
 func (b0 Bin256) Compare(b1 Bin256) int {
 	return bytes.Compare(b0[:], b1[:])
 }
 
-// Equal returns whether two IDs are equal.
+// Equal returns whether two values are equal.
 func (b0 Bin256) Equal(b1 Bin256) bool {
 	return b0 == b1
 }
 
-// Less returns whether the current ID is less than another.
+// Less returns whether the current value is less than another.
 func (b0 Bin256) Less(b1 Bin256) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
 }
@@ -59,12 +59,12 @@ func (b Bin256) String() string {
 	return string(buf)
 }
 
-// Marshal marshals the ID to a 32-byte array.
+// Marshal marshals the value to a 32-byte array.
 func (b Bin256) Marshal() ([]byte, error) {
 	return b[:], nil
 }
 
-// MarshalTo marshals the ID to a 32-byte array.
+// MarshalTo marshals the value to a 32-byte array.
 func (b Bin256) MarshalTo(buf []byte) (n int, err error) {
 	copy(buf, b[:])
 	return len(b), nil
@@ -81,13 +81,13 @@ func (b *Bin256) Unmarshal(buf []byte) error {
 	return nil
 }
 
-// MarshalJSON marshals the ID to a JSON string.
+// MarshalJSON marshals the value to a JSON string.
 func (b Bin256) MarshalJSON() ([]byte, error) {
 	s := b.String()
 	return json.Marshal(s)
 }
 
-// MarshalJSON parses the ID from a JSON string.
+// MarshalJSON parses the value from a JSON string.
 func (b *Bin256) UnmarshalJSON(buf []byte) error {
 	var s string
 	if err := json.Unmarshal(buf, &s); err != nil {
