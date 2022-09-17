@@ -1,19 +1,19 @@
 package blake3
 
 import (
-	"github.com/epochtimeout/baselibrary/bin"
+	"github.com/epochtimeout/baselibrary/types"
 	"github.com/zeebo/blake3"
 )
 
 // SumBin128 returns a Blake3 hash truncated from 64 bytes to bin128.
-func SumBin128(b []byte) bin.Bin128 {
+func SumBin128(b []byte) types.Bin128 {
 	out := blake3.Sum512(b)
-	sum := bin.Bin128{}
+	sum := types.Bin128{}
 	copy(sum[:], out[:16])
 	return sum
 }
 
-var _ (bin.HashBin128) = (*HashBin128)(nil)
+var _ (types.HashBin128) = (*HashBin128)(nil)
 
 // HashBin128 computes a Blake3 hash and truncates it from 64 bytes to bin128.
 type HashBin128 struct {
@@ -35,11 +35,11 @@ func (h *HashBin128) Write(p []byte) (int, error) {
 }
 
 // SumBin128 returns the current hash as bin128.
-func (h *HashBin128) SumBin128() bin.Bin128 {
+func (h *HashBin128) SumBin128() types.Bin128 {
 	out := [64]byte{}
 	h.h.Sum(out[:0])
 
-	sum := bin.Bin128{}
+	sum := types.Bin128{}
 	copy(sum[:], out[:16])
 	return sum
 }

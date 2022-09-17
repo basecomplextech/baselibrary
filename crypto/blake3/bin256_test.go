@@ -3,7 +3,7 @@ package blake3
 import (
 	"testing"
 
-	"github.com/epochtimeout/baselibrary/bin"
+	"github.com/epochtimeout/baselibrary/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/zeebo/blake3"
 )
@@ -14,7 +14,7 @@ func TestSumBin256__should_compute_blake3_hash(t *testing.T) {
 	u := SumBin256(b)
 
 	assert.Equal(t, h[:], u[:])
-	assert.NotEqual(t, bin.Bin256{}, u)
+	assert.NotEqual(t, types.Bin256{}, u)
 }
 
 func TestHashBin256__should_compute_blake3_hash(t *testing.T) {
@@ -26,5 +26,5 @@ func TestHashBin256__should_compute_blake3_hash(t *testing.T) {
 	u := hash.SumBin256()
 
 	assert.Equal(t, h[:], u[:])
-	assert.NotEqual(t, bin.Bin256{}, u)
+	assert.NotEqual(t, types.Bin256{}, u)
 }

@@ -1,4 +1,4 @@
-package bin
+package types
 
 import (
 	"testing"
