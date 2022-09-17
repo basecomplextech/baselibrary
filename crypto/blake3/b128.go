@@ -13,7 +13,7 @@ func SumBin128(b []byte) bin.Bin128 {
 	return sum
 }
 
-var _ (bin.Hash128) = (*HashBin128)(nil)
+var _ (bin.HashBin128) = (*HashBin128)(nil)
 
 // HashBin128 computes a Blake3 hash and truncates it from 64 bytes to bin128.
 type HashBin128 struct {

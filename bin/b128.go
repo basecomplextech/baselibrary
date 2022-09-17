@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	ByteLen128 = 16
-	CharLen128 = (ByteLen128 * 2) // 341a7d60bc5893a64bda3de06721534c
+	Bin128ByteLen = 16
+	Bin128CharLen = (Bin128ByteLen * 2) // 341a7d60bc5893a64bda3de06721534c
 )
 
 // Bin128 is a 128-bit value.
-type Bin128 [ByteLen128]byte
+type Bin128 [Bin128ByteLen]byte
 
 // Bin128FromInt64 converts an int64 into a bin128.
 func Bin128FromInt64(v int64) Bin128 {
@@ -41,7 +41,7 @@ func (b Bin128) Size() int {
 
 // String returns a 32-char lower-case hex-encoded string.
 func (b Bin128) String() string {
-	buf := make([]byte, CharLen128)
+	buf := make([]byte, Bin128CharLen)
 	hex.Encode(buf, b[:])
 	return string(buf)
 }
@@ -59,7 +59,7 @@ func (b Bin128) MarshalTo(buf []byte) (n int, err error) {
 
 // Unmarshal parses a 16-byte array.
 func (b *Bin128) Unmarshal(buf []byte) error {
-	b0, err := Parse128(buf)
+	b0, err := ParseBin128(buf)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (b *Bin128) UnmarshalJSON(buf []byte) error {
 		return err
 	}
 
-	b0, err := ParseString128(s)
+	b0, err := ParseStringBin128(s)
 	if err != nil {
 		return err
 	}

@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	ByteLen256 = 32
-	CharLen256 = (ByteLen256 * 2)
+	Bin256ByteLen = 32
+	Bin256CharLen = (Bin256ByteLen * 2)
 )
 
 // Bin256 is a 32 byte value.
-type Bin256 [ByteLen256]byte
+type Bin256 [Bin256ByteLen]byte
 
 // Bin256FromInt64 converts an int64 into a big endian Bin256.
 func Bin256FromInt64(v int64) Bin256 {
@@ -54,7 +54,7 @@ func (b Bin256) Size() int {
 
 // String returns a 32-char lower-case hex-encoded string.
 func (b Bin256) String() string {
-	buf := make([]byte, CharLen256)
+	buf := make([]byte, Bin256CharLen)
 	hex.Encode(buf, b[:])
 	return string(buf)
 }
@@ -72,7 +72,7 @@ func (b Bin256) MarshalTo(buf []byte) (n int, err error) {
 
 // Unmarshal parses a 32-byte array.
 func (b *Bin256) Unmarshal(buf []byte) error {
-	b0, err := Parse256(buf)
+	b0, err := ParseBin256(buf)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (b *Bin256) UnmarshalJSON(buf []byte) error {
 		return err
 	}
 
-	b0, err := ParseString256(s)
+	b0, err := ParseStringBin256(s)
 	if err != nil {
 		return err
 	}

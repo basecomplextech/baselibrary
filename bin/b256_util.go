@@ -11,42 +11,42 @@ import (
 	"time"
 )
 
-var Pattern256 = regexp.MustCompile(`^[0-9A-Za-z]{64}$`)
+var Bin256Pattern = regexp.MustCompile(`^[0-9A-Za-z]{64}$`)
 
 // Random
 
-// Random256 returns a random bin256.
-func Random256() Bin256 {
+// RandomBin256 returns a random bin256.
+func RandomBin256() Bin256 {
 	return gen256.random()
 }
 
-// TimeRandom256 returns a time-random bin256.
-func TimeRandom256() Bin256 {
+// TimeRandomBin256 returns a time-random bin256.
+func TimeRandomBin256() Bin256 {
 	return gen256.timeRandom()
 }
 
 // Match
 
-// Match256 returns true if a byte string matches a bin256 pattern.
-func Match256(s []byte) bool {
-	return Pattern256.Match(s)
+// MatchBin256 returns true if a byte string matches a bin256 pattern.
+func MatchBin256(s []byte) bool {
+	return Bin256Pattern.Match(s)
 }
 
-// MatchString256 returns true if a string matches a bin256 pattern.
-func MatchString256(s string) bool {
-	return Pattern256.MatchString(s)
+// MatchStringBin256 returns true if a string matches a bin256 pattern.
+func MatchStringBin256(s string) bool {
+	return Bin256Pattern.MatchString(s)
 }
 
 // Parse
 
-// Parse256 parses a bin256 from a 32-byte array.
-func Parse256(b []byte) (Bin256, error) {
+// ParseBin256 parses a bin256 from a 32-byte array.
+func ParseBin256(b []byte) (Bin256, error) {
 	switch {
 	case b == nil:
 		return Bin256{}, nil
 	case len(b) == 0:
 		return Bin256{}, nil
-	case len(b) != ByteLen256:
+	case len(b) != Bin256ByteLen:
 		return Bin256{}, errors.New("bin256: invalid bin256 length")
 	}
 
@@ -55,19 +55,19 @@ func Parse256(b []byte) (Bin256, error) {
 	return u, nil
 }
 
-// ParseString256 parses a bin256 from 64-char string.
-func ParseString256(s string) (Bin256, error) {
-	return ParseByteString256([]byte(s))
+// ParseStringBin256 parses a bin256 from 64-char string.
+func ParseStringBin256(s string) (Bin256, error) {
+	return ParseByteStringBin256([]byte(s))
 }
 
-// ParseByteString256 parses a bin256 from 64-char byte string.
-func ParseByteString256(s []byte) (Bin256, error) {
+// ParseByteStringBin256 parses a bin256 from 64-char byte string.
+func ParseByteStringBin256(s []byte) (Bin256, error) {
 	switch {
 	case s == nil:
 		return Bin256{}, nil
 	case len(s) == 0:
 		return Bin256{}, nil
-	case len(s) != CharLen256:
+	case len(s) != Bin256CharLen:
 		return Bin256{}, errors.New("bin256: invalid bin256 length")
 	}
 
@@ -79,9 +79,9 @@ func ParseByteString256(s []byte) (Bin256, error) {
 	return u, nil
 }
 
-// MustParseString256 parses a bin256 from 32-char string or panics.
-func MustParseString256(s string) Bin256 {
-	u, err := ParseString256(s)
+// MustParseStringBin256 parses a bin256 from 32-char string or panics.
+func MustParseStringBin256(s string) Bin256 {
+	u, err := ParseStringBin256(s)
 	if err != nil {
 		panic(err)
 	}

@@ -2,8 +2,8 @@ package bin
 
 import "io"
 
-// Hash128 is the common interface for hash functions which return hashes as bin128.
-type Hash128 interface {
+// HashBin128 is a common interface for hash functions which return hashes as bin128.
+type HashBin128 interface {
 	io.Writer
 
 	// SumBin128 returns the current hash as bin128.
