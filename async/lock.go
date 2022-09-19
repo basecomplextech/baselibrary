@@ -16,7 +16,6 @@ var _ sync.Locker = (Lock)(nil)
 //		return status.Cancelled
 //	}
 //	defer lock.Unlock()
-//
 type Lock chan struct{}
 
 // NewLock returns a new unlocked lock.

@@ -1,22 +1,16 @@
 package async
 
 import (
-	"sync"
-
 	"github.com/epochtimeout/baselibrary/errors2"
 	"github.com/epochtimeout/baselibrary/status"
 )
 
-// Routine executes a function in a goroutine, recovers on panics, and returns a future result.
-type Routine[T any] interface {
-	Result[T]
+// Routine is a future alias which indicates that this is an async computation in a gorooutine.
+// Commented out until Go supports generic type aliases.
+// type Routine[T] = Future[T]
 
-	// Stop requests the routine to stop and returns the wait channel.
-	Stop() <-chan struct{}
-}
-
-// Run runs a function in a routine and returns its status, recovers on panics.
-func Run(fn func(stop <-chan struct{}) status.Status) Routine[struct{}] {
+// Run runs a function in a goroutine, recovers on panics, and returns its status as a future.
+func Run(fn func(stop <-chan struct{}) status.Status) Future[struct{}] {
 	r := newRoutine[struct{}]()
 
 	go func() {
@@ -38,8 +32,8 @@ func Run(fn func(stop <-chan struct{}) status.Status) Routine[struct{}] {
 	return r
 }
 
-// Execute executes a function in a routine and returns its result and status, recovers on panics.
-func Execute[T any](fn func(stop <-chan struct{}) (T, status.Status)) Routine[T] {
+// Execute executes a function in a goroutine, recovers on panics, and returns its result as a future.
+func Execute[T any](fn func(stop <-chan struct{}) (T, status.Status)) Future[T] {
 	r := newRoutine[T]()
 
 	go func() {
@@ -61,68 +55,24 @@ func Execute[T any](fn func(stop <-chan struct{}) (T, status.Status)) Routine[T]
 	return r
 }
 
-// ToFuture returns a routine as a future.
-func ToFuture[T any](r Routine[T]) Future[T] {
-	return newRoutineFuture(r)
-}
-
-// StopAll stops all routines.
-func StopAll[T any](routines ...Routine[T]) {
-	for _, r := range routines {
-		r.Stop()
-	}
-}
-
-// StopWait stops a routine and awaits its result.
-func StopWait[T any](r Routine[T]) (T, status.Status) {
-	<-r.Stop()
-	return r.Result()
-}
-
 // internal
 
 type routine[T any] struct {
-	mu sync.Mutex
+	result[T]
 
-	done   bool
-	result T
-	status status.Status
-
-	wait  chan struct{}
 	stop  chan struct{}
 	stop_ bool
 }
 
 func newRoutine[T any]() *routine[T] {
 	return &routine[T]{
-		wait: make(chan struct{}),
-		stop: make(chan struct{}),
+		result: newResult[T](),
+		stop:   make(chan struct{}),
 	}
 }
 
-// Wait awaits the result.
-func (r *routine[T]) Wait() <-chan struct{} {
-	return r.wait
-}
-
-// Result returns a value and a status or zero.
-func (r *routine[T]) Result() (T, status.Status) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	return r.result, r.status
-}
-
-// Status returns a status.
-func (r *routine[T]) Status() status.Status {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	return r.status
-}
-
-// Stop requests the routine to stop and returns its wait channel.
-func (r *routine[T]) Stop() <-chan struct{} {
+// Cancel tries to cancel the routine and returns the wait channel.
+func (r *routine[T]) Cancel() <-chan struct{} {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -140,33 +90,4 @@ func (r *routine[T]) Stop() <-chan struct{} {
 func (r *routine[T]) reject(st status.Status) {
 	var result T
 	r.complete(result, st)
-}
-
-func (r *routine[T]) complete(result T, st status.Status) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.done {
-		return
-	}
-
-	r.done = true
-	r.result = result
-	r.status = st
-	close(r.wait)
-}
-
-// routine future
-
-type routineFuture[T any] struct {
-	Routine[T]
-}
-
-func newRoutineFuture[T any](r Routine[T]) *routineFuture[T] {
-	return &routineFuture[T]{r}
-}
-
-// Cancel tries to cancel the future.
-func (r *routineFuture[T]) Cancel() {
-	r.Routine.Stop()
 }

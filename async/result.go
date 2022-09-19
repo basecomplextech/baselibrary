@@ -1,54 +1,72 @@
 package async
 
 import (
-	"reflect"
+	"sync"
 
 	"github.com/epochtimeout/baselibrary/status"
 )
 
-// Result is a generic future result interface.
+// Result is an abstract async result.
 type Result[T any] interface {
-	// Wait awaits the result.
+	// Wait returns a channel which is closed when the result is available.
 	Wait() <-chan struct{}
-
-	// Result returns a value and a status or zero.
-	Result() (T, status.Status)
 
 	// Status returns a status.
 	Status() status.Status
+
+	// Result returns a value and a status.
+	Result() (T, status.Status)
 }
 
-// Any awaits for any result and returns its index or -1 when no more results.
-func Any[T any](stop <-chan struct{}, results ...Result[T]) (index int, st status.Status) {
-	if len(results) == 0 {
-		return -1, status.OK
+// internal
+
+type result[T any] struct {
+	mu     sync.Mutex
+	done   bool
+	result T
+	status status.Status
+	wait   chan struct{}
+}
+
+func newResult[T any]() result[T] {
+	return result[T]{
+		wait: make(chan struct{}),
+	}
+}
+
+// Wait returns a channel which is closed when the result is available.
+func (r *result[T]) Wait() <-chan struct{} {
+	return r.wait
+}
+
+// Status returns a status.
+func (r *result[T]) Status() status.Status {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	return r.status
+}
+
+// Result returns a value and a status.
+func (r *result[T]) Result() (T, status.Status) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	return r.result, r.status
+}
+
+func (r *result[T]) complete(result T, status status.Status) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.done {
+		return false
 	}
 
-	// make stop case
-	cases := make([]reflect.SelectCase, 0, len(results)+1)
-	stop_ := reflect.SelectCase{
-		Dir:  reflect.SelectRecv,
-		Chan: reflect.ValueOf(stop),
-	}
-	cases = append(cases, stop_)
+	r.result = result
+	r.status = status
+	r.done = true
 
-	// make result cases
-	for _, result := range results {
-		wait := result.Wait()
-		case_ := reflect.SelectCase{
-			Dir:  reflect.SelectRecv,
-			Chan: reflect.ValueOf(wait),
-		}
-		cases = append(cases, case_)
-	}
-
-	// select case
-	i, _, _ := reflect.Select(cases)
-	if i == 0 {
-		return 0, status.Cancelled
-	}
-
-	// return index
-	index = i - 1
-	return index, status.OK
+	close(r.wait)
+	return true
 }

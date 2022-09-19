@@ -9,9 +9,9 @@ import (
 )
 
 func TestPromise_Resolve__should_complete_future(t *testing.T) {
-	p := Pending[string]()
+	p := NewPromise[string]()
 
-	ok := p.Resolve("hello")
+	ok := p.Complete("hello", status.OK)
 	require.True(t, ok)
 
 	result, st := p.Result()
@@ -21,10 +21,10 @@ func TestPromise_Resolve__should_complete_future(t *testing.T) {
 }
 
 func TestPromise_Reject__should_fail_future(t *testing.T) {
-	p := Pending[string]()
+	p := NewPromise[string]()
 	st := status.Error("test")
 
-	ok := p.Reject(st)
+	ok := p.Complete("", st)
 	require.True(t, ok)
 
 	result, st1 := p.Result()
@@ -33,7 +33,7 @@ func TestPromise_Reject__should_fail_future(t *testing.T) {
 }
 
 func TestPromise_Complete__should_resolve_promise(t *testing.T) {
-	p := Pending[string]()
+	p := NewPromise[string]()
 
 	ok := p.Complete("hello", status.OK)
 	require.True(t, ok)
@@ -44,7 +44,7 @@ func TestPromise_Complete__should_resolve_promise(t *testing.T) {
 }
 
 func TestPromise_Complete__should_reject_promise(t *testing.T) {
-	p := Pending[string]()
+	p := NewPromise[string]()
 	st := status.Error("test")
 
 	ok := p.Complete("failed", st)
