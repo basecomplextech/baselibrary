@@ -7,7 +7,7 @@ import (
 	"unsafe"
 )
 
-func BenchmarkAllocInt64(b *testing.B) {
+func BenchmarkArena_AllocInt64(b *testing.B) {
 	a := newArena()
 	size := unsafe.Sizeof(int64(0))
 
@@ -19,7 +19,7 @@ func BenchmarkAllocInt64(b *testing.B) {
 
 	var v *int64
 	for i := 0; i < b.N; i++ {
-		v = Alloc[int64](a)
+		v = ArenaAlloc[int64](a)
 	}
 
 	*v = math.MaxInt64
@@ -36,7 +36,7 @@ func BenchmarkAllocInt64(b *testing.B) {
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
-func BenchmarkAllocStruct(b *testing.B) {
+func BenchmarkArena_AllocStruct(b *testing.B) {
 	type Struct struct {
 		Int8  int8
 		Int16 int16
@@ -55,7 +55,7 @@ func BenchmarkAllocStruct(b *testing.B) {
 
 	var s *Struct
 	for i := 0; i < b.N; i++ {
-		s = Alloc[Struct](a)
+		s = ArenaAlloc[Struct](a)
 		s.Int64 = math.MaxInt64
 		if s.Int64 != math.MaxInt64 {
 			b.Fatal()
@@ -71,7 +71,7 @@ func BenchmarkAllocStruct(b *testing.B) {
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
-func BenchmarkAllocBytes(b *testing.B) {
+func BenchmarkArena_AllocBytes(b *testing.B) {
 	a := newArena()
 	size := 16
 
@@ -83,7 +83,7 @@ func BenchmarkAllocBytes(b *testing.B) {
 
 	var v []byte
 	for i := 0; i < b.N; i++ {
-		v = AllocBytes(a, size)
+		v = a.Bytes(size)
 		if len(v) != size {
 			b.Fatal()
 		}
@@ -98,7 +98,7 @@ func BenchmarkAllocBytes(b *testing.B) {
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
-func BenchmarkAllocSlice(b *testing.B) {
+func BenchmarkArena_AllocSlice(b *testing.B) {
 	a := newArena()
 	n := 4
 	size := n * 4
@@ -111,7 +111,7 @@ func BenchmarkAllocSlice(b *testing.B) {
 
 	var v []int32
 	for i := 0; i < b.N; i++ {
-		v = AllocSlice[int32](a, n)
+		v = ArenaSlice[int32](a, n)
 		if len(v) != 4 {
 			b.Fatal()
 		}
@@ -153,9 +153,9 @@ func BenchmarkArena_Alloc(b *testing.B) {
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
-func BenchmarkFreeList_Get_Put(b *testing.B) {
+func BenchmarkArenaFreeList_Get_Put(b *testing.B) {
 	a := newArena()
-	list := newFreeList[int64](a)
+	list := newArenaFreeList[int64](a)
 	size := 8
 
 	b.ResetTimer()

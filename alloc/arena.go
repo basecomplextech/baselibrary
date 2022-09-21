@@ -1,17 +1,94 @@
 package alloc
 
 import (
-	"reflect"
 	"runtime"
 	"sync/atomic"
 	"unsafe"
-)
 
-const alignment = 8
+	"github.com/epochtimeout/baselibrary/ref"
+)
 
 // Arena allocates objects in internal byte blocks.
 // It is goroutine-safe, but operations on a free arena panic.
-type Arena struct {
+type Arena interface {
+	// Size returns the total arena memory size in bytes.
+	Size() int64
+
+	// Used returns the allocated arena memory size in bytes.
+	Used() int64
+
+	// Allocation
+
+	// Bytes allocates a byte slice with a given capacity in the arena.
+	Bytes(cap int) []byte
+
+	// String returns a string copy allocated in the arena.
+	String(s string) string
+
+	// CopyBytes allocates a byte slice and copies items from b into it.
+	// The slice capacity is len(b).
+	CopyBytes(b []byte) []byte
+
+	// Internal
+
+	// Free frees the arena and releases its memory.
+	Free()
+}
+
+// NewArena returns a new arena with a global heap.
+func NewArena() *ref.R[Arena] {
+	a := newArenaHeap(globalHeap)
+	return ref.Wrap[Arena](a)
+}
+
+// ArenaAlloc allocates a new object and returns a pointer to it.
+//
+// Usage:
+//
+//	var foo *float64
+//	var bar *MyStruct
+//	foo = ArenaAlloc[float64](arena)
+//	bar = ArenaAlloc[MyStruct](arena)
+func ArenaAlloc[T any](a Arena) *T {
+	var zero T
+	size := int(unsafe.Sizeof(zero))
+
+	arena := a.(*arena)
+	ptr := arena.alloc(size)
+	return (*T)(ptr)
+}
+
+// ArenaSlice allocates a new slice of a generic type.
+//
+// Usage:
+//
+//	var foo []MyStruct
+//	foo = ArenaSlice[MyStruct](arena, 16)
+func ArenaSlice[T any](a Arena, cap int) []T {
+	if cap == 0 {
+		return nil
+	}
+
+	var zero T
+	elem := int(unsafe.Sizeof(zero))
+	size := elem * cap
+
+	arena := a.(*arena)
+	ptr := arena.alloc(size)
+	return unsafe.Slice((*T)(ptr), cap)
+}
+
+// ArenaCopySlice allocates a new slice and copies items from src into it.
+// The slice capacity is len(src).
+func ArenaCopySlice[T any](a Arena, src []T) []T {
+	dst := ArenaSlice[T](a, len(src))
+	copy(dst, src)
+	return dst
+}
+
+// internal
+
+type arena struct {
 	heap *heap
 
 	spinlock int32
@@ -19,29 +96,20 @@ type Arena struct {
 	size     int64 // total allocated size
 
 	blocks []*block
-	lists  map[reflect.Type]unsafe.Pointer
-}
-
-// NewArena returns a new arena with a global heap.
-func NewArena() *Arena {
-	return newArenaHeap(globalHeap)
 }
 
 // newArena returns a new arena with a new heap, for tests only.
-func newArena() *Arena {
+func newArena() *arena {
 	return newArenaHeap(newHeap())
 }
 
 // newArenaHeap returns a new arena with a given heap.
-func newArenaHeap(heap *heap) *Arena {
-	return &Arena{
-		heap:  heap,
-		lists: make(map[reflect.Type]unsafe.Pointer),
-	}
+func newArenaHeap(heap *heap) *arena {
+	return &arena{heap: heap}
 }
 
 // Size returns the total arena memory size in bytes.
-func (a *Arena) Size() int64 {
+func (a *arena) Size() int64 {
 	a.lock()
 	defer a.unlock()
 
@@ -49,7 +117,7 @@ func (a *Arena) Size() int64 {
 }
 
 // Used returns the allocated arena memory size in bytes.
-func (a *Arena) Used() int64 {
+func (a *arena) Used() int64 {
 	a.lock()
 	defer a.unlock()
 
@@ -60,8 +128,41 @@ func (a *Arena) Used() int64 {
 	return total
 }
 
+// Allocation
+
+// Bytes allocates a byte slice with a `size` capacity in the arena.
+func (a *arena) Bytes(cap int) []byte {
+	if cap == 0 {
+		return nil
+	}
+
+	ptr := a.alloc(cap)
+	return unsafe.Slice((*byte)(ptr), cap)
+}
+
+// String returns a string copy allocated in the arena.
+func (a *arena) String(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
+
+	b := a.Bytes(len(s))
+	copy(b, s)
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+// CopyBytes allocates a byte slice and copies items from src into it.
+// The slice capacity is len(src).
+func (a *arena) CopyBytes(src []byte) []byte {
+	dst := a.Bytes(len(src))
+	copy(dst, src)
+	return dst
+}
+
+// Internal
+
 // Free frees the arena and releases its memory.
-func (a *Arena) Free() {
+func (a *arena) Free() {
 	a.lock()
 	defer a.unlock()
 
@@ -74,15 +175,16 @@ func (a *Arena) Free() {
 
 	blocks := a.blocks
 	a.blocks = nil
-	a.lists = make(map[reflect.Type]unsafe.Pointer)
 
 	a.heap.freeBlocks(blocks...)
 }
 
-// internal
+// alloc
+
+const arenaAlignment = 8
 
 // alloc allocates data and returns a pointer to it.
-func (a *Arena) alloc(n int) unsafe.Pointer {
+func (a *arena) alloc(n int) unsafe.Pointer {
 	a.lock()
 	defer a.unlock()
 
@@ -103,7 +205,7 @@ func (a *Arena) alloc(n int) unsafe.Pointer {
 		panic("allocation out of block range") // unreachable
 	}
 
-	end += (alignment - (end % alignment)) % alignment
+	end += (arenaAlignment - (end % arenaAlignment)) % arenaAlignment
 	if end > last.cap() {
 		end = last.cap()
 	}
@@ -116,53 +218,7 @@ func (a *Arena) alloc(n int) unsafe.Pointer {
 	return ptr
 }
 
-// allocFreeList allocates a new free list or returns an existing one.
-func allocFreeList[T any](a *Arena) *FreeList[T] {
-	var zero T
-	typ := reflect.TypeOf(zero)
-
-	a.lock()
-	defer a.unlock()
-
-	if a.free {
-		panic("operation on a free arena")
-	}
-
-	// get existing list
-	uptr, ok := a.lists[typ]
-	if ok {
-		return (*FreeList[T])(uptr)
-	}
-
-	// init new list
-	list := newFreeList[T](a)
-	a.lists[typ] = (unsafe.Pointer)(list)
-	return list
-}
-
-// private
-
-func (a *Arena) lock() {
-	for {
-		if atomic.CompareAndSwapInt32(&a.spinlock, 0, 1) {
-			return
-		}
-		runtime.Gosched()
-	}
-}
-
-func (a *Arena) unlock() {
-	atomic.StoreInt32(&a.spinlock, 0)
-}
-
-func (a *Arena) last() *block {
-	if len(a.blocks) == 0 {
-		return nil
-	}
-	return a.blocks[len(a.blocks)-1]
-}
-
-func (a *Arena) allocBlock(n int) *block {
+func (a *arena) allocBlock(n int) *block {
 	// double last block size
 	// limit it to maxBlockSize
 	size := 0
@@ -182,4 +238,26 @@ func (a *Arena) allocBlock(n int) *block {
 	a.blocks = append(a.blocks, block)
 	a.size += int64(block.cap())
 	return block
+}
+
+func (a *arena) last() *block {
+	if len(a.blocks) == 0 {
+		return nil
+	}
+	return a.blocks[len(a.blocks)-1]
+}
+
+// lock
+
+func (a *arena) lock() {
+	for {
+		if atomic.CompareAndSwapInt32(&a.spinlock, 0, 1) {
+			return
+		}
+		runtime.Gosched()
+	}
+}
+
+func (a *arena) unlock() {
+	atomic.StoreInt32(&a.spinlock, 0)
 }
