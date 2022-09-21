@@ -1,8 +1,14 @@
 package alloc
 
-import "github.com/epochtimeout/baselibrary/buffer"
+import (
+	"github.com/epochtimeout/baselibrary/buffer"
+	"github.com/epochtimeout/baselibrary/ref"
+)
 
-var _ buffer.Buffer = (*Buffer)(nil)
+var (
+	_ buffer.Buffer = (*Buffer)(nil)
+	_ ref.Freer     = (*Buffer)(nil)
+)
 
 type Buffer struct {
 	heap *heap
@@ -30,6 +36,12 @@ func newBuffer() *Buffer {
 
 func newBufferHeap(heap *heap) *Buffer {
 	return &Buffer{heap: heap}
+}
+
+// Free frees the buffer and releases its memory to the heap.
+func (b *Buffer) Free() {
+	b.len = 0
+	b.clearBlocks()
 }
 
 // Len returns the number of bytes in the buffer; b.Len() == len(b.Bytes()).
