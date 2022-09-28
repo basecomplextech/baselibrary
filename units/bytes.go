@@ -5,6 +5,16 @@ import (
 	"math"
 )
 
+const (
+	_ Bytes = 1 << (10 * iota)
+	KiB
+	MiB
+	GiB
+	TiB
+	PiB
+	EiB
+)
+
 // Bytes formats a byte count into a human readable string.
 // TODO: Test bytes, including negative bytes.
 type Bytes int64
