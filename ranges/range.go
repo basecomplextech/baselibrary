@@ -1,6 +1,6 @@
 package ranges
 
-import "github.com/epochtimeout/baselibrary/compare"
+import "github.com/complex1tech/baselibrary/compare"
 
 // Range is a closed range [start:end] which defines boundaries around a continuous span of values.
 type Range[V any] struct {

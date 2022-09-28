@@ -1,6 +1,6 @@
 package ranges
 
-import "github.com/epochtimeout/baselibrary/compare"
+import "github.com/complex1tech/baselibrary/compare"
 
 // Binary is a type alias for Range[[]byte].
 type Binary = Range[[]byte]

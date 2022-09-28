@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/epochtimeout/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/fs"
 )
 
 var _ fs.FileInfo = (*memInfo)(nil)

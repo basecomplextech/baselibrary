@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/epochtimeout/baselibrary/status"
+	"github.com/complex1tech/baselibrary/status"
 	"github.com/stretchr/testify/assert"
 )
 

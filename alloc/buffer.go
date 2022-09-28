@@ -1,8 +1,8 @@
 package alloc
 
 import (
-	"github.com/epochtimeout/baselibrary/buffer"
-	"github.com/epochtimeout/baselibrary/ref"
+	"github.com/complex1tech/baselibrary/buffer"
+	"github.com/complex1tech/baselibrary/ref"
 )
 
 var (

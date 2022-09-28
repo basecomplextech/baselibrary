@@ -1,6 +1,6 @@
 package async
 
-import "github.com/epochtimeout/baselibrary/status"
+import "github.com/complex1tech/baselibrary/status"
 
 // Promise is a future which can be completed.
 type Promise[T any] interface {

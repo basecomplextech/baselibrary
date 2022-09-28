@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/epochtimeout/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/fs"
 )
 
 // New returns a new in-memory file system.

@@ -1,6 +1,6 @@
 package try
 
-import "github.com/epochtimeout/baselibrary/errors2"
+import "github.com/complex1tech/baselibrary/errors2"
 
 // Run runs a function, recovers on a panic.
 func Run(fn func() error) (err error) {

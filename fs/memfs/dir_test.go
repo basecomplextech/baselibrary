@@ -3,7 +3,7 @@ package memfs
 import (
 	"testing"
 
-	"github.com/epochtimeout/baselibrary/slices"
+	"github.com/complex1tech/baselibrary/slices"
 	"github.com/stretchr/testify/assert"
 )
 

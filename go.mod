@@ -1,4 +1,4 @@
-module github.com/epochtimeout/baselibrary
+module github.com/complex1tech/baselibrary
 
 go 1.18
 

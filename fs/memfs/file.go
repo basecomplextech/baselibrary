@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/epochtimeout/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/fs"
 )
 
 // NewFile returns a new in-memory file detached from a file system.

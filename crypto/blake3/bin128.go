@@ -1,7 +1,7 @@
 package blake3
 
 import (
-	"github.com/epochtimeout/baselibrary/types"
+	"github.com/complex1tech/baselibrary/types"
 	"github.com/zeebo/blake3"
 )
 

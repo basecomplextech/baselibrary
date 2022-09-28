@@ -3,7 +3,7 @@ package blake3
 import (
 	"testing"
 
-	"github.com/epochtimeout/baselibrary/types"
+	"github.com/complex1tech/baselibrary/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/zeebo/blake3"
 )

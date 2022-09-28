@@ -3,7 +3,7 @@ package async
 import (
 	"sync"
 
-	"github.com/epochtimeout/baselibrary/status"
+	"github.com/complex1tech/baselibrary/status"
 )
 
 // Thread executes a function in a goroutine, recovers on panics, and returns a future result.

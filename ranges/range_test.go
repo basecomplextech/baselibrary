@@ -3,7 +3,7 @@ package ranges
 import (
 	"testing"
 
-	"github.com/epochtimeout/baselibrary/compare"
+	"github.com/complex1tech/baselibrary/compare"
 	"github.com/stretchr/testify/assert"
 )
 

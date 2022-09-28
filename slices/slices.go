@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/epochtimeout/baselibrary/constraints"
+	"github.com/complex1tech/baselibrary/constraints"
 )
 
 // Clone returns a copy of the slice.

@@ -3,7 +3,7 @@ package logging
 import (
 	"os"
 
-	"github.com/epochtimeout/baselibrary/tests"
+	"github.com/complex1tech/baselibrary/tests"
 )
 
 // TEST_LOG specifies an env variable that can be used to override the log level.

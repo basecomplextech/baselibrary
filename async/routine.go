@@ -1,8 +1,8 @@
 package async
 
 import (
-	"github.com/epochtimeout/baselibrary/errors2"
-	"github.com/epochtimeout/baselibrary/status"
+	"github.com/complex1tech/baselibrary/errors2"
+	"github.com/complex1tech/baselibrary/status"
 )
 
 // Routine is a future alias which indicates that this is an async computation in a gorooutine.

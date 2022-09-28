@@ -1,8 +1,8 @@
 package memfs
 
 import (
-	"github.com/epochtimeout/baselibrary/fs"
-	"github.com/epochtimeout/baselibrary/tests"
+	"github.com/complex1tech/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/tests"
 )
 
 func testDir(t tests.T, fs fs.FileSystem, path string) {

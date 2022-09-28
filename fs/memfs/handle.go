@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/epochtimeout/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/fs"
 )
 
 var _ fs.File = (*memHandle)(nil)

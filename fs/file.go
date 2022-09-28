@@ -6,8 +6,8 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/complex1tech/baselibrary/errors2"
 	"github.com/edsrzf/mmap-go"
-	"github.com/epochtimeout/baselibrary/errors2"
 )
 
 // File is an extended file interface for *os.File.

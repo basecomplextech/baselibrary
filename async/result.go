@@ -3,7 +3,7 @@ package async
 import (
 	"sync"
 
-	"github.com/epochtimeout/baselibrary/status"
+	"github.com/complex1tech/baselibrary/status"
 )
 
 // Result is an abstract async result.
