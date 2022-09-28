@@ -8,10 +8,17 @@ import (
 
 // Future represents an optionally cancellable concurrent computation with a future result.
 type Future[T any] interface {
-	Result[T]
-
 	// Cancel tries to cancel the future and returns the wait channel.
 	Cancel() <-chan struct{}
+
+	// Result returns a value and a status.
+	Result() (T, status.Status)
+
+	// Status returns a status.
+	Status() status.Status
+
+	// Wait returns a channel which is closed when the result is available.
+	Wait() <-chan struct{}
 }
 
 // Resolved returns a resolved future.

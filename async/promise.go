@@ -1,6 +1,10 @@
 package async
 
-import "github.com/complex1tech/baselibrary/status"
+import (
+	"sync"
+
+	"github.com/complex1tech/baselibrary/status"
+)
 
 // Promise is a future which can be completed.
 type Promise[T any] interface {
@@ -34,15 +38,19 @@ func Resolve[T any](p Promise[T], result T) bool {
 var _ Promise[any] = (*promise[any])(nil)
 
 type promise[T any] struct {
-	result[T]
+	mu     sync.Mutex
+	done   bool
+	result T
+	status status.Status
 
+	wait      chan struct{}
 	cancel    chan struct{}
 	cancelled bool
 }
 
 func newPromise[T any]() *promise[T] {
 	return &promise[T]{
-		result: newResult[T](),
+		wait:   make(chan struct{}),
 		cancel: make(chan struct{}),
 	}
 }
@@ -66,7 +74,40 @@ func (p *promise[T]) Cancelled() <-chan struct{} {
 	return p.cancel
 }
 
+// Result returns a value and a status.
+func (p *promise[T]) Result() (T, status.Status) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return p.result, p.status
+}
+
+// Status returns a status.
+func (p *promise[T]) Status() status.Status {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return p.status
+}
+
+// Wait returns a channel which is closed when the result is available.
+func (p *promise[T]) Wait() <-chan struct{} {
+	return p.wait
+}
+
 // Complete completes the promise with a status and a result.
 func (p *promise[T]) Complete(result T, st status.Status) bool {
-	return p.complete(result, st)
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.done {
+		return false
+	}
+
+	p.result = result
+	p.status = st
+	p.done = true
+
+	close(p.wait)
+	return true
 }
