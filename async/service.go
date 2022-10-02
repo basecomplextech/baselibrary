@@ -9,7 +9,7 @@ import (
 // Service executes a function in a goroutine, recovers on panics, and returns an exit status.
 // Service can be restarted multiple times.
 type Service interface {
-	// Status returns a stop status or none.
+	// Status returns none if running, unavailable if stopped successfully, or an error status.
 	Status() status.Status
 
 	// Flags
@@ -36,16 +36,17 @@ func NewService(fn func(stop <-chan struct{}) status.Status) Service {
 
 // internal
 
+var stopped = status.Unavailable("stopped")
+
 type service struct {
 	fn func(stop <-chan struct{}) status.Status
 
 	running *Flag
 	stopped *Flag
 
-	mu     sync.Mutex
-	status status.Status
-	// result  result[struct{}]
-	routine Future[struct{}]
+	mu      sync.Mutex
+	status  status.Status
+	routine Routine[struct{}]
 }
 
 func newService(fn func(stop <-chan struct{}) status.Status) *service {
@@ -55,11 +56,11 @@ func newService(fn func(stop <-chan struct{}) status.Status) *service {
 		running: NewFlag(),
 		stopped: SetFlag(),
 
-		status: status.None,
+		status: stopped,
 	}
 }
 
-// Status returns a stop status or none.
+// Status returns none if running, unavailable if stopped successfully, or an error status.
 func (th *service) Status() status.Status {
 	th.mu.Lock()
 	defer th.mu.Unlock()
@@ -103,7 +104,7 @@ func (th *service) Stop() <-chan struct{} {
 	defer th.mu.Unlock()
 
 	if th.routine == nil {
-		th.status = status.Cancelled
+		th.status = stopped
 		return closedChan
 	}
 
@@ -117,9 +118,13 @@ func (th *service) run(stop <-chan struct{}) (st status.Status) {
 		th.mu.Lock()
 		defer th.mu.Unlock()
 
-		th.status = st
-		th.routine = nil
+		if st.OK() {
+			th.status = stopped
+		} else {
+			th.status = st
+		}
 
+		th.routine = nil
 		th.running.Reset()
 		th.stopped.Signal()
 	}()

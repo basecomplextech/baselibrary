@@ -69,7 +69,7 @@ func TestService_Start__should_restart_stopped_service(t *testing.T) {
 
 	st := s.Status()
 	assert.Equal(t, 1, i)
-	assert.Equal(t, status.CodeOK, st.Code)
+	assert.Equal(t, status.CodeUnavailable, st.Code)
 
 	s.Start()
 	select {
@@ -80,7 +80,7 @@ func TestService_Start__should_restart_stopped_service(t *testing.T) {
 
 	st = s.Status()
 	assert.Equal(t, 2, i)
-	assert.Equal(t, status.CodeOK, st.Code)
+	assert.Equal(t, status.CodeUnavailable, st.Code)
 }
 
 // Stop
@@ -88,7 +88,7 @@ func TestService_Start__should_restart_stopped_service(t *testing.T) {
 func TestService_Stop__should_stop_service(t *testing.T) {
 	fn := func(stop <-chan struct{}) status.Status {
 		<-stop
-		return status.Cancelled
+		return status.OK
 	}
 
 	s := NewService(fn)
@@ -114,10 +114,10 @@ func TestService_Stop__should_stop_service(t *testing.T) {
 	}
 
 	st := s.Status()
-	assert.Equal(t, status.CodeCancelled, st.Code)
+	assert.Equal(t, status.CodeUnavailable, st.Code)
 }
 
-func TestService_Stop__should_cancel_result_when_service_not_started(t *testing.T) {
+func TestService_Stop__should_stop_service_when_service_not_started(t *testing.T) {
 	fn := func(stop <-chan struct{}) status.Status {
 		<-stop
 		return status.OK
@@ -133,5 +133,5 @@ func TestService_Stop__should_cancel_result_when_service_not_started(t *testing.
 	}
 
 	st := s.Status()
-	assert.Equal(t, status.CodeCancelled, st.Code)
+	assert.Equal(t, status.CodeUnavailable, st.Code)
 }

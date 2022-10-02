@@ -70,8 +70,9 @@ func TestRun__should_stop_on_request(t *testing.T) {
 		return status.Cancelled
 	})
 
+	r.Cancel()
 	select {
-	case <-r.Cancel():
+	case <-r.Wait():
 		st := r.Status()
 		assert.Equal(t, status.Cancelled, st)
 	case <-time.After(100 * time.Millisecond):
