@@ -5,18 +5,21 @@ import (
 	"github.com/complex1tech/baselibrary/status"
 )
 
-var _ Canceller = (Routine[any])(nil)
+var _ CancelWaiter = (Routine[any])(nil)
 
-// Routine is an asynchronous computation which runs in a separate goroutine.
-// Routine recovers on panics and returns its result as a future.
+// Routine is a goroutine wrapper which returns the result as a future, recovers on panics,
+// and can be cancelled.
 type Routine[T any] interface {
 	Future[T]
 
 	// Cancel requests the routine to cancel.
 	Cancel() <-chan struct{}
+
+	// CancelWait cancels the routine and awaits its result.
+	CancelWait()
 }
 
-// Run runs a function in a goroutine, recovers on panics, and returns its status as a future.
+// Run runs a function in a routine.
 func Run(fn func(stop <-chan struct{}) status.Status) Routine[struct{}] {
 	r := newRoutine[struct{}]()
 
@@ -39,7 +42,7 @@ func Run(fn func(stop <-chan struct{}) status.Status) Routine[struct{}] {
 	return r
 }
 
-// Execute executes a function in a goroutine, recovers on panics, and returns its result as a future.
+// Execute executes a function in a routine.
 func Execute[T any](fn func(stop <-chan struct{}) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
 
@@ -94,4 +97,10 @@ func (r *routine[T]) Cancel() <-chan struct{} {
 	close(r.cancel)
 	r.cancelled = true
 	return r.wait
+}
+
+// CancelWait cancels the routine and awaits its result.
+func (r *routine[T]) CancelWait() {
+	r.Cancel()
+	<-r.Wait()
 }

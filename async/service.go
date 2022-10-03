@@ -12,8 +12,6 @@ type Service interface {
 	// Status returns none if running, unavailable if stopped successfully, or an error status.
 	Status() status.Status
 
-	// Flags
-
 	// Running returns a channel which is closed when the service is running.
 	Running() <-chan struct{}
 
@@ -67,8 +65,6 @@ func (th *service) Status() status.Status {
 
 	return th.status
 }
-
-// Flags
 
 // Running returns a channel which is closed when the service is running.
 func (th *service) Running() <-chan struct{} {

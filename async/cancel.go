@@ -1,29 +1,19 @@
 package async
 
-// Canceller tries to cancel an operation.
+// Canceller requests an operation to cancel.
 type Canceller interface {
+	// Cancel requests an operation to cancel and returns a wait channel.
 	Cancel() <-chan struct{}
 }
 
-// CancelWaiter cancels an operation and awaits it.
+// Waiter awaits an operation completion.
+type Waiter interface {
+	// Wait returns a channel which is closed when the operation is complete.
+	Wait() <-chan struct{}
+}
+
+// CancelWaiter requests an operation to cancel and awaits its completion.
 type CancelWaiter interface {
 	Canceller
 	Waiter
-}
-
-// Cancel cancels all operations.
-func Cancel(cc ...Canceller) {
-	for _, c := range cc {
-		c.Cancel()
-	}
-}
-
-// CancelWait cancels all operations and awaits them.
-func CancelWait(cc ...CancelWaiter) {
-	for _, c := range cc {
-		c.Cancel()
-	}
-	for _, c := range cc {
-		c.Wait()
-	}
 }

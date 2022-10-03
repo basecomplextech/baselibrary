@@ -44,7 +44,7 @@ func (rr Routines[T]) WaitAny(cancel <-chan struct{}) (int, Routine[T], status.S
 	}
 	cases = append(cases, stop_)
 
-	// make future cases
+	// make wait cases
 	for _, r := range rr {
 		wait := r.Wait()
 		case_ := reflect.SelectCase{
