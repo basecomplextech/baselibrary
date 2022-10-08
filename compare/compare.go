@@ -6,6 +6,20 @@ import (
 	"time"
 )
 
+type (
+	IntFunc     = Compare[int]
+	Int32Func   = Compare[int32]
+	Int64Func   = Compare[int64]
+	UintFunc    = Compare[uint]
+	Uint32Func  = Compare[uint32]
+	Uint64Func  = Compare[uint64]
+	Float32Func = Compare[float32]
+	Float64Func = Compare[float64]
+	BytesFunc   = Compare[[]byte]
+	StringFunc  = Compare[string]
+	TimeFunc    = Compare[time.Time]
+)
+
 // Compare is a generic comparison function.
 // The result should be 0 if a == b, negative if a < b, and positive if a > b.
 type Compare[T any] func(a, b T) int
