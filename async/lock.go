@@ -14,7 +14,7 @@ var _ sync.Locker = (Lock)(nil)
 //	lock := async.NewLock()
 //	select {
 //	case <-lock:
-//	case <-stop:
+//	case <-cancel:
 //		return status.Cancelled
 //	}
 //	defer lock.Unlock()

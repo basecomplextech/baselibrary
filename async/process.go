@@ -17,7 +17,7 @@ type Process[T any] interface {
 }
 
 // Run runs a function in a new process, recovers on panics.
-func Run(fn func(stop <-chan struct{}) status.Status) Process[struct{}] {
+func Run(fn func(cancel <-chan struct{}) status.Status) Process[struct{}] {
 	p := newProcess[struct{}]()
 
 	go func() {
@@ -40,7 +40,7 @@ func Run(fn func(stop <-chan struct{}) status.Status) Process[struct{}] {
 }
 
 // Execute executes a function in a new process, recovers on panics.
-func Execute[T any](fn func(stop <-chan struct{}) (T, status.Status)) Process[T] {
+func Execute[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Process[T] {
 	p := newProcess[T]()
 
 	go func() {

@@ -8,14 +8,14 @@ var _ Waiter = (Future[any])(nil)
 
 // Future represents a result available in the future.
 type Future[T any] interface {
+	// Wait returns a channel which is closed when the future is complete.
+	Wait() <-chan struct{}
+
 	// Result returns a value and a status.
 	Result() (T, status.Status)
 
 	// Status returns a status or none.
 	Status() status.Status
-
-	// Wait returns a channel which is closed when the future is complete.
-	Wait() <-chan struct{}
 }
 
 // Resolved returns a successful future.

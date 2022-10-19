@@ -13,7 +13,7 @@ import (
 // Run
 
 func TestRun__should_return_on_on_success(t *testing.T) {
-	p := Run(func(stop <-chan struct{}) status.Status {
+	p := Run(func(cancel <-chan struct{}) status.Status {
 		return status.OK
 	})
 	p.Cancel()
@@ -32,7 +32,7 @@ func TestRun__should_return_on_on_success(t *testing.T) {
 
 func TestRun__should_return_status_on_error(t *testing.T) {
 	st := status.Error("test")
-	p := Run(func(stop <-chan struct{}) status.Status {
+	p := Run(func(cancel <-chan struct{}) status.Status {
 		return st
 	})
 	p.Cancel()
@@ -48,7 +48,7 @@ func TestRun__should_return_status_on_error(t *testing.T) {
 }
 
 func TestRun__should_return_recover_on_panic(t *testing.T) {
-	p := Run(func(stop <-chan struct{}) status.Status {
+	p := Run(func(cancel <-chan struct{}) status.Status {
 		panic("test")
 	})
 	p.Cancel()
@@ -65,8 +65,8 @@ func TestRun__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestRun__should_stop_on_request(t *testing.T) {
-	p := Run(func(stop <-chan struct{}) status.Status {
-		<-stop
+	p := Run(func(cancel <-chan struct{}) status.Status {
+		<-cancel
 		return status.Cancelled
 	})
 
@@ -83,7 +83,7 @@ func TestRun__should_stop_on_request(t *testing.T) {
 // Execute
 
 func TestExecute__should_return_result_on_success(t *testing.T) {
-	p := Execute(func(stop <-chan struct{}) (string, status.Status) {
+	p := Execute(func(cancel <-chan struct{}) (string, status.Status) {
 		return "hello, world", status.OK
 	})
 	p.Cancel()
@@ -103,7 +103,7 @@ func TestExecute__should_return_result_on_success(t *testing.T) {
 
 func TestExecute__should_return_status_on_error(t *testing.T) {
 	st := status.Error("test")
-	p := Execute(func(stop <-chan struct{}) (string, status.Status) {
+	p := Execute(func(cancel <-chan struct{}) (string, status.Status) {
 		return "", st
 	})
 	p.Cancel()
@@ -119,7 +119,7 @@ func TestExecute__should_return_status_on_error(t *testing.T) {
 }
 
 func TestExecute__should_return_recover_on_panic(t *testing.T) {
-	p := Execute(func(stop <-chan struct{}) (string, status.Status) {
+	p := Execute(func(cancel <-chan struct{}) (string, status.Status) {
 		panic("test")
 	})
 	p.Cancel()
@@ -136,8 +136,8 @@ func TestExecute__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestExecute__should_stop_on_request(t *testing.T) {
-	p := Execute(func(stop <-chan struct{}) (string, status.Status) {
-		<-stop
+	p := Execute(func(cancel <-chan struct{}) (string, status.Status) {
+		<-cancel
 		return "", status.Cancelled
 	})
 
