@@ -1,6 +1,10 @@
 package status
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/complex1tech/baselibrary/errors2"
+)
 
 // Error returns an error status.
 func Error(text string) Status {
@@ -74,4 +78,12 @@ func WrapErrorf(err error, format string, a ...interface{}) Status {
 	text := fmt.Sprintf(format, a...)
 	text += ": " + err.Error()
 	return Status{Code: CodeError, Text: text, Error: err}
+}
+
+// Recover
+
+// Recover recovers from a panic and returns an error status.
+func Recover(e interface{}) Status {
+	err := errors2.Recover(e)
+	return WrapError(err)
 }
