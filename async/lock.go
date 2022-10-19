@@ -1,6 +1,8 @@
 package async
 
-import "sync"
+import (
+	"sync"
+)
 
 var _ sync.Locker = (Lock)(nil)
 

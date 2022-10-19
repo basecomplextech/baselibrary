@@ -90,7 +90,7 @@ func (r *routine[T]) Cancel() <-chan struct{} {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.done {
+	if r.done || r.cancelled {
 		return r.wait
 	}
 
