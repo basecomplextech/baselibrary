@@ -21,6 +21,12 @@ func Reverse[T any](s []T) {
 	}
 }
 
+// RemoveAt removes an item at an index.
+func RemoveAt[T any](s []T, index int) []T {
+	copy(s[index:], s[index+1:])
+	return s[:len(s)-1]
+}
+
 // Shuffle pseudo-randomizes the order of elements using rand.Shuffle.
 func Shuffle[T any](s []T) {
 	rand.Shuffle(len(s), func(i, j int) {
