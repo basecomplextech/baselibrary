@@ -5,15 +5,14 @@ import (
 	"time"
 )
 
-// CancelGroup cancels all operations in the group and awaits their completion.
+// CancelGroup processes all operations in the group and awaits their completion.
 type CancelGroup struct {
 	mu   sync.Mutex
 	done bool
 
-	cancels  []CancelWaiter
-	services []Service
-	tickers  []*time.Ticker
-	timers   []*time.Timer
+	timers  []*time.Timer
+	tickers []*time.Ticker
+	waiters []CancelWaiter
 }
 
 // NewCancelGroup creates a new cancel group.
@@ -21,7 +20,7 @@ func NewCancelGroup() *CancelGroup {
 	return &CancelGroup{}
 }
 
-// Add adds a routine to the group, or immediately cancels it if the group is cancelled.
+// Add adds a process to the group, or immediately cancels it if the group is cancelled.
 func (g *CancelGroup) Add(c CancelWaiter) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -31,7 +30,7 @@ func (g *CancelGroup) Add(c CancelWaiter) {
 		return
 	}
 
-	g.cancels = append(g.cancels, c)
+	g.waiters = append(g.waiters, c)
 }
 
 // AddTicker adds a ticker to the group, or immediately stops it if the group is cancelled.
@@ -60,19 +59,6 @@ func (g *CancelGroup) AddTimer(t *time.Timer) {
 	g.timers = append(g.timers, t)
 }
 
-// AddService adds a service to the group, or immediately stops it if the group is cancelled.
-func (g *CancelGroup) AddService(s Service) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-
-	if g.done {
-		s.Stop()
-		return
-	}
-
-	g.services = append(g.services, s)
-}
-
 // Cancel cancels all operations in the group.
 func (g *CancelGroup) Cancel() {
 	g.mu.Lock()
@@ -83,21 +69,18 @@ func (g *CancelGroup) Cancel() {
 	}
 	g.done = true
 
-	for _, c := range g.cancels {
-		c.Cancel()
-	}
-	for _, s := range g.services {
-		s.Stop()
-	}
 	for _, t := range g.tickers {
 		t.Stop()
 	}
 	for _, t := range g.timers {
 		t.Stop()
 	}
+	for _, w := range g.waiters {
+		w.Cancel()
+	}
 }
 
-// CancelWait cancels all operations in the group and awaits them.
+// CancelWait processes all operations in the group and awaits them.
 func (g *CancelGroup) CancelWait() {
 	g.Cancel()
 	g.Wait()
@@ -108,11 +91,7 @@ func (g *CancelGroup) Wait() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	for _, c := range g.cancels {
-		<-c.Wait()
-	}
-
-	for _, s := range g.services {
-		<-s.Stopped()
+	for _, w := range g.waiters {
+		<-w.Wait()
 	}
 }

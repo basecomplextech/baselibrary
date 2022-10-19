@@ -17,3 +17,8 @@ type CancelWaiter interface {
 	Canceller
 	Waiter
 }
+
+// CancelWait cancels and awaits an operation.
+func CancelWait(w CancelWaiter) {
+	<-w.Cancel()
+}

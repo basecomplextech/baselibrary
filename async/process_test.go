@@ -13,14 +13,14 @@ import (
 // Run
 
 func TestRun__should_return_on_on_success(t *testing.T) {
-	r := Run(func(stop <-chan struct{}) status.Status {
+	p := Run(func(stop <-chan struct{}) status.Status {
 		return status.OK
 	})
-	r.Cancel()
+	p.Cancel()
 
 	select {
-	case <-r.Wait():
-		_, st := r.Result()
+	case <-p.Wait():
+		_, st := p.Result()
 		if !st.OK() {
 			t.Fatal(st)
 		}
@@ -32,14 +32,14 @@ func TestRun__should_return_on_on_success(t *testing.T) {
 
 func TestRun__should_return_status_on_error(t *testing.T) {
 	st := status.Error("test")
-	r := Run(func(stop <-chan struct{}) status.Status {
+	p := Run(func(stop <-chan struct{}) status.Status {
 		return st
 	})
-	r.Cancel()
+	p.Cancel()
 
 	select {
-	case <-r.Wait():
-		_, st1 := r.Result()
+	case <-p.Wait():
+		_, st1 := p.Result()
 		assert.Equal(t, st, st1)
 
 	case <-time.After(100 * time.Millisecond):
@@ -48,14 +48,14 @@ func TestRun__should_return_status_on_error(t *testing.T) {
 }
 
 func TestRun__should_return_recover_on_panic(t *testing.T) {
-	r := Run(func(stop <-chan struct{}) status.Status {
+	p := Run(func(stop <-chan struct{}) status.Status {
 		panic("test")
 	})
-	r.Cancel()
+	p.Cancel()
 
 	select {
-	case <-r.Wait():
-		_, st := r.Result()
+	case <-p.Wait():
+		_, st := p.Result()
 		require.IsType(t, &errors2.PanicError{}, st.Error)
 		assert.EqualValues(t, "test", st.Error.(*errors2.PanicError).E)
 
@@ -65,15 +65,15 @@ func TestRun__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestRun__should_stop_on_request(t *testing.T) {
-	r := Run(func(stop <-chan struct{}) status.Status {
+	p := Run(func(stop <-chan struct{}) status.Status {
 		<-stop
 		return status.Cancelled
 	})
 
-	r.Cancel()
+	p.Cancel()
 	select {
-	case <-r.Wait():
-		st := r.Status()
+	case <-p.Wait():
+		st := p.Status()
 		assert.Equal(t, status.Cancelled, st)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("timeout")
@@ -83,14 +83,14 @@ func TestRun__should_stop_on_request(t *testing.T) {
 // Execute
 
 func TestExecute__should_return_result_on_success(t *testing.T) {
-	r := Execute(func(stop <-chan struct{}) (string, status.Status) {
+	p := Execute(func(stop <-chan struct{}) (string, status.Status) {
 		return "hello, world", status.OK
 	})
-	r.Cancel()
+	p.Cancel()
 
 	select {
-	case <-r.Wait():
-		v, st := r.Result()
+	case <-p.Wait():
+		v, st := p.Result()
 		if !st.OK() {
 			t.Fatal(st)
 		}
@@ -103,14 +103,14 @@ func TestExecute__should_return_result_on_success(t *testing.T) {
 
 func TestExecute__should_return_status_on_error(t *testing.T) {
 	st := status.Error("test")
-	r := Execute(func(stop <-chan struct{}) (string, status.Status) {
+	p := Execute(func(stop <-chan struct{}) (string, status.Status) {
 		return "", st
 	})
-	r.Cancel()
+	p.Cancel()
 
 	select {
-	case <-r.Wait():
-		_, st1 := r.Result()
+	case <-p.Wait():
+		_, st1 := p.Result()
 		assert.Equal(t, st, st1)
 
 	case <-time.After(100 * time.Millisecond):
@@ -119,14 +119,14 @@ func TestExecute__should_return_status_on_error(t *testing.T) {
 }
 
 func TestExecute__should_return_recover_on_panic(t *testing.T) {
-	r := Execute(func(stop <-chan struct{}) (string, status.Status) {
+	p := Execute(func(stop <-chan struct{}) (string, status.Status) {
 		panic("test")
 	})
-	r.Cancel()
+	p.Cancel()
 
 	select {
-	case <-r.Wait():
-		_, st := r.Result()
+	case <-p.Wait():
+		_, st := p.Result()
 		require.IsType(t, &errors2.PanicError{}, st.Error)
 		assert.EqualValues(t, "test", st.Error.(*errors2.PanicError).E)
 
@@ -136,14 +136,14 @@ func TestExecute__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestExecute__should_stop_on_request(t *testing.T) {
-	r := Execute(func(stop <-chan struct{}) (string, status.Status) {
+	p := Execute(func(stop <-chan struct{}) (string, status.Status) {
 		<-stop
 		return "", status.Cancelled
 	})
 
 	select {
-	case <-r.Cancel():
-		st := r.Status()
+	case <-p.Cancel():
+		st := p.Status()
 		assert.Equal(t, status.Cancelled, st)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("timeout")
