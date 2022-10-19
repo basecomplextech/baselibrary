@@ -87,3 +87,9 @@ func Recover(e interface{}) Status {
 	err := errors2.Recover(e)
 	return WrapError(err)
 }
+
+// RecoverStack recovers from a panic and returns an error status and a stack trace.
+func RecoverStack(e interface{}) (Status, []byte) {
+	err, stack := errors2.RecoverStack(e)
+	return WrapError(err), stack
+}
