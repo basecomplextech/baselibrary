@@ -21,9 +21,35 @@ func Reverse[T any](s []T) {
 	}
 }
 
-// RemoveAt removes an item at an index.
+// IndexOf returns the index of the first occurrence of the item in the slice.
+// If the item is not found, -1 is returned.
+func IndexOf[T comparable](s []T, item T) int {
+	for i, v := range s {
+		if v == item {
+			return i
+		}
+	}
+	return -1
+}
+
+// Remove removes the first occurrence of the item from the slice.
+func Remove[T comparable](s []T, item T) []T {
+	index := IndexOf(s, item)
+	if index == -1 {
+		return s
+	}
+	return RemoveAt(s, index)
+}
+
+// RemoveAt removes an item at an index, and truncates the slice.
 func RemoveAt[T any](s []T, index int) []T {
 	copy(s[index:], s[index+1:])
+
+	// clear the last element for GC
+	var zero T
+	s[len(s)-1] = zero
+
+	// truncate slice
 	return s[:len(s)-1]
 }
 
