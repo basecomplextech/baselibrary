@@ -56,3 +56,26 @@ func LevelFromString(s string) Level {
 	}
 	return LevelUndefined
 }
+
+func (l Level) MarshalText() ([]byte, error) {
+	return []byte(l.String()), nil
+}
+
+func (l *Level) UnmarshalText(b []byte) error {
+	*l = LevelFromString(string(b))
+	return nil
+}
+
+func (l Level) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + l.String() + `"`), nil
+}
+
+func (lptr *Level) UnmarshalJSON(b []byte) error {
+	if len(b) == 0 {
+		return nil
+	}
+
+	s := strings.Trim(string(b), `"`)
+	*lptr = LevelFromString(s)
+	return nil
+}
