@@ -34,5 +34,9 @@ func (l Lock) Lock() {
 
 // Unlock unlocks the lock.
 func (l Lock) Unlock() {
-	l <- struct{}{}
+	select {
+	case l <- struct{}{}:
+	default:
+		panic("unlock of unlocked lock")
+	}
 }
