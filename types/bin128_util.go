@@ -20,7 +20,7 @@ func RandomBin128() Bin128 {
 	return gen128.random()
 }
 
-// TimeRandomBin128 returns a time-random bin128.
+// TimeRandomBin128 returns a time-random bin128 with a millisecond resolution.
 func TimeRandomBin128() Bin128 {
 	return gen128.timeRandom()
 }

@@ -20,7 +20,7 @@ func RandomBin256() Bin256 {
 	return gen256.random()
 }
 
-// TimeRandomBin256 returns a time-random bin256.
+// TimeRandomBin256 returns a time-random bin256 with a millisecond resolution.
 func TimeRandomBin256() Bin256 {
 	return gen256.timeRandom()
 }
