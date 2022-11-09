@@ -72,6 +72,10 @@ func (t *LockTable[K]) release(lock *keyLock[K]) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	if lock.refs <= 0 {
+		panic("release of released lock")
+	}
+
 	lock.refs--
 	if lock.refs > 0 {
 		return
