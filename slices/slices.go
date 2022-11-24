@@ -14,13 +14,6 @@ func Clone[T any](s []T) []T {
 	return s1
 }
 
-// Reverse reverse the slice in place.
-func Reverse[T any](s []T) {
-	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = s[j], s[i]
-	}
-}
-
 // IndexOf returns the index of the first occurrence of the item in the slice.
 // If the item is not found, -1 is returned.
 func IndexOf[T comparable](s []T, item T) int {
@@ -30,6 +23,16 @@ func IndexOf[T comparable](s []T, item T) int {
 		}
 	}
 	return -1
+}
+
+// Insert inserts an item at an index.
+func Insert[T any](s []T, index int, item T) []T {
+	var zero T
+	s = append(s, zero)
+
+	copy(s[index+1:], s[index:])
+	s[index] = item
+	return s
 }
 
 // Remove removes the first occurrence of the item from the slice.
@@ -53,11 +56,11 @@ func RemoveAt[T any](s []T, index int) []T {
 	return s[:len(s)-1]
 }
 
-// Shuffle pseudo-randomizes the order of elements using rand.Shuffle.
-func Shuffle[T any](s []T) {
-	rand.Shuffle(len(s), func(i, j int) {
+// Reverse reverse the slice in place.
+func Reverse[T any](s []T) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
-	})
+	}
 }
 
 // Sort sorts a slice of ordered items.
@@ -73,5 +76,12 @@ func SortCompare[T any](s []T, compare func(a, b T) bool) {
 	sort.Slice(s, func(i, j int) bool {
 		a, b := s[i], s[j]
 		return compare(a, b)
+	})
+}
+
+// Shuffle pseudo-randomizes the order of elements using rand.Shuffle.
+func Shuffle[T any](s []T) {
+	rand.Shuffle(len(s), func(i, j int) {
+		s[i], s[j] = s[j], s[i]
 	})
 }
