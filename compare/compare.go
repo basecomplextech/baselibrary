@@ -16,6 +16,7 @@ type (
 	Float32Func = Compare[float32]
 	Float64Func = Compare[float64]
 	BytesFunc   = Compare[[]byte]
+	BinaryFunc  = Compare[[]byte]
 	StringFunc  = Compare[string]
 	TimeFunc    = Compare[time.Time]
 )
@@ -107,6 +108,10 @@ func Float64(a, b float64) int {
 		return 1
 	}
 	return 0
+}
+
+func Binary(a, b []byte) int {
+	return bytes.Compare(a, b)
 }
 
 func Bytes(a, b []byte) int {
