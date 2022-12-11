@@ -22,7 +22,7 @@ type Config struct {
 
 type CPUConfig struct {
 	Enabled bool   `json:"enabled"`
-	Path    string `json:"cpu.pprof"`
+	Path    string `json:"path"`
 
 	// Rate sets the CPU profiling rate to hz samples per second.
 	//
