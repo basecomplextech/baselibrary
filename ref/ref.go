@@ -1,64 +1,76 @@
 package ref
 
-import (
-	"fmt"
-	"sync/atomic"
-)
+// Ref is a countable reference interface.
+type Ref interface {
+	// Retain increments refcount, panics when count is <= 0.
+	Retain()
 
-// R is a generic atomically countable reference which wraps an object.
-// The object is automatically freed when refcount reaches 0.
-type R[T Freer] struct {
-	obj  T
-	refs int32
+	// Release decrements refcount and releases the object if the count is 0.
+	Release()
 }
 
-// Freer frees the object.
-type Freer interface {
-	Free()
+// Retain retains and returns a reference.
+//
+// Usage:
+//
+//	tree.table = Retain(table)
+func Retain[R Ref](r R) R {
+	r.Retain()
+	return r
 }
 
-// Wrap wraps an object into a reference.
-func Wrap[T Freer](obj T) *R[T] {
-	return &R[T]{
-		obj:  obj,
-		refs: 1,
+// RetainAll retains all references.
+func RetainAll[R Ref](refs ...R) []R {
+	for _, r := range refs {
+		r.Retain()
+	}
+	return refs
+}
+
+// RetainTree retains all references in a tree.
+func RetainTree[R Ref](tree ...[]R) [][]R {
+	for _, refs := range tree {
+		RetainAll(refs...)
+	}
+	return tree
+}
+
+// ReleaseAll releases all references.
+func ReleaseAll[R Ref](refs ...R) {
+	for _, r := range refs {
+		r.Release()
 	}
 }
 
-// Refcount returns the number of current references.
-func (r *R[T]) Refcount() int32 {
-	return r.refs
+// ReleaseTree releases all references in a tree.
+func ReleaseTree[R Ref](tree ...[]R) {
+	for _, refs := range tree {
+		ReleaseAll(refs...)
+	}
 }
 
-// Retain increments refcount, panics when count is 0.
-func (r *R[T]) Retain() {
-	v := atomic.AddInt32(&r.refs, 1)
-	if v <= 1 {
-		panic(fmt.Sprintf("retain: %T already released", r.obj))
-	}
-	return
+// Swap retains a new reference, releases an old one and returns the new.
+//
+// Usage:
+//
+//	tbl := table.Clone()
+//	defer tbl.Release()
+//	...
+//	s.table = Swap(s.table, tbl)
+func Swap[R Ref](old R, new R) R {
+	new.Retain()
+	old.Release()
+	return new
 }
 
-// Release decrements refcount and releases the object if the count is 0.
-func (r *R[T]) Release() {
-	v := atomic.AddInt32(&r.refs, -1)
-	switch {
-	case v > 0:
-		return
-	case v < 0:
-		panic(fmt.Sprintf("release: %T already released", r.obj))
-	}
-
-	r.obj.Free()
-	return
-}
-
-// Unwrap returns the object or panics if the refcount is 0.
-func (r *R[T]) Unwrap() T {
-	refs := atomic.LoadInt32(&r.refs)
-	if refs <= 0 {
-		panic(fmt.Sprintf("unwrap: %T already released", r.obj))
-	}
-
-	return r.obj
+// SwapNoRetain releases an old reference, and returns a new one.
+//
+// Usage:
+//
+//	tbl := newTable()
+//	...
+//	s.table = SwapNoRetain(s.table, tbl)
+func SwapNoRetain[R Ref](old R, new R) R {
+	old.Release()
+	return new
 }
