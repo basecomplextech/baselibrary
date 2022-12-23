@@ -32,7 +32,10 @@ func ByteString(s int64) string {
 }
 
 func byteString(s int64, base float64, sizes []string) string {
-	if s < 10 {
+	switch {
+	case s == 0:
+		return "0"
+	case s < 10:
 		return fmt.Sprintf("%db", s)
 	}
 
