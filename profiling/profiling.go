@@ -2,7 +2,9 @@ package profiling
 
 import (
 	"bufio"
+	"errors"
 	"os"
+	"path/filepath"
 	"runtime"
 	"runtime/pprof"
 	"sync"
@@ -120,6 +122,11 @@ func (p *Profiling) startCPU() error {
 		return nil
 	}
 
+	// create dir
+	if err := makeParentDir(cpu.Path); err != nil {
+		return err
+	}
+
 	// create file
 	f, err := os.Create(cpu.Path)
 	if err != nil {
@@ -178,6 +185,11 @@ func (p *Profiling) startMemory() error {
 		return nil
 	}
 
+	// create dir
+	if err := makeParentDir(mem.Path); err != nil {
+		return err
+	}
+
 	// create file
 	f, err := os.Create(mem.Path)
 	if err != nil {
@@ -227,6 +239,11 @@ func (p *Profiling) startBlock() error {
 	block := p.config.Block
 	if !block.Enabled {
 		return nil
+	}
+
+	// create dir
+	if err := makeParentDir(block.Path); err != nil {
+		return err
 	}
 
 	// create file
@@ -279,6 +296,11 @@ func (p *Profiling) startMutex() error {
 		return nil
 	}
 
+	// create dir
+	if err := makeParentDir(mutex.Path); err != nil {
+		return err
+	}
+
 	// create file
 	f, err := os.Create(mutex.Path)
 	if err != nil {
@@ -319,4 +341,22 @@ func (p *Profiling) stopMutex() (err error) {
 		return err
 	}
 	return nil
+}
+
+// makedir
+
+const dirMode = 0755
+
+func makeParentDir(file string) error {
+	path := filepath.Dir(file)
+
+	_, err := os.Stat(path)
+	switch {
+	case err == nil:
+		return nil
+	case !errors.Is(err, os.ErrNotExist):
+		return err
+	}
+
+	return os.MkdirAll(path, dirMode)
 }
