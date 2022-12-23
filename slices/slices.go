@@ -14,6 +14,15 @@ func Clone[T any](s []T) []T {
 	return s1
 }
 
+// CloneTree returns a deep copy of the slice of slices.
+func CloneTree[T any](tree [][]T) [][]T {
+	tree1 := make([][]T, len(tree))
+	for i, v := range tree {
+		tree1[i] = Clone(v)
+	}
+	return tree1
+}
+
 // IndexOf returns the index of the first occurrence of the item in the slice.
 // If the item is not found, -1 is returned.
 func IndexOf[T comparable](s []T, item T) int {
@@ -35,25 +44,44 @@ func Insert[T any](s []T, index int, item T) []T {
 	return s
 }
 
+// InsertAt inserts items at an index.
+func InsertAt[T any](s []T, index int, items ...T) []T {
+	total := len(s) + len(items)
+
+	if cap(s) < total {
+		s1 := make([]T, len(s), total)
+		copy(s1, s)
+		s = s1
+	}
+
+	s = s[:total]
+	copy(s[index+len(items):], s[index:])
+	copy(s[index:], items)
+	return s
+}
+
 // Remove removes the first occurrence of the item from the slice.
 func Remove[T comparable](s []T, item T) []T {
 	index := IndexOf(s, item)
 	if index == -1 {
 		return s
 	}
-	return RemoveAt(s, index)
+	return RemoveAt(s, index, 1)
 }
 
-// RemoveAt removes an item at an index, and truncates the slice.
-func RemoveAt[T any](s []T, index int) []T {
-	copy(s[index:], s[index+1:])
+// RemoveAt removes n items at an index, and truncates the slice.
+func RemoveAt[T any](s []T, index int, n int) []T {
+	// shift left
+	copy(s[index:], s[index+n:])
 
-	// clear the last element for GC
-	var zero T
-	s[len(s)-1] = zero
+	// clear n last elements for GC
+	for i := len(s) - n; i < len(s); i++ {
+		var zero T
+		s[i] = zero
+	}
 
 	// truncate slice
-	return s[:len(s)-1]
+	return s[:len(s)-n]
 }
 
 // Reverse reverse the slice in place.
