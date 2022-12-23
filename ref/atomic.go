@@ -12,11 +12,6 @@ type R[T Freer] struct {
 	refs int64
 }
 
-// Freer frees the object.
-type Freer interface {
-	Free()
-}
-
 // Wrap wraps an object into a reference.
 func Wrap[T Freer](obj T) *R[T] {
 	return &R[T]{
