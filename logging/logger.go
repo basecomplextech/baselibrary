@@ -1,5 +1,7 @@
 package logging
 
+import "time"
+
 type Logger interface {
 	// Name returns the logger name.
 	Name() string
@@ -100,6 +102,7 @@ func (l *logger) Logger(name string) Logger {
 // Trace logs a trace record.
 func (l *logger) Trace(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelTrace,
 		Logger:  l.name,
 		Message: msg,
@@ -111,6 +114,7 @@ func (l *logger) Trace(msg string, keyValues ...any) {
 // Debug logs a debug record.
 func (l *logger) Debug(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelDebug,
 		Logger:  l.name,
 		Message: msg,
@@ -122,6 +126,7 @@ func (l *logger) Debug(msg string, keyValues ...any) {
 // Info logs an info record.
 func (l *logger) Info(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelInfo,
 		Logger:  l.name,
 		Message: msg,
@@ -133,6 +138,7 @@ func (l *logger) Info(msg string, keyValues ...any) {
 // Notice logs a notice record.
 func (l *logger) Notice(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelNotice,
 		Logger:  l.name,
 		Message: msg,
@@ -144,6 +150,7 @@ func (l *logger) Notice(msg string, keyValues ...any) {
 // Warn logs a warning record.
 func (l *logger) Warn(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelWarn,
 		Logger:  l.name,
 		Message: msg,
@@ -155,6 +162,7 @@ func (l *logger) Warn(msg string, keyValues ...any) {
 // Error logs an error record.
 func (l *logger) Error(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelError,
 		Logger:  l.name,
 		Message: msg,
@@ -166,6 +174,7 @@ func (l *logger) Error(msg string, keyValues ...any) {
 // Fatal logs a fatal record.
 func (l *logger) Fatal(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelFatal,
 		Logger:  l.name,
 		Message: msg,
