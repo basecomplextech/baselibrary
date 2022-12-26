@@ -4,33 +4,35 @@ import (
 	"bytes"
 	"strings"
 	"time"
+
+	"github.com/complex1tech/baselibrary/constraints"
 )
 
 type (
-	IntFunc     = Compare[int]
-	Int32Func   = Compare[int32]
-	Int64Func   = Compare[int64]
-	UintFunc    = Compare[uint]
-	Uint32Func  = Compare[uint32]
-	Uint64Func  = Compare[uint64]
-	Float32Func = Compare[float32]
-	Float64Func = Compare[float64]
-	BytesFunc   = Compare[[]byte]
-	BinaryFunc  = Compare[[]byte]
-	StringFunc  = Compare[string]
-	TimeFunc    = Compare[time.Time]
+	IntFunc     = Func[int]
+	Int32Func   = Func[int32]
+	Int64Func   = Func[int64]
+	UintFunc    = Func[uint]
+	Uint32Func  = Func[uint32]
+	Uint64Func  = Func[uint64]
+	Float32Func = Func[float32]
+	Float64Func = Func[float64]
+	BytesFunc   = Func[[]byte]
+	BinaryFunc  = Func[[]byte]
+	StringFunc  = Func[string]
+	TimeFunc    = Func[time.Time]
 )
 
-// Compare is a generic comparison function.
+// Func is a generic comparison function.
 // The result should be 0 if a == b, negative if a < b, and positive if a > b.
-type Compare[T any] func(a, b T) int
+type Func[T any] func(a, b T) int
 
 // Less is a generic comparison function.
 // The result should be true if a < b, and false otherwise.
 type Less[T any] func(a, b T) bool
 
 // Reverse reverses a comparison function.
-func Reverse[T any](cmp Compare[T]) Compare[T] {
+func Reverse[T any](cmp Func[T]) Func[T] {
 	return func(a, b T) int {
 		return -cmp(a, b)
 	}
@@ -141,5 +143,19 @@ func Duration(a, b time.Duration) int {
 		return 1
 	default:
 		return 0
+	}
+}
+
+// Ordered returns a comparison function for a natually ordered type.
+func Ordered[T constraints.Ordered]() Func[T] {
+	return func(a, b T) int {
+		switch {
+		case a < b:
+			return -1
+		case a > b:
+			return 1
+		default:
+			return 0
+		}
 	}
 }
