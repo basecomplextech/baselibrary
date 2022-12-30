@@ -2,16 +2,39 @@ package async
 
 import "sync"
 
+// Flag is a thread-safe boolean flag that can be set, reset, and waited on until set.
+//
+// Example:
+//
+//	serving := async.NewFlag()
+//
+//	func serve() {
+//		s.serving.Signal()
+//		defer s.serving.Reset()
+//
+//		// ... start server ...
+//	}
+//
+//	func handle(cancel <-chan struct{}, req *request) <-chan struct{} {
+//		// await server handling requests
+//		select {
+//		case <-serving.Wait():
+//		case <-cancel:
+//			return status.Cancelled
+//		}
+//
+//		// ... handle request ...
+//	}
 type Flag struct {
-	mu  sync.Mutex
-	ch  chan struct{}
-	set bool
+	mu      sync.Mutex
+	set     bool
+	setChan chan struct{} // closed when set
 }
 
 // NewFlag returns a new unset flag.
 func NewFlag() *Flag {
 	return &Flag{
-		ch: make(chan struct{}),
+		setChan: make(chan struct{}),
 	}
 }
 
@@ -30,17 +53,18 @@ func (f *Flag) IsSet() bool {
 	return f.set
 }
 
-// Signal sets the flag and closes its wait channel.
-func (f *Flag) Signal() {
+// Signal sets the flag, notifies waiters and returns true, or false if already set.
+func (f *Flag) Signal() bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	if f.set {
-		return
+		return false
 	}
 
-	close(f.ch)
+	close(f.setChan)
 	f.set = true
+	return true
 }
 
 // Reset resets the flag and replaces its wait channel with an open one.
@@ -52,7 +76,7 @@ func (f *Flag) Reset() {
 		return
 	}
 
-	f.ch = make(chan struct{})
+	f.setChan = make(chan struct{})
 	f.set = false
 }
 
@@ -61,5 +85,5 @@ func (f *Flag) Wait() <-chan struct{} {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	return f.ch
+	return f.setChan
 }
