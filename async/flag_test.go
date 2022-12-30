@@ -2,7 +2,7 @@ package async
 
 import "testing"
 
-func TestFlag__should_signal_and_reset_flag(t *testing.T) {
+func TestFlag__should_set_and_reset_flag(t *testing.T) {
 	f := NewFlag()
 	select {
 	case <-f.Wait():
@@ -10,7 +10,7 @@ func TestFlag__should_signal_and_reset_flag(t *testing.T) {
 	default:
 	}
 
-	f.Signal()
+	f.Set()
 	select {
 	case <-f.Wait():
 	default:
@@ -24,7 +24,7 @@ func TestFlag__should_signal_and_reset_flag(t *testing.T) {
 	default:
 	}
 
-	f.Signal()
+	f.Set()
 	select {
 	case <-f.Wait():
 	default:

@@ -41,7 +41,7 @@ func NewFlag() *Flag {
 // SetFlag returns a new set flag.
 func SetFlag() *Flag {
 	f := NewFlag()
-	f.Signal()
+	f.Set()
 	return f
 }
 
@@ -53,8 +53,8 @@ func (f *Flag) IsSet() bool {
 	return f.set
 }
 
-// Signal sets the flag, notifies waiters and returns true, or false if already set.
-func (f *Flag) Signal() bool {
+// Set sets the flag, notifies waiters and returns true, or false if already set.
+func (f *Flag) Set() bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
