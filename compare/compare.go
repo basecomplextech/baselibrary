@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/complex1tech/baselibrary/constraints"
+	"github.com/complex1tech/baselibrary/types"
 )
 
 type (
@@ -112,11 +113,19 @@ func Float64(a, b float64) int {
 	return 0
 }
 
-func Binary(a, b []byte) int {
-	return bytes.Compare(a, b)
+func Bin64(a, b types.Bin64) int {
+	return bytes.Compare(a[:], b[:])
 }
 
-func Bytes(a, b []byte) int {
+func Bin128(a, b types.Bin128) int {
+	return bytes.Compare(a[:], b[:])
+}
+
+func Bin256(a, b types.Bin256) int {
+	return bytes.Compare(a[:], b[:])
+}
+
+func Binary(a, b []byte) int {
 	return bytes.Compare(a, b)
 }
 
