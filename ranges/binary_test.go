@@ -11,7 +11,7 @@ import (
 
 func TestExpandBinary__should_expand_binary_range_skip_nil_values(t *testing.T) {
 	r := Range[[]byte]{[]byte{3}, []byte{7}}
-	cmp := compare.Bytes
+	cmp := compare.Binary
 
 	assert.Equal(t,
 		Range[[]byte]{[]byte{3}, []byte{7}},
