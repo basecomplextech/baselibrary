@@ -1,10 +1,10 @@
-package types
+package hashset
 
 // Set is a collection of unique values implemented as a map[T]struct{}.
 type Set[T comparable] map[T]struct{}
 
-// NewSet returns a new set.
-func NewSet[T comparable](uu ...T) Set[T] {
+// New returns a new set.
+func New[T comparable](uu ...T) Set[T] {
 	set := make(Set[T], len(uu))
 	for _, u := range uu {
 		set.Add(u)
