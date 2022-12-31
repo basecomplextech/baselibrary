@@ -1,7 +1,6 @@
 package memfs
 
 import (
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -48,7 +47,7 @@ func (h *memHandle) Size() (int64, error) {
 	defer h.mu.RUnlock()
 
 	if !h.open {
-		return 0, os.ErrClosed
+		return 0, filesys.ErrClosed
 	}
 
 	return h.entry.Size()
@@ -76,7 +75,7 @@ func (h *memHandle) Map() ([]byte, error) {
 	defer h.mu.Unlock()
 
 	if !h.open {
-		return nil, os.ErrClosed
+		return nil, filesys.ErrClosed
 	}
 
 	return h.entry.Map()
@@ -88,7 +87,7 @@ func (h *memHandle) Read(p []byte) (n int, err error) {
 	defer h.mu.RUnlock()
 
 	if !h.open {
-		return 0, os.ErrClosed
+		return 0, filesys.ErrClosed
 	}
 
 	return h.entry.Read(p)
@@ -100,19 +99,19 @@ func (h *memHandle) ReadAt(p []byte, off int64) (n int, err error) {
 	defer h.mu.RUnlock()
 
 	if !h.open {
-		return 0, os.ErrClosed
+		return 0, filesys.ErrClosed
 	}
 
 	return h.entry.ReadAt(p, off)
 }
 
 // Readdir reads and returns the directory entries, upto n entries if n > 0.
-func (h *memHandle) Readdir(count int) ([]os.FileInfo, error) {
+func (h *memHandle) Readdir(count int) ([]filesys.FileInfo, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if !h.open {
-		return nil, os.ErrClosed
+		return nil, filesys.ErrClosed
 	}
 
 	return h.entry.Readdir(count)
@@ -124,7 +123,7 @@ func (h *memHandle) Readdirnames(n int) ([]string, error) {
 	defer h.mu.RUnlock()
 
 	if !h.open {
-		return nil, os.ErrClosed
+		return nil, filesys.ErrClosed
 	}
 
 	return h.entry.Readdirnames(n)
@@ -136,19 +135,19 @@ func (h *memHandle) Seek(offset int64, whence int) (int64, error) {
 	defer h.mu.Unlock()
 
 	if !h.open {
-		return 0, os.ErrClosed
+		return 0, filesys.ErrClosed
 	}
 
 	return h.entry.Seek(offset, whence)
 }
 
 // Stat returns a file info.
-func (h *memHandle) Stat() (os.FileInfo, error) {
+func (h *memHandle) Stat() (filesys.FileInfo, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if !h.open {
-		return nil, os.ErrClosed
+		return nil, filesys.ErrClosed
 	}
 
 	return h.entry.Stat()
@@ -160,7 +159,7 @@ func (h *memHandle) Sync() error {
 	defer h.mu.Unlock()
 
 	if !h.open {
-		return os.ErrClosed
+		return filesys.ErrClosed
 	}
 
 	return h.entry.Sync()
@@ -172,7 +171,7 @@ func (h *memHandle) Truncate(size int64) error {
 	defer h.mu.Unlock()
 
 	if !h.open {
-		return os.ErrClosed
+		return filesys.ErrClosed
 	}
 
 	return h.entry.Truncate(size)
@@ -184,7 +183,7 @@ func (h *memHandle) Write(p []byte) (n int, err error) {
 	defer h.mu.Unlock()
 
 	if !h.open {
-		return 0, os.ErrClosed
+		return 0, filesys.ErrClosed
 	}
 
 	return h.entry.Write(p)
@@ -196,7 +195,7 @@ func (h *memHandle) WriteAt(p []byte, off int64) (n int, err error) {
 	defer h.mu.Unlock()
 
 	if !h.open {
-		return 0, os.ErrClosed
+		return 0, filesys.ErrClosed
 	}
 
 	return h.entry.WriteAt(p, off)
@@ -208,7 +207,7 @@ func (h *memHandle) WriteString(s string) (ret int, err error) {
 	defer h.mu.Unlock()
 
 	if !h.open {
-		return 0, os.ErrClosed
+		return 0, filesys.ErrClosed
 	}
 
 	return h.entry.WriteString(s)

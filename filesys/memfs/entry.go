@@ -1,16 +1,16 @@
 package memfs
 
-import "os"
+import "github.com/complex1tech/baselibrary/filesys"
 
 type memEntry interface {
 	Size() (int64, error)
 	Map() ([]byte, error)
 	Read(p []byte) (n int, err error)
 	ReadAt(p []byte, off int64) (n int, err error)
-	Readdir(count int) ([]os.FileInfo, error)
+	Readdir(count int) ([]filesys.FileInfo, error)
 	Readdirnames(n int) ([]string, error)
 	Seek(offset int64, whence int) (int64, error)
-	Stat() (os.FileInfo, error)
+	Stat() (filesys.FileInfo, error)
 	Sync() error
 	Truncate(size int64) error
 	Write(p []byte) (n int, err error)

@@ -3,7 +3,6 @@ package memfs
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -50,7 +49,7 @@ func (fs *memFS) Create(path string) (filesys.File, error) {
 func (fs *memFS) Exists(path string) (bool, error) {
 	_, err := fs.Stat(path)
 	switch {
-	case os.IsNotExist(err):
+	case errors.Is(err, filesys.ErrNotExist):
 		return false, nil
 	case err != nil:
 		return false, nil
@@ -59,13 +58,13 @@ func (fs *memFS) Exists(path string) (bool, error) {
 }
 
 // MakeDir creates a directory in the file system.
-func (fs *memFS) MakeDir(path string, perm os.FileMode) error {
+func (fs *memFS) MakeDir(path string, perm filesys.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	names := splitPath(path)
 	if len(names) == 0 {
-		return os.ErrInvalid
+		return filesys.ErrInvalid
 	}
 
 	parent, ok, err := fs.findParent(names...)
@@ -73,7 +72,7 @@ func (fs *memFS) MakeDir(path string, perm os.FileMode) error {
 		return err
 	}
 	if !ok {
-		return os.ErrNotExist
+		return filesys.ErrNotExist
 	}
 
 	last := names[len(names)-1]
@@ -82,7 +81,7 @@ func (fs *memFS) MakeDir(path string, perm os.FileMode) error {
 }
 
 // MakePath creates a directory path and all parents that does not exist.
-func (fs *memFS) MakePath(path string, perm os.FileMode) error {
+func (fs *memFS) MakePath(path string, perm filesys.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -99,7 +98,7 @@ func (fs *memFS) Open(path string) (filesys.File, error) {
 	names := splitPath(path)
 	f, ok := fs.root.findPath(names...)
 	if !ok {
-		return nil, os.ErrNotExist
+		return nil, filesys.ErrNotExist
 	}
 	if err := f.open(); err != nil {
 		return nil, err
@@ -110,7 +109,7 @@ func (fs *memFS) Open(path string) (filesys.File, error) {
 }
 
 // OpenFile is the generalized open call, see os.OpenFile.
-func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (filesys.File, error) {
+func (fs *memFS) OpenFile(path string, flag int, perm filesys.FileMode) (filesys.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -125,8 +124,8 @@ func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (filesys.File
 		return h, nil
 	}
 
-	if flag&os.O_CREATE == 0 {
-		return nil, os.ErrNotExist
+	if flag&filesys.O_CREATE == 0 {
+		return nil, filesys.ErrNotExist
 	}
 
 	f, err := fs.create(path)
@@ -194,25 +193,25 @@ func (fs *memFS) Rename(srcPath string, dstPath string) error {
 	// get source and its parent
 	srcNames := splitPath(srcPath)
 	if len(srcNames) == 0 {
-		return os.ErrInvalid
+		return filesys.ErrInvalid
 	}
 	src, ok := fs.root.findPath(srcNames...)
 	if !ok {
-		return os.ErrNotExist
+		return filesys.ErrNotExist
 	}
 	srcParent := src.getParent()
 
 	// get dest parent
 	dstNames := splitPath(dstPath)
 	if len(dstNames) == 0 {
-		return os.ErrInvalid
+		return filesys.ErrInvalid
 	}
 	dstParent, ok, err := fs.findParent(dstNames...)
 	switch {
 	case err != nil:
 		return err
 	case !ok:
-		return os.ErrNotExist
+		return filesys.ErrNotExist
 	}
 	dstName := dstNames[len(dstNames)-1]
 
@@ -230,7 +229,7 @@ func (fs *memFS) Stat(path string) (filesys.FileInfo, error) {
 	names := splitPath(path)
 	f, ok := fs.root.findPath(names...)
 	if !ok {
-		return nil, os.ErrNotExist
+		return nil, filesys.ErrNotExist
 	}
 
 	info := f.getInfo()
@@ -244,7 +243,7 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 	defer fs.mu.Unlock()
 
 	if len(splitPath(pattern)) != 1 {
-		return "", os.ErrInvalid
+		return "", filesys.ErrInvalid
 	}
 	dir = cleanPath(dir)
 
@@ -254,7 +253,7 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 		names := splitPath(dir)
 		entry, ok := fs.root.findPath(names...)
 		if !ok {
-			return "", os.ErrNotExist
+			return "", filesys.ErrNotExist
 		}
 
 		parent, ok = entry.(*memDir)
@@ -291,7 +290,7 @@ func (fs *memFS) TempFile(dir, pattern string) (filesys.File, error) {
 	defer fs.mu.Unlock()
 
 	if len(splitPath(pattern)) != 1 {
-		return nil, os.ErrInvalid
+		return nil, filesys.ErrInvalid
 	}
 	dir = cleanPath(dir)
 
@@ -301,7 +300,7 @@ func (fs *memFS) TempFile(dir, pattern string) (filesys.File, error) {
 		names := splitPath(dir)
 		entry, ok := fs.root.findPath(names...)
 		if !ok {
-			return nil, os.ErrNotExist
+			return nil, filesys.ErrNotExist
 		}
 
 		parent, ok = entry.(*memDir)
@@ -339,7 +338,7 @@ func (fs *memFS) TempFile(dir, pattern string) (filesys.File, error) {
 func (fs *memFS) create(path string) (memEntry, error) {
 	names := splitPath(path)
 	if len(names) == 0 {
-		return nil, os.ErrInvalid
+		return nil, filesys.ErrInvalid
 	}
 
 	parent, ok, err := fs.findParent(names...)
@@ -347,7 +346,7 @@ func (fs *memFS) create(path string) (memEntry, error) {
 		return nil, err
 	}
 	if !ok {
-		return nil, os.ErrNotExist
+		return nil, filesys.ErrNotExist
 	}
 
 	last := names[len(names)-1]

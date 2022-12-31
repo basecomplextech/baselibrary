@@ -2,7 +2,6 @@ package memfs
 
 import (
 	"errors"
-	"os"
 	"sync"
 
 	"github.com/complex1tech/baselibrary/filesys"
@@ -87,7 +86,7 @@ func (f *memFile) ReadAt(p []byte, off int64) (n int, err error) {
 }
 
 // Readdir reads and returns the directory entries, upto n entries if n > 0.
-func (f *memFile) Readdir(count int) ([]os.FileInfo, error) {
+func (f *memFile) Readdir(count int) ([]filesys.FileInfo, error) {
 	panic("not implemented")
 }
 
@@ -115,7 +114,7 @@ func (f *memFile) Seek(offset int64, whence int) (int64, error) {
 }
 
 // Stat returns a file info.
-func (f *memFile) Stat() (os.FileInfo, error) {
+func (f *memFile) Stat() (filesys.FileInfo, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 

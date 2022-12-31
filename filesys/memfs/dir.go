@@ -2,7 +2,8 @@ package memfs
 
 import (
 	"errors"
-	"os"
+
+	"github.com/complex1tech/baselibrary/filesys"
 )
 
 type memDir struct {
@@ -46,11 +47,11 @@ func (d *memDir) ReadAt(p []byte, off int64) (n int, err error) {
 }
 
 // Readdir reads and returns the directory entries, upto n entries if n > 0.
-func (d *memDir) Readdir(n int) ([]os.FileInfo, error) {
+func (d *memDir) Readdir(n int) ([]filesys.FileInfo, error) {
 	d.fs.mu.RLock()
 	defer d.fs.mu.RUnlock()
 
-	var infos []os.FileInfo
+	var infos []filesys.FileInfo
 	for _, entry := range d.entries {
 		if n > 0 && len(infos) >= n {
 			break
@@ -87,7 +88,7 @@ func (d *memDir) Seek(offset int64, whence int) (int64, error) {
 }
 
 // Stat returns a file info.
-func (d *memDir) Stat() (os.FileInfo, error) {
+func (d *memDir) Stat() (filesys.FileInfo, error) {
 	d.fs.mu.RLock()
 	defer d.fs.mu.RUnlock()
 
@@ -191,7 +192,7 @@ func (d *memDir) findPath(names ...string) (memEntry, bool) {
 func (d *memDir) create(name string) (*memFile, error) {
 	_, ok := d.entries[name]
 	if ok {
-		return nil, os.ErrExist
+		return nil, filesys.ErrExist
 	}
 
 	f := newMemFile(d.fs, name, d)
@@ -202,7 +203,7 @@ func (d *memDir) create(name string) (*memFile, error) {
 func (d *memDir) makeDir(name string) (*memDir, error) {
 	_, ok := d.entries[name]
 	if ok {
-		return nil, os.ErrExist
+		return nil, filesys.ErrExist
 	}
 
 	dir := newMemDir(d.fs, name, d)
@@ -212,7 +213,7 @@ func (d *memDir) makeDir(name string) (*memDir, error) {
 
 func (d *memDir) makePath(names ...string) (*memDir, error) {
 	if len(names) == 0 {
-		return nil, os.ErrInvalid
+		return nil, filesys.ErrInvalid
 	}
 	name := names[0]
 
@@ -244,7 +245,7 @@ func (d *memDir) open() error {
 func (d *memDir) remove(name string) error {
 	_, ok := d.entries[name]
 	if !ok {
-		return os.ErrNotExist
+		return filesys.ErrNotExist
 	}
 
 	delete(d.entries, name)

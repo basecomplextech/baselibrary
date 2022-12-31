@@ -1,7 +1,6 @@
 package memfs
 
 import (
-	"os"
 	"time"
 
 	"github.com/complex1tech/baselibrary/filesys"
@@ -26,7 +25,7 @@ func (i *memInfo) Size() int64 {
 }
 
 // File mode bits.
-func (i *memInfo) Mode() os.FileMode {
+func (i *memInfo) Mode() filesys.FileMode {
 	return 0
 }
 

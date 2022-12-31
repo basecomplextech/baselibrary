@@ -1,10 +1,10 @@
 package memfs
 
 import (
-	"os"
 	"strings"
 	"testing"
 
+	"github.com/complex1tech/baselibrary/filesys"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -194,7 +194,7 @@ func TestMemFS_OpenFile__should_create_absent_file(t *testing.T) {
 	fs := newMemFS()
 	testDir(t, fs, "dir")
 
-	f, err := fs.OpenFile("dir/file", os.O_CREATE, 0)
+	f, err := fs.OpenFile("dir/file", filesys.O_CREATE, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestMemFS_Remove__should_delete_file(t *testing.T) {
 	}
 
 	_, err := fs.Open("dir/file")
-	assert.Equal(t, os.ErrNotExist, err)
+	assert.Equal(t, filesys.ErrNotExist, err)
 }
 
 func TestMemFS_Remove__should_delete_directory(t *testing.T) {
@@ -241,7 +241,7 @@ func TestMemFS_Remove__should_delete_directory(t *testing.T) {
 	}
 
 	_, err := fs.Open("dir/file")
-	assert.Equal(t, os.ErrNotExist, err)
+	assert.Equal(t, filesys.ErrNotExist, err)
 }
 
 // RemoveAll
@@ -256,7 +256,7 @@ func TestMemFS_RemoveAll__should_remove_directory_with_files(t *testing.T) {
 	}
 
 	_, err := fs.Open("dir/subdir/file")
-	assert.Equal(t, os.ErrNotExist, err)
+	assert.Equal(t, filesys.ErrNotExist, err)
 }
 
 // Rename
@@ -271,7 +271,7 @@ func TestMemFS_Rename__should_rename_file(t *testing.T) {
 	}
 
 	_, err := fs.Open("dir/file")
-	assert.Equal(t, os.ErrNotExist, err)
+	assert.Equal(t, filesys.ErrNotExist, err)
 
 	f, err := fs.Open("dir/file2")
 	if err != nil {
@@ -293,7 +293,7 @@ func TestMemFS_Rename__should_replace_file(t *testing.T) {
 	}
 
 	_, err := fs.Open("dir/file")
-	assert.Equal(t, os.ErrNotExist, err)
+	assert.Equal(t, filesys.ErrNotExist, err)
 
 	f, err := fs.Open("dir/file2")
 	if err != nil {
@@ -315,7 +315,7 @@ func TestMemFS_Rename__should_move_file(t *testing.T) {
 	}
 
 	_, err := fs.Open("dir1/file")
-	assert.Equal(t, os.ErrNotExist, err)
+	assert.Equal(t, filesys.ErrNotExist, err)
 
 	f, err := fs.Open("dir2/file")
 	if err != nil {
