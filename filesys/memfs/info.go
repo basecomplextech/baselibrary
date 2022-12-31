@@ -4,10 +4,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/complex1tech/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/filesys"
 )
 
-var _ fs.FileInfo = (*memInfo)(nil)
+var _ filesys.FileInfo = (*memInfo)(nil)
 
 type memInfo struct {
 	name string

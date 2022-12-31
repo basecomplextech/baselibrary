@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/complex1tech/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/filesys"
 )
 
-var _ fs.File = (*memHandle)(nil)
+var _ filesys.File = (*memHandle)(nil)
 
 type memHandle struct {
 	path string

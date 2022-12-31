@@ -9,15 +9,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/complex1tech/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/filesys"
 )
 
 // New returns a new in-memory file system.
-func New() fs.FileSystem {
+func New() filesys.FileSystem {
 	return newMemFS()
 }
 
-var _ fs.FileSystem = (*memFS)(nil)
+var _ filesys.FileSystem = (*memFS)(nil)
 
 type memFS struct {
 	mu   *sync.RWMutex
@@ -33,7 +33,7 @@ func newMemFS() *memFS {
 }
 
 // Create creates a file in the file system.
-func (fs *memFS) Create(path string) (fs.File, error) {
+func (fs *memFS) Create(path string) (filesys.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -92,7 +92,7 @@ func (fs *memFS) MakePath(path string, perm os.FileMode) error {
 }
 
 // Open opens the named file for reading, see os.Open.
-func (fs *memFS) Open(path string) (fs.File, error) {
+func (fs *memFS) Open(path string) (filesys.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -110,7 +110,7 @@ func (fs *memFS) Open(path string) (fs.File, error) {
 }
 
 // OpenFile is the generalized open call, see os.OpenFile.
-func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (fs.File, error) {
+func (fs *memFS) OpenFile(path string, flag int, perm os.FileMode) (filesys.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
@@ -223,7 +223,7 @@ func (fs *memFS) Rename(srcPath string, dstPath string) error {
 }
 
 // Stat returns a file info.
-func (fs *memFS) Stat(path string) (fs.FileInfo, error) {
+func (fs *memFS) Stat(path string) (filesys.FileInfo, error) {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
 
@@ -286,7 +286,7 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 
 // TempFile creates a new temporary file in the directory dir,
 // opens the file for reading and writing, and returns the resulting *os.File.
-func (fs *memFS) TempFile(dir, pattern string) (fs.File, error) {
+func (fs *memFS) TempFile(dir, pattern string) (filesys.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 

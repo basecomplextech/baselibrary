@@ -5,11 +5,11 @@ import (
 	"os"
 	"sync"
 
-	"github.com/complex1tech/baselibrary/fs"
+	"github.com/complex1tech/baselibrary/filesys"
 )
 
 // NewFile returns a new in-memory file detached from a file system.
-func NewFile() fs.File {
+func NewFile() filesys.File {
 	f := newDetachedFile()
 	return newMemHandle("", f)
 }
