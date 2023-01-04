@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/complex1tech/baselibrary/errors2"
+	"github.com/complex1tech/baselibrary/panics"
 	"github.com/complex1tech/baselibrary/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -56,8 +56,8 @@ func TestRun__should_return_recover_on_panic(t *testing.T) {
 	select {
 	case <-p.Wait():
 		_, st := p.Result()
-		require.IsType(t, &errors2.PanicError{}, st.Error)
-		assert.EqualValues(t, "test", st.Error.(*errors2.PanicError).E)
+		require.IsType(t, &panics.Error{}, st.Error)
+		assert.EqualValues(t, "test", st.Error.(*panics.Error).E)
 
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("timeout")
@@ -127,8 +127,8 @@ func TestExecute__should_return_recover_on_panic(t *testing.T) {
 	select {
 	case <-p.Wait():
 		_, st := p.Result()
-		require.IsType(t, &errors2.PanicError{}, st.Error)
-		assert.EqualValues(t, "test", st.Error.(*errors2.PanicError).E)
+		require.IsType(t, &panics.Error{}, st.Error)
+		assert.EqualValues(t, "test", st.Error.(*panics.Error).E)
 
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("timeout")

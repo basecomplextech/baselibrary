@@ -3,7 +3,7 @@ package status
 import (
 	"fmt"
 
-	"github.com/complex1tech/baselibrary/errors2"
+	"github.com/complex1tech/baselibrary/panics"
 )
 
 // Error returns an error status.
@@ -84,12 +84,12 @@ func WrapErrorf(err error, format string, a ...interface{}) Status {
 
 // Recover recovers from a panic and returns an error status.
 func Recover(e interface{}) Status {
-	err := errors2.Recover(e)
+	err := panics.Recover(e)
 	return WrapError(err)
 }
 
 // RecoverStack recovers from a panic and returns an error status and a stack trace.
 func RecoverStack(e interface{}) (Status, []byte) {
-	err, stack := errors2.RecoverStack(e)
+	err, stack := panics.RecoverStack(e)
 	return WrapError(err), stack
 }
