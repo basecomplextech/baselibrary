@@ -1,4 +1,4 @@
-package hashset
+package sets
 
 // Set is a collection of unique values implemented as a map[T]struct{}.
 type Set[T comparable] map[T]struct{}
