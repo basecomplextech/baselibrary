@@ -3,9 +3,9 @@ package pqueue
 import (
 	"container/heap"
 
+	"github.com/complex1tech/baselibrary/collect/slices"
 	"github.com/complex1tech/baselibrary/compare"
 	"github.com/complex1tech/baselibrary/constraints"
-	"github.com/complex1tech/baselibrary/slices"
 )
 
 // Queue is a priority queue that is implemented using a heap.

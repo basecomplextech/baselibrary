@@ -3,7 +3,7 @@ package pqueue
 import (
 	"testing"
 
-	"github.com/complex1tech/baselibrary/slices"
+	"github.com/complex1tech/baselibrary/collect/slices"
 	"github.com/stretchr/testify/assert"
 )
 
