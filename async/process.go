@@ -39,6 +39,29 @@ func Run(fn func(cancel <-chan struct{}) status.Status) Process[struct{}] {
 	return p
 }
 
+// RunSelf runs a function in a new process, recovers on panics.
+func RunSelf(fn func(cancel <-chan struct{}, p Process[struct{}]) status.Status) Process[struct{}] {
+	p := newProcess[struct{}]()
+
+	go func() {
+		defer func() {
+			e := recover()
+			if e == nil {
+				return
+			}
+
+			err := panics.Recover(e)
+			st := status.WrapError(err)
+			p.Complete(struct{}{}, st)
+		}()
+
+		st := fn(p.cancel, p)
+		p.Complete(struct{}{}, st)
+	}()
+
+	return p
+}
+
 // Execute executes a function in a new process, recovers on panics.
 func Execute[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Process[T] {
 	p := newProcess[T]()
