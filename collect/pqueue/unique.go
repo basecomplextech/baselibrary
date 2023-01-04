@@ -22,12 +22,15 @@ func NewUnique[V comparable, P any](compare compare.Func[P], items ...Item[V, P]
 		},
 	}
 
-	for _, item := range items {
+	for i, item := range items {
 		item := uniqueItem[V, P]{
 			value:    item.Value,
 			priority: item.Priority,
+			index:    i,
 		}
+
 		q.queue.items = append(q.queue.items, item)
+		q.queue.indexes[item.value] = i
 	}
 
 	heap.Init(q.queue)
@@ -43,6 +46,12 @@ func OrderedUnique[V comparable, P constraints.Ordered](items ...Item[V, P]) *Un
 // Len returns the number of elements in the queue.
 func (q *UniqueQueue[V, P]) Len() int {
 	return q.queue.Len()
+}
+
+// Clear removes all elements from the queue.
+func (q *UniqueQueue[V, P]) Clear() {
+	q.queue.items = nil
+	q.queue.indexes = make(map[V]int)
 }
 
 // Contains returns true if the queue contains an element.

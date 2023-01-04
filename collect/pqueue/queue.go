@@ -43,6 +43,11 @@ func (q *Queue[V, P]) Len() int {
 	return q.queue.Len()
 }
 
+// Clear removes all elements from the queue.
+func (q *Queue[V, P]) Clear() {
+	q.queue.items = nil
+}
+
 // Pop removes and returns the minimum element (according to Less) from the queue.
 func (q *Queue[V, P]) Pop() (value V, priority P, ok bool) {
 	if q.Len() == 0 {
