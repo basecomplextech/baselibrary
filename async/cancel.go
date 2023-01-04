@@ -22,3 +22,14 @@ type CancelWaiter interface {
 func CancelWait(w CancelWaiter) {
 	<-w.Cancel()
 }
+
+// CancelWaitAll cancels and awaits all operations.
+func CancelWaitAll[W CancelWaiter](w ...W) {
+	for _, w := range w {
+		w.Cancel()
+	}
+
+	for _, w := range w {
+		<-w.Wait()
+	}
+}
