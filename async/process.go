@@ -87,6 +87,43 @@ func Execute[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Process[
 	return p
 }
 
+// Join joins all processes into a single process.
+// The process returns all the results and the first non-OK status.
+func Join[T any](ps ...Process[T]) Process[[]T] {
+	return Execute(func(cancel <-chan struct{}) ([]T, status.Status) {
+		// await all or cancel
+		st := status.OK
+	loop:
+		for _, p := range ps {
+			select {
+			case <-p.Wait():
+			case <-cancel:
+				st = status.Cancelled
+				break loop
+			}
+		}
+
+		// cancel all
+		for _, p := range ps {
+			<-p.Cancel()
+		}
+
+		// collect results
+		results := make([]T, 0, len(ps))
+		for _, p := range ps {
+			<-p.Wait()
+
+			r, st1 := p.Result()
+			if !st1.OK() && st.OK() {
+				st = st1
+			}
+
+			results = append(results, r)
+		}
+		return results, st
+	})
+}
+
 // internal
 
 type process[T any] struct {
