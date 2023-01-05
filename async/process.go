@@ -105,7 +105,7 @@ func Join[T any](ps ...Process[T]) Process[[]T] {
 
 		// cancel all
 		for _, p := range ps {
-			<-p.Cancel()
+			p.Cancel()
 		}
 
 		// collect results
