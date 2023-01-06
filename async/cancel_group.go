@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// CancelGroup processes all operations in the group and awaits their completion.
+// CancelGroup cancels all operations in the group and awaits their completion.
 type CancelGroup struct {
 	mu   sync.Mutex
 	done bool
@@ -20,7 +20,7 @@ func NewCancelGroup() *CancelGroup {
 	return &CancelGroup{}
 }
 
-// Add adds a process to the group, or immediately cancels it if the group is cancelled.
+// Add adds a thread to the group, or immediately cancels it if the group is cancelled.
 func (g *CancelGroup) Add(c CancelWaiter) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -80,7 +80,7 @@ func (g *CancelGroup) Cancel() {
 	}
 }
 
-// CancelWait processes all operations in the group and awaits them.
+// CancelWait cancels all operations in the group and awaits them.
 func (g *CancelGroup) CancelWait() {
 	g.Cancel()
 	g.Wait()
