@@ -29,6 +29,24 @@ func (r Range[V]) Expand(r1 Range[V], compare compare.Func[V]) Range[V] {
 	return r
 }
 
+// Includes returns 0 if the value is inside the range, <0 if before, >0 if after.
+func (r Range[V]) Includes(v V, compare compare.Func[V]) int {
+	cmp := compare(v, r.Start)
+	switch {
+	case cmp < 0:
+		return -1
+	case cmp == 0:
+		return 0
+	}
+
+	cmp = compare(v, r.End)
+	if cmp > 0 {
+		return 1
+	}
+
+	return 0
+}
+
 // Overlaps returns if the current range overlaps another range.
 //
 // One range overlaps another when either start/end of the first
