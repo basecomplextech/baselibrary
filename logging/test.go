@@ -10,18 +10,20 @@ import (
 const TEST_LOG = "TEST_LOG"
 
 // TestLevel is the default log level for tests, you can change it in your modules for tests.
-var TestLevel = LevelDebug
+var TestLevel = LevelError
 
 // Test returns a new test logging service.
 func Test(t tests.T) Logging {
 	level := TestLevelEnv()
-	writer := newStdoutWriter(level)
-	return newLogging(level, writer)
+	writer := newConsoleWriter(level, true, os.Stdout)
+	return newLogging(writer)
 }
 
 // TestLogger returns a new test logger.
 func TestLogger(t tests.T) Logger {
-	return Test(t).Main()
+	level := TestLevelEnv()
+	writer := newConsoleWriter(level, true, os.Stdout)
+	return newLogger("main", true /* root */, writer)
 }
 
 // TestLevelEnv returns a log level from the env variable TEST_LOG or the default test level.

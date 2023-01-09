@@ -10,14 +10,15 @@ import (
 
 // Config specifies the logging configuration.
 type Config struct {
-	Level   Level          `json:"level"`
 	Console *ConsoleConfig `json:"console"`
 	File    *FileConfig    `json:"file"`
 }
 
 type ConsoleConfig struct {
-	Enabled bool  `json:"enabled"`
-	Level   Level `json:"level"`
+	Enabled bool       `json:"enabled"`
+	Level   Level      `json:"level"`
+	Color   bool       `json:"color"`
+	Theme   ColorTheme `json:"theme"`
 }
 
 type FileConfig struct {
@@ -39,6 +40,8 @@ func DefaultConfig() *Config {
 		Console: &ConsoleConfig{
 			Enabled: true,
 			Level:   LevelInfo,
+			Color:   true,
+			Theme:   DefaultColorTheme(),
 		},
 		File: &FileConfig{
 			Enabled:    false,

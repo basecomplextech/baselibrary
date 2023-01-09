@@ -1,14 +1,7 @@
 package logging
 
-import "sync"
-
-// Main is the main logger name.
-const Main = "main"
-
-var (
-	Null   Logger = newLogging(LevelDebug, nil).Main()
-	Stdout Logger = newLogging(LevelDebug, newStdoutWriter(LevelTrace)).Main()
-	Stderr Logger = newLogging(LevelDebug, newStderrWriter(LevelTrace)).Main()
+import (
+	"github.com/complex1tech/baselibrary/collect/slices"
 )
 
 // Logging is a logging service.
@@ -16,22 +9,31 @@ type Logging interface {
 	// Main returns the main logger.
 	Main() Logger
 
-	// Send logs the record.
-	Send(rec Record)
-
 	// Logger returns a logger with the given name or creates a new one.
 	Logger(name string) Logger
+
+	// Enabled returns true if logging is enabled for the given level.
+	Enabled(level Level) bool
+
+	// Write writes a record.
+	Write(rec Record) error
 }
 
 // New returns a new logging service.
-func New(config *Config) (Logging, error) {
-	return openLogging(config)
+func New(writers ...Writer) Logging {
+	return newLogging(writers...)
+}
+
+// Init initializes and returns a new logging service.
+func Init(config *Config) (Logging, error) {
+	return initLogging(config)
 }
 
 // Default returns a new logging service with the default config.
 func Default() Logging {
 	config := DefaultConfig()
-	l, err := openLogging(config)
+
+	l, err := initLogging(config)
 	if err != nil {
 		panic(err) // unreachable
 	}
@@ -41,20 +43,15 @@ func Default() Logging {
 // internal
 
 type logging struct {
-	main    *logger // main logger
-	level   Level
+	main    *logger
 	writers []Writer
-
-	mu      sync.RWMutex
-	loggers map[string]*logger
 }
 
-func openLogging(config *Config) (*logging, error) {
-	level := config.Level
+func initLogging(config *Config) (*logging, error) {
 	var writers []Writer
 
 	if config.Console != nil && config.Console.Enabled {
-		console, err := newConsoleWriter(config.Console)
+		console, err := initConsoleWriter(config.Console)
 		if err != nil {
 			return nil, err
 		}
@@ -62,29 +59,21 @@ func openLogging(config *Config) (*logging, error) {
 	}
 
 	if config.File != nil && config.File.Enabled {
-		file, err := newFileWriter(config.File)
+		file, err := initFileWriter(config.File)
 		if err != nil {
 			return nil, err
 		}
 		writers = append(writers, file)
 	}
 
-	return newLogging(level, writers...), nil
+	return newLogging(writers...), nil
 }
 
-func newLogging(level Level, writers ...Writer) *logging {
+func newLogging(writers ...Writer) *logging {
 	l := &logging{
-		level:   level,
-		writers: make([]Writer, len(writers)),
-		loggers: make(map[string]*logger),
+		writers: slices.Clone(writers),
 	}
-	copy(l.writers, writers)
-
-	main := newLogger(l, Main)
-	main.main = true
-
-	l.main = main
-	l.loggers[Main] = main
+	l.main = newLogger("main", true, l)
 	return l
 }
 
@@ -93,42 +82,27 @@ func (l *logging) Main() Logger {
 	return l.main
 }
 
-// Send logs the record.
-func (l *logging) Send(rec Record) {
-	l.send(rec)
-}
-
 // Logger returns a logger with the given name or creates a new one.
 func (l *logging) Logger(name string) Logger {
-	return l.logger(name)
+	return l.main.Logger(name)
 }
 
-// internal
-
-func (l *logging) enabled(logger string, level Level) bool {
-	return level >= l.level
-}
-
-func (l *logging) logger(name string) *logger {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	logger, ok := l.loggers[name]
-	if ok {
-		return logger
-	}
-
-	logger = newLogger(l, name)
-	l.loggers[name] = logger
-	return logger
-}
-
-func (l *logging) send(rec Record) {
-	if rec.Level < l.level {
-		return
-	}
-
+// Enabled returns true if logging is enabled for the given level.
+func (l *logging) Enabled(level Level) bool {
 	for _, w := range l.writers {
-		w.Write(rec)
+		if w.Enabled(level) {
+			return true
+		}
 	}
+	return false
+}
+
+// Write writes a record.
+func (l *logging) Write(rec Record) error {
+	for _, w := range l.writers {
+		if err := w.Write(rec); err != nil {
+			return err
+		}
+	}
+	return nil
 }

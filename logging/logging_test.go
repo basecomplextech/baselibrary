@@ -1,6 +1,8 @@
 package logging
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestLogging(t *testing.T) {
 	l := Stdout
@@ -12,7 +14,7 @@ func TestLogging(t *testing.T) {
 	l.Error("Error message", "key", "value", "key1", 1234)
 	l.Fatal("Fatal message")
 
-	l.Log().
+	l.Begin().
 		Infof("Hello, %v", "world").
 		Fields("key", "value", "key1", 1234).
 		Send()

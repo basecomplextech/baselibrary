@@ -1,11 +1,22 @@
 package logging
 
+import (
+	"os"
+	"time"
+)
+
+var (
+	Null   Logger = newLogger("null", true, newNullWriter())
+	Stdout Logger = newLogger("main", true, newConsoleWriter(LevelDebug, true, os.Stdout))
+	Stderr Logger = newLogger("main", true, newConsoleWriter(LevelDebug, true, os.Stderr))
+)
+
 type Logger interface {
 	// Name returns the logger name.
 	Name() string
 
-	// Log returns a record builder with info level.
-	Log() RecordBuilder
+	// Begin returns a record builder with the info level.
+	Begin() RecordBuilder
 
 	// Logger returns a child logger.
 	Logger(name string) Logger
@@ -65,15 +76,18 @@ type Logger interface {
 var _ Logger = (*logger)(nil)
 
 type logger struct {
-	l    *logging
 	name string
-	main bool
+	root bool
+
+	w Writer
 }
 
-func newLogger(l *logging, name string) *logger {
+func newLogger(name string, root bool, writer Writer) *logger {
 	return &logger{
-		l:    l,
 		name: name,
+		root: root,
+
+		w: writer,
 	}
 }
 
@@ -82,17 +96,18 @@ func (l *logger) Name() string {
 	return l.name
 }
 
-// Log returns a record builder with info level.
-func (l *logger) Log() RecordBuilder {
-	return newRecordBuilder(l.l, l.name).Level(LevelInfo)
+// Begin returns a record builder with the info level.
+func (l *logger) Begin() RecordBuilder {
+	return newRecordBuilder(l.w, l.name).Level(LevelInfo)
 }
 
 // Logger returns a child logger.
 func (l *logger) Logger(name string) Logger {
-	if !l.main {
+	if !l.root {
 		name = l.name + "." + name
 	}
-	return l.l.logger(name)
+
+	return newLogger(name, false, l.w)
 }
 
 // Records
@@ -100,118 +115,125 @@ func (l *logger) Logger(name string) Logger {
 // Trace logs a trace record.
 func (l *logger) Trace(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelTrace,
 		Logger:  l.name,
 		Message: msg,
 		Fields:  NewFields(keyValues...),
 	}
-	l.l.send(rec)
+	l.w.Write(rec)
 }
 
 // Debug logs a debug record.
 func (l *logger) Debug(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelDebug,
 		Logger:  l.name,
 		Message: msg,
 		Fields:  NewFields(keyValues...),
 	}
-	l.l.send(rec)
+	l.w.Write(rec)
 }
 
 // Info logs an info record.
 func (l *logger) Info(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelInfo,
 		Logger:  l.name,
 		Message: msg,
 		Fields:  NewFields(keyValues...),
 	}
-	l.l.send(rec)
+	l.w.Write(rec)
 }
 
 // Notice logs a notice record.
 func (l *logger) Notice(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelNotice,
 		Logger:  l.name,
 		Message: msg,
 		Fields:  NewFields(keyValues...),
 	}
-	l.l.send(rec)
+	l.w.Write(rec)
 }
 
 // Warn logs a warning record.
 func (l *logger) Warn(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelWarn,
 		Logger:  l.name,
 		Message: msg,
 		Fields:  NewFields(keyValues...),
 	}
-	l.l.send(rec)
+	l.w.Write(rec)
 }
 
 // Error logs an error record.
 func (l *logger) Error(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelError,
 		Logger:  l.name,
 		Message: msg,
 		Fields:  NewFields(keyValues...),
 	}
-	l.l.send(rec)
+	l.w.Write(rec)
 }
 
 // Fatal logs a fatal record.
 func (l *logger) Fatal(msg string, keyValues ...any) {
 	rec := Record{
+		Time:    time.Now(),
 		Level:   LevelFatal,
 		Logger:  l.name,
 		Message: msg,
 		Fields:  NewFields(keyValues...),
 	}
-	l.l.send(rec)
+	l.w.Write(rec)
 }
 
 // Level checks
 
 // Enabled returns true if a level is enabled.
 func (l *logger) Enabled(level Level) bool {
-	return l.l.enabled(l.name, level)
+	return l.w.Enabled(level)
 }
 
 // TraceEnabled returns true if trace level is enabled.
 func (l *logger) TraceEnabled() bool {
-	return l.l.enabled(l.name, LevelTrace)
+	return l.w.Enabled(LevelTrace)
 }
 
 // DebugEnabled returns true if debug level is enabled.
 func (l *logger) DebugEnabled() bool {
-	return l.l.enabled(l.name, LevelDebug)
+	return l.w.Enabled(LevelDebug)
 }
 
 // InfoEnabled returns true if info level is enabled.
 func (l *logger) InfoEnabled() bool {
-	return l.l.enabled(l.name, LevelInfo)
+	return l.w.Enabled(LevelInfo)
 }
 
 // NoticeEnabled return true if notice level is enabled.
 func (l *logger) NoticeEnabled() bool {
-	return l.l.enabled(l.name, LevelNotice)
+	return l.w.Enabled(LevelNotice)
 }
 
 // WarnEnabled returns true if warn level is enabled.
 func (l *logger) WarnEnabled() bool {
-	return l.l.enabled(l.name, LevelWarn)
+	return l.w.Enabled(LevelWarn)
 }
 
 // ErrorEnabled returns true if error level is enabled.
 func (l *logger) ErrorEnabled() bool {
-	return l.l.enabled(l.name, LevelError)
+	return l.w.Enabled(LevelError)
 }
 
 // FatalEnabled returns true if fatal level is enabled.
 func (l *logger) FatalEnabled() bool {
-	return l.l.enabled(l.name, LevelFatal)
+	return l.w.Enabled(LevelFatal)
 }

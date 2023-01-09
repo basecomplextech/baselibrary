@@ -85,27 +85,27 @@ type RecordBuilder interface {
 var _ RecordBuilder = (*recordBuilder)(nil)
 
 type recordBuilder struct {
-	l   *logging
-	rec Record
+	w Writer
+	r Record
 }
 
-func newRecordBuilder(l *logging, logger string) *recordBuilder {
+func newRecordBuilder(w Writer, logger string) *recordBuilder {
 	return &recordBuilder{
-		l:   l,
-		rec: NewRecord(logger),
+		w: w,
+		r: NewRecord(logger),
 	}
 }
 
 // Send sends the record.
 func (b *recordBuilder) Send() {
-	b.l.send(b.rec)
+	b.w.Write(b.r)
 }
 
 // Level
 
 // Level sets the record level.
 func (b *recordBuilder) Level(level Level) RecordBuilder {
-	b.rec.Level = level
+	b.r.Level = level
 	return b
 }
 
@@ -113,13 +113,13 @@ func (b *recordBuilder) Level(level Level) RecordBuilder {
 
 // Message sets the record message.
 func (b *recordBuilder) Message(msg string) RecordBuilder {
-	b.rec.Message = msg
+	b.r.Message = msg
 	return b
 }
 
 // Messagef formats and sets the record message.
 func (b *recordBuilder) Messagef(format string, args ...any) RecordBuilder {
-	b.rec.Message = fmt.Sprintf(format, args...)
+	b.r.Message = fmt.Sprintf(format, args...)
 	return b
 }
 
@@ -128,7 +128,7 @@ func (b *recordBuilder) Messagef(format string, args ...any) RecordBuilder {
 // Field adds a field to the record.
 func (b *recordBuilder) Field(key string, value any) RecordBuilder {
 	field := NewField(key, value)
-	b.rec.Fields = append(b.rec.Fields, field)
+	b.r.Fields = append(b.r.Fields, field)
 	return b
 }
 
@@ -141,13 +141,13 @@ func (b *recordBuilder) Fieldf(key string, format string, a ...any) RecordBuilde
 // Fields adds fields to the record.
 func (b *recordBuilder) Fields(keyValuePairs ...any) RecordBuilder {
 	fields := NewFields(keyValuePairs...)
-	b.rec.Fields = append(b.rec.Fields, fields...)
+	b.r.Fields = append(b.r.Fields, fields...)
 	return b
 }
 
 // Stack adds a stack trace.
 func (b *recordBuilder) Stack(stack []byte) RecordBuilder {
-	b.rec.Stack = stack
+	b.r.Stack = stack
 	return b
 }
 

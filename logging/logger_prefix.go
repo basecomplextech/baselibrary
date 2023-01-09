@@ -51,9 +51,9 @@ func (l *prefixLogger) Name() string {
 	return l.logger.Name()
 }
 
-// Log returns a record builder with info level.
-func (l *prefixLogger) Log() RecordBuilder {
-	return l.logger.Log()
+// Begin returns a record builder with info level.
+func (l *prefixLogger) Begin() RecordBuilder {
+	return l.logger.Begin()
 }
 
 // Logger returns a child logger.

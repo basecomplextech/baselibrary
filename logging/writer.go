@@ -1,41 +1,30 @@
 package logging
 
-import (
-	"log"
-)
-
 // Writer writes log records.
 type Writer interface {
+	// Enabled returns true if the writer is enabled for the given level.
+	Enabled(level Level) bool
+
 	// Write writes a record.
 	Write(rec Record) error
 }
 
-// internal
+// null
 
-var _ Writer = (*writer)(nil)
+var _ Writer = (*nullWriter)(nil)
 
-const lflags = log.Ldate | log.Ltime | log.Lmicroseconds
+type nullWriter struct{}
 
-type writer struct {
-	level     Level
-	logger    *log.Logger
-	formatter Formatter
+func newNullWriter() *nullWriter {
+	return &nullWriter{}
 }
 
-func newWriter(level Level, logger *log.Logger, formatter Formatter) *writer {
-	return &writer{
-		level:     level,
-		logger:    logger,
-		formatter: formatter,
-	}
+// Enabled returns true if the writer is enabled for the given level.
+func (w *nullWriter) Enabled(level Level) bool {
+	return false
 }
 
 // Write writes a record.
-func (w *writer) Write(rec Record) error {
-	if rec.Level < w.level {
-		return nil
-	}
-
-	msg := w.formatter.Format(rec)
-	return w.logger.Output(2, msg)
+func (w *nullWriter) Write(rec Record) error {
+	return nil
 }
