@@ -6,8 +6,8 @@ type Logger interface {
 	// Name returns the logger name.
 	Name() string
 
-	// Log returns a record builder with the info level.
-	Log() RecordBuilder
+	// Begin returns a record builder with the info level.
+	Begin() RecordBuilder
 
 	// Logger returns a child logger.
 	Logger(name string) Logger
@@ -87,8 +87,8 @@ func (l *logger) Name() string {
 	return l.name
 }
 
-// Log returns a record builder with the info level.
-func (l *logger) Log() RecordBuilder {
+// Begin returns a record builder with the info level.
+func (l *logger) Begin() RecordBuilder {
 	return newRecordBuilder(l.w, l.name).Level(LevelInfo)
 }
 
