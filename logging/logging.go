@@ -1,14 +1,7 @@
 package logging
 
-import "os"
-
-// Main is the root logger name.
-const Main = "main"
-
-var (
-	Null   Logger = newLogger(Main, true, newNullWriter())
-	Stdout Logger = newLogger(Main, true, newConsoleWriter(LevelDebug, true, os.Stdout))
-	Stderr Logger = newLogger(Main, true, newConsoleWriter(LevelDebug, true, os.Stderr))
+import (
+	"github.com/complex1tech/baselibrary/slices"
 )
 
 // Logging is a logging service.
@@ -24,6 +17,11 @@ type Logging interface {
 
 	// Write writes a record.
 	Write(rec Record) error
+}
+
+// New returns a new logging service.
+func New(writers ...Writer) Logging {
+	return newLogging(writers...)
 }
 
 // Init initializes and returns a new logging service.
@@ -45,8 +43,8 @@ func Default() Logging {
 // internal
 
 type logging struct {
-	main   *logger // main logger
-	writer Writer
+	main    *logger
+	writers []Writer
 }
 
 func initLogging(config *Config) (*logging, error) {
@@ -73,9 +71,9 @@ func initLogging(config *Config) (*logging, error) {
 
 func newLogging(writers ...Writer) *logging {
 	l := &logging{
-		writer: newMultiWriter(writers...),
+		writers: slices.Clone(writers),
 	}
-	l.main = newLogger(Main, true, l)
+	l.main = newLogger("main", true, l)
 	return l
 }
 
@@ -91,10 +89,20 @@ func (l *logging) Logger(name string) Logger {
 
 // Enabled returns true if logging is enabled for the given level.
 func (l *logging) Enabled(level Level) bool {
-	return l.writer.Enabled(level)
+	for _, w := range l.writers {
+		if w.Enabled(level) {
+			return true
+		}
+	}
+	return false
 }
 
 // Write writes a record.
 func (l *logging) Write(rec Record) error {
-	return l.writer.Write(rec)
+	for _, w := range l.writers {
+		if err := w.Write(rec); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -1,6 +1,15 @@
 package logging
 
-import "time"
+import (
+	"os"
+	"time"
+)
+
+var (
+	Null   Logger = newLogger("null", true, newNullWriter())
+	Stdout Logger = newLogger("main", true, newConsoleWriter(LevelDebug, true, os.Stdout))
+	Stderr Logger = newLogger("main", true, newConsoleWriter(LevelDebug, true, os.Stderr))
+)
 
 type Logger interface {
 	// Name returns the logger name.

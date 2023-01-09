@@ -41,6 +41,7 @@ func (f *textFormatter) Format(w io.Writer, rec Record) error {
 	f.writeMessage(tw, rec)
 	f.writeFields(tw, rec.Fields)
 	f.writeStack(tw, rec.Stack)
+	tw.WriteString("\n")
 	return nil
 }
 

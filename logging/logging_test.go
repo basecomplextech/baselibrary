@@ -1,6 +1,8 @@
 package logging
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestLogging(t *testing.T) {
 	l := Stdout
