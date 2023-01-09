@@ -1,6 +1,8 @@
 package terminal
 
 const (
+	FgReset = "\033[0m"
+
 	FgBlack   = "\033[0;30m"
 	FgRed     = "\033[0;31m"
 	FgGreen   = "\033[0;32m"

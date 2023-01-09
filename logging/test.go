@@ -15,13 +15,15 @@ var TestLevel = LevelError
 // Test returns a new test logging service.
 func Test(t tests.T) Logging {
 	level := TestLevelEnv()
-	writer := newStdoutWriter(level)
-	return newLogging(level, writer)
+	writer := newConsoleWriter(level, true, os.Stdout)
+	return newLogging(writer)
 }
 
 // TestLogger returns a new test logger.
 func TestLogger(t tests.T) Logger {
-	return Test(t).Main()
+	level := TestLevelEnv()
+	writer := newConsoleWriter(level, true, os.Stdout)
+	return newLogger(Main, true /* root */, writer)
 }
 
 // TestLevelEnv returns a log level from the env variable TEST_LOG or the default test level.

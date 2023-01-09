@@ -10,7 +10,6 @@ import (
 
 // Config specifies the logging configuration.
 type Config struct {
-	Level   Level          `json:"level"`
 	Console *ConsoleConfig `json:"console"`
 	File    *FileConfig    `json:"file"`
 }
