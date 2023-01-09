@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// NewArenaFreeList
+// ArenaFreeList
 
-func TestNewArenaFreeList__should_allocate_free_list(t *testing.T) {
+func TestArenaList__should_allocate_free_list(t *testing.T) {
 	a := testArena()
-	list := NewArenaFreeList[int64](a)
+	list := ArenaFreeList[int64](a)
 
 	v0 := list.Get()
 	*v0 = math.MaxInt64
@@ -22,23 +22,23 @@ func TestNewArenaFreeList__should_allocate_free_list(t *testing.T) {
 	assert.Zero(t, *v1)
 }
 
-func TestNewArenaFreeList__should_return_different_lists_for_different_types_with_same_size(t *testing.T) {
+func TestArenaList__should_return_different_lists_for_different_types_with_same_size(t *testing.T) {
 	type Value struct {
 		V int64
 	}
 
 	a := testArena()
-	list0 := NewArenaFreeList[int64](a)
-	list1 := NewArenaFreeList[Value](a)
+	list0 := ArenaFreeList[int64](a)
+	list1 := ArenaFreeList[Value](a)
 
 	assert.NotSame(t, list0, list1)
 }
 
 // Get
 
-func TestArenaFreeList_Get__should_allocate_new_object(t *testing.T) {
+func TestArenaList_Get__should_allocate_new_object(t *testing.T) {
 	a := testArena()
-	list := newArenaFreeList[int64](a)
+	list := newArenaList[int64](a)
 
 	v := list.Get()
 	*v = math.MaxInt64
@@ -46,9 +46,9 @@ func TestArenaFreeList_Get__should_allocate_new_object(t *testing.T) {
 	assert.Equal(t, int64(math.MaxInt64), *v)
 }
 
-func TestArenaFreeList_Get__should_return_free_object(t *testing.T) {
+func TestArenaList_Get__should_return_free_object(t *testing.T) {
 	a := testArena()
-	list := newArenaFreeList[int64](a)
+	list := newArenaList[int64](a)
 
 	v0 := list.Get()
 	list.Put(v0)
@@ -57,9 +57,9 @@ func TestArenaFreeList_Get__should_return_free_object(t *testing.T) {
 	assert.Same(t, v0, v1)
 }
 
-func TestArenaFreeList_Get__should_consume_free_item(t *testing.T) {
+func TestArenaList_Get__should_consume_free_item(t *testing.T) {
 	a := testArena()
-	list := newArenaFreeList[int64](a)
+	list := newArenaList[int64](a)
 
 	v0 := list.Get()
 	list.Put(v0)
@@ -68,9 +68,9 @@ func TestArenaFreeList_Get__should_consume_free_item(t *testing.T) {
 	assert.Zero(t, list.free)
 }
 
-func TestArenaFreeList_Get__should_swap_free_item_with_previous(t *testing.T) {
+func TestArenaList_Get__should_swap_free_item_with_previous(t *testing.T) {
 	a := testArena()
-	list := newArenaFreeList[int64](a)
+	list := newArenaList[int64](a)
 
 	v0 := list.Get()
 	v1 := list.Get()
@@ -82,7 +82,7 @@ func TestArenaFreeList_Get__should_swap_free_item_with_previous(t *testing.T) {
 	assert.Equal(t, ptr0, list.free)
 }
 
-func TestArenaFreeList_Get__should_zero_object(t *testing.T) {
+func TestArenaList_Get__should_zero_object(t *testing.T) {
 	type Value struct {
 		A int64
 		B int64
@@ -90,7 +90,7 @@ func TestArenaFreeList_Get__should_zero_object(t *testing.T) {
 	}
 
 	a := testArena()
-	list := newArenaFreeList[Value](a)
+	list := newArenaList[Value](a)
 
 	v := list.Get()
 	v.A = 1
@@ -105,9 +105,9 @@ func TestArenaFreeList_Get__should_zero_object(t *testing.T) {
 
 // Put
 
-func TestArenaFreeList_Put__should_swap_free_item_with_next(t *testing.T) {
+func TestArenaList_Put__should_swap_free_item_with_next(t *testing.T) {
 	a := testArena()
-	list := newArenaFreeList[int64](a)
+	list := newArenaList[int64](a)
 
 	v0 := list.Get()
 	v1 := list.Get()

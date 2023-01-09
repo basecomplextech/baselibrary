@@ -153,9 +153,9 @@ func BenchmarkArena_Alloc(b *testing.B) {
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
-func BenchmarkArenaFreeList_Get_Put(b *testing.B) {
+func BenchmarkArenaList_Get_Put(b *testing.B) {
 	a := testArena()
-	list := newArenaFreeList[int64](a)
+	list := newArenaList[int64](a)
 	size := 8
 
 	b.ResetTimer()

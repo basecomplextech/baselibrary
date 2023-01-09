@@ -25,10 +25,6 @@ type Arena interface {
 	// String returns a string copy allocated in the arena.
 	String(s string) string
 
-	// CopyBytes allocates a byte slice and copies items from b into it.
-	// The slice capacity is len(b).
-	CopyBytes(b []byte) []byte
-
 	// Internal
 
 	// Free frees the arena and releases its memory.
@@ -84,6 +80,12 @@ func ArenaCopy[T any](a Arena, src []T) []T {
 	dst := ArenaSlice[T](a, len(src))
 	copy(dst, src)
 	return dst
+}
+
+// ArenaFreeList returns a new free list which allocates objects in the given arena.
+func ArenaFreeList[T any](a Arena) FreeList[T] {
+	arena := a.(*arena)
+	return newArenaList[T](arena)
 }
 
 // internal
