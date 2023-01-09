@@ -23,7 +23,3 @@ const (
 	FgLightWhite   = "\033[0;97m"
 	FgGray         = "\033[0;90m"
 )
-
-type Writer struct {
-	Colorize bool
-}
