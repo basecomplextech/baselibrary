@@ -8,9 +8,7 @@ var (
 	Wait   = New(CodeWait, "")
 	Closed = New(CodeClosed, "")
 
-	Start = New(CodeStart, "")
-	End   = New(CodeEnd, "")
-
+	End       = New(CodeEnd, "")
 	Cancelled = New(CodeCancelled, "")
 	Timeout   = New(CodeTimeout, "")
 )

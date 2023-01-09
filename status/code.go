@@ -4,14 +4,11 @@ type Code string
 
 // General codes
 const (
-	// CodeUndefined is an empty status code.
-	CodeUndefined Code = ""
+	// CodeNone indicates an undefined status code.
+	CodeNone Code = ""
 
 	// CodeOK indicates that an operation completed successfully.
 	CodeOK Code = "ok"
-
-	// CodeNone indicates that no status code is available.
-	CodeNone Code = "none"
 
 	// CodeClosed indicates that an object is closed and cannot be used anymore.
 	CodeClosed Code = "closed"
@@ -25,14 +22,14 @@ const (
 	// CodeError is a generic error status code.
 	CodeError Code = "error"
 
-	// CodeCorruption indicates any data corruption.
-	CodeCorruption Code = "corruption"
-
 	// CodeIOError indicates that an I/O error occurred, the operation can be retried later.
 	CodeIOError Code = "io_error"
 
 	// CodeNotFound indicates that an object is not found.
 	CodeNotFound Code = "not_found"
+
+	// CodeCorruption indicates any data corruption.
+	CodeCorruption Code = "corruption"
 )
 
 // Unavailable codes
@@ -49,9 +46,6 @@ const (
 
 // Iteration/streaming codes
 const (
-	// CodeStart indicates a file/channel/stream start.
-	CodeStart Code = "start"
-
 	// CodeEnd indicates a file/channel/stream end.
 	CodeEnd Code = "end"
 
