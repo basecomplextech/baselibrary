@@ -17,7 +17,7 @@ func New() Allocator {
 	return newAllocator()
 }
 
-// Global returns a global allocator.
+// Global returns the global allocator.
 func Global() Allocator {
 	return global
 }

@@ -17,12 +17,12 @@ type Buffer struct {
 	blocks []*block
 }
 
-// NewBuffer returns a new empty buffer.
+// NewBuffer returns a new empty buffer with the global allocator.
 func NewBuffer() *Buffer {
 	return newBuffer(global)
 }
 
-// NewBuffer returns a new empty buffer with a preallocated memory storage.
+// NewBuffer returns a new empty buffer with a preallocated memory storage in the global allocator.
 func NewBufferSize(size int) *Buffer {
 	b := newBuffer(global)
 	b.allocBlock(size)
