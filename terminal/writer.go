@@ -25,102 +25,72 @@ func NewWriterColor(out io.Writer, color bool) *Writer {
 
 // Color
 
-// Color sets the color.
-func (w *Writer) Color(color string) error {
-	if !w.color {
-		return nil
-	}
-	return w.write(color)
+// Color writes the color.
+func (w *Writer) Color(color Color) error {
+	code := color.Code()
+	return w.writeColor(code)
+}
+
+// ColorCode writes the color code.
+func (w *Writer) ColorCode(code ColorCode) error {
+	return w.writeColor(code)
 }
 
 // ResetColor resets the color.
 func (w *Writer) ResetColor() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgReset)
+	return w.writeColor(FgReset)
 }
 
 // Colors
 
 // Default resets the color to the default color.
 func (w *Writer) Default() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgDefault)
+	return w.writeColor(FgDefault)
 }
 
 // Black sets the color to black.
 func (w *Writer) Black() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgBlack)
+	return w.writeColor(FgBlack)
 }
 
 // Red sets the color to red.
 func (w *Writer) Red() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgRed)
+	return w.writeColor(FgRed)
 }
 
 // Green sets the color to green.
 func (w *Writer) Green() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgGreen)
+	return w.writeColor(FgGreen)
 }
 
 // Yellow sets the color to yellow.
 func (w *Writer) Yellow() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgYellow)
+	return w.writeColor(FgYellow)
 }
 
 // Blue sets the color to blue.
 func (w *Writer) Blue() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgBlue)
+	return w.writeColor(FgBlue)
 }
 
 // Magenta sets the color to magenta.
 func (w *Writer) Magenta() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgMagenta)
+	return w.writeColor(FgMagenta)
 }
 
 // Cyan sets the color to cyan.
 func (w *Writer) Cyan() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgCyan)
+	return w.writeColor(FgCyan)
 }
 
 // White sets the color to white.
 func (w *Writer) White() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgWhite)
+	return w.writeColor(FgWhite)
 }
 
 // Gray sets the color to gray.
 func (w *Writer) Gray() error {
-	if !w.color {
-		return nil
-	}
-	return w.write(FgGray)
+	return w.writeColor(FgGray)
 }
 
 // Write
@@ -152,4 +122,11 @@ func (w *Writer) WriteString(s string) (n int, err error) {
 func (w *Writer) write(s string) error {
 	_, err := w.WriteString(s)
 	return err
+}
+
+func (w *Writer) writeColor(code ColorCode) error {
+	if !w.color {
+		return nil
+	}
+	return w.write(string(code))
 }
