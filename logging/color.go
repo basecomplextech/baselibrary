@@ -2,35 +2,38 @@ package logging
 
 import "github.com/complex1tech/baselibrary/terminal"
 
+// ColorTheme specifies the terminal colors.
 type ColorTheme struct {
-	Time           string
-	Logger         string
-	FieldKey       string
-	FieldEqualSign string
-	FieldValue     string
-	Levels         map[Level]string
+	Time           terminal.Color
+	Logger         terminal.Color
+	FieldKey       terminal.Color
+	FieldEqualSign terminal.Color
+	FieldValue     terminal.Color
+	Levels         map[Level]terminal.Color
 }
 
+// DefaultColorTheme returns the default terminal colors.
 func DefaultColorTheme() ColorTheme {
 	return ColorTheme{
-		Time:           terminal.FgGray,
-		Logger:         terminal.FgDefault,
-		FieldKey:       terminal.FgLightBlue,
-		FieldEqualSign: terminal.FgGray,
-		FieldValue:     terminal.FgDefault,
-		Levels: map[Level]string{
+		Time:           terminal.Gray,
+		Logger:         terminal.Default,
+		FieldKey:       terminal.LightBlue,
+		FieldEqualSign: terminal.Gray,
+		FieldValue:     terminal.Default,
+		Levels: map[Level]terminal.Color{
 			LevelTrace:  "",
 			LevelDebug:  "",
-			LevelInfo:   terminal.FgBlue,
-			LevelNotice: terminal.FgGreen,
-			LevelWarn:   terminal.FgYellow,
-			LevelError:  terminal.FgRed,
-			LevelFatal:  terminal.FgRed,
+			LevelInfo:   terminal.Blue,
+			LevelNotice: terminal.Green,
+			LevelWarn:   terminal.Yellow,
+			LevelError:  terminal.Red,
+			LevelFatal:  terminal.Red,
 		},
 	}
 }
 
-func (th ColorTheme) Level(level Level) string {
+// Level returns a color for the given level.
+func (th ColorTheme) Level(level Level) terminal.Color {
 	if th.Levels == nil {
 		return ""
 	}

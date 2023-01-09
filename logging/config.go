@@ -15,9 +15,10 @@ type Config struct {
 }
 
 type ConsoleConfig struct {
-	Enabled bool  `json:"enabled"`
-	Level   Level `json:"level"`
-	Color   bool  `json:"color"`
+	Enabled bool       `json:"enabled"`
+	Level   Level      `json:"level"`
+	Color   bool       `json:"color"`
+	Theme   ColorTheme `json:"theme"`
 }
 
 type FileConfig struct {
@@ -40,6 +41,7 @@ func DefaultConfig() *Config {
 			Enabled: true,
 			Level:   LevelInfo,
 			Color:   true,
+			Theme:   DefaultColorTheme(),
 		},
 		File: &FileConfig{
 			Enabled:    false,

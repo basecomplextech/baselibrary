@@ -97,7 +97,7 @@ func (f *textFormatter) storeLoggerLength(length int) {
 func (f *textFormatter) writeLevel(w *terminal.Writer, level Level) {
 	s := level.String()
 	color := f.theme.Level(level)
-	w.WriteString(color)
+	w.Color(color)
 	w.WriteString(s)
 	w.ResetColor()
 
