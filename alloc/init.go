@@ -2,5 +2,9 @@ package alloc
 
 func init() {
 	initBlockClasses()
-	initGlobalHeap()
+	initGlobal()
+}
+
+func initGlobal() {
+	global = newAllocator()
 }

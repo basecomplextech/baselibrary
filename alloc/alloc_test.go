@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHeap_allocBlock__should_allocate_block(t *testing.T) {
-	h := newHeap()
+func TestAllocator_allocBlock__should_allocate_block(t *testing.T) {
+	a := newAllocator()
 
 	cases := []struct {
 		size      int
@@ -24,21 +24,21 @@ func TestHeap_allocBlock__should_allocate_block(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		block, cls := h.allocBlock(c.size)
+		block, cls := a.allocBlock(c.size)
 		require.Equal(t, c.blockSize, block.cap())
 		require.Equal(t, c.cls, cls)
 	}
 }
 
-func TestHeap_freeBlocks__should_free_blocks(t *testing.T) {
-	h := newHeap()
+func TestAllocator_freeBlocks__should_free_blocks(t *testing.T) {
+	a := newAllocator()
 	sizes := []int{1, 1023, 1024, 2048}
 
 	blocks := []*block{}
 	for _, size := range sizes {
-		block, _ := h.allocBlock(size)
+		block, _ := a.allocBlock(size)
 		blocks = append(blocks, block)
 	}
 
-	h.freeBlocks(blocks...)
+	a.freeBlocks(blocks...)
 }

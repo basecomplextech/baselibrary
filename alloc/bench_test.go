@@ -8,7 +8,7 @@ import (
 )
 
 func BenchmarkArena_AllocInt64(b *testing.B) {
-	a := newArena()
+	a := testArena()
 	size := unsafe.Sizeof(int64(0))
 
 	b.ResetTimer()
@@ -44,7 +44,7 @@ func BenchmarkArena_AllocStruct(b *testing.B) {
 		Int64 int64
 	}
 
-	a := newArena()
+	a := testArena()
 	size := unsafe.Sizeof(Struct{})
 
 	b.ResetTimer()
@@ -72,7 +72,7 @@ func BenchmarkArena_AllocStruct(b *testing.B) {
 }
 
 func BenchmarkArena_AllocBytes(b *testing.B) {
-	a := newArena()
+	a := testArena()
 	size := 16
 
 	b.ResetTimer()
@@ -99,7 +99,7 @@ func BenchmarkArena_AllocBytes(b *testing.B) {
 }
 
 func BenchmarkArena_AllocSlice(b *testing.B) {
-	a := newArena()
+	a := testArena()
 	n := 4
 	size := n * 4
 
@@ -127,7 +127,7 @@ func BenchmarkArena_AllocSlice(b *testing.B) {
 }
 
 func BenchmarkArena_Alloc(b *testing.B) {
-	a := newArena()
+	a := testArena()
 	size := 8
 
 	b.ResetTimer()
@@ -154,7 +154,7 @@ func BenchmarkArena_Alloc(b *testing.B) {
 }
 
 func BenchmarkArenaFreeList_Get_Put(b *testing.B) {
-	a := newArena()
+	a := testArena()
 	list := newArenaFreeList[int64](a)
 	size := 8
 

@@ -11,7 +11,7 @@ var (
 )
 
 type Buffer struct {
-	heap *heap
+	a *allocator
 
 	len    int
 	blocks []*block
@@ -19,26 +19,21 @@ type Buffer struct {
 
 // NewBuffer returns a new empty buffer.
 func NewBuffer() *Buffer {
-	return newBufferHeap(globalHeap)
+	return newBuffer(global)
 }
 
 // NewBuffer returns a new empty buffer with a preallocated memory storage.
 func NewBufferSize(size int) *Buffer {
-	b := newBufferHeap(globalHeap)
+	b := newBuffer(global)
 	b.allocBlock(size)
 	return b
 }
 
-// for tests
-func newBuffer() *Buffer {
-	return &Buffer{heap: newHeap()}
+func newBuffer(a *allocator) *Buffer {
+	return &Buffer{a: a}
 }
 
-func newBufferHeap(heap *heap) *Buffer {
-	return &Buffer{heap: heap}
-}
-
-// Free frees the buffer and releases its memory to the heap.
+// Free frees the buffer and releases its memory to the allocator.
 func (b *Buffer) Free() {
 	b.len = 0
 	b.clearBlocks()
@@ -86,7 +81,7 @@ func (b *Buffer) Write(p []byte) (n int, err error) {
 	return
 }
 
-// Reset resets the buffer to be empty, releases its memory storage to the heap.
+// Reset resets the buffer to be empty, releases its memory storage to the allocator.
 func (b *Buffer) Reset() {
 	b.len = 0
 	b.clearBlocks()
@@ -109,7 +104,7 @@ func (b *Buffer) merge() {
 	}
 
 	// alloc block
-	one, _ := b.heap.allocBlock(b.len)
+	one, _ := b.a.allocBlock(b.len)
 
 	// merge data
 	for _, block := range b.blocks {
@@ -146,7 +141,7 @@ func (b *Buffer) allocBlock(n int) *block {
 		size = n
 	}
 
-	block, _ := b.heap.allocBlock(size)
+	block, _ := b.a.allocBlock(size)
 	b.blocks = append(b.blocks, block)
 	return block
 }
@@ -154,7 +149,7 @@ func (b *Buffer) allocBlock(n int) *block {
 // clearBlocks clears and frees blocks.
 func (b *Buffer) clearBlocks() {
 	// free blocks
-	b.heap.freeBlocks(b.blocks...)
+	b.a.freeBlocks(b.blocks...)
 
 	// clear blocks for gc
 	for i := range b.blocks {

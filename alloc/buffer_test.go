@@ -7,10 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func testBuffer() *Buffer {
+	return &Buffer{a: newAllocator()}
+}
+
 // Bytes
 
 func TestBuffer_Bytes__should_return_bytes(t *testing.T) {
-	b := newBuffer()
+	b := testBuffer()
 	data := []byte("hello, world")
 	b.Write(data)
 
@@ -19,14 +23,14 @@ func TestBuffer_Bytes__should_return_bytes(t *testing.T) {
 }
 
 func TestBuffer_Bytes__should_return_nil_when_empty(t *testing.T) {
-	b := newBuffer()
+	b := testBuffer()
 	data := b.Bytes()
 
 	assert.Nil(t, data)
 }
 
 func TestBuffer_Bytes__should_merge_multiple_blocks(t *testing.T) {
-	b := newBuffer()
+	b := testBuffer()
 	data := []byte("hello, world")
 
 	for _, ch := range data {
@@ -43,7 +47,7 @@ func TestBuffer_Bytes__should_merge_multiple_blocks(t *testing.T) {
 // Grow
 
 func TestBuffer_Grow__should_grow_buffer(t *testing.T) {
-	b := newBuffer()
+	b := testBuffer()
 	data := b.Grow(10)
 
 	assert.Len(t, data, 10)
@@ -51,7 +55,7 @@ func TestBuffer_Grow__should_grow_buffer(t *testing.T) {
 }
 
 func TestBuffer_Grow__should_alloc_next_block(t *testing.T) {
-	b := newBuffer()
+	b := testBuffer()
 	size := blockClassSizes[0]
 
 	b.Grow(size)
@@ -64,7 +68,7 @@ func TestBuffer_Grow__should_alloc_next_block(t *testing.T) {
 // Write
 
 func TestBuffer_Write__should_append_bytes(t *testing.T) {
-	b := newBuffer()
+	b := testBuffer()
 	data := []byte("hello, world")
 
 	n, err := b.Write(data)
@@ -78,7 +82,7 @@ func TestBuffer_Write__should_append_bytes(t *testing.T) {
 // Reset
 
 func TestBuffer_Reset__should_clear_buffer(t *testing.T) {
-	b := newBuffer()
+	b := testBuffer()
 	data := []byte("hello, world")
 
 	b.Write(data)
@@ -89,7 +93,7 @@ func TestBuffer_Reset__should_clear_buffer(t *testing.T) {
 }
 
 func TestBuffer_Reset__should_clear_and_free_blocks(t *testing.T) {
-	b := newBuffer()
+	b := testBuffer()
 	data := []byte("hello, world")
 
 	b.Write(data)

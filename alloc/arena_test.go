@@ -8,8 +8,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// testArena returns a new arena with a new heap, for tests only.
+func testArena() *arena {
+	a := newAllocator()
+	return newArena(a)
+}
+
+// Alloc
+
 func TestArenaAlloc__should_allocate_value(t *testing.T) {
-	a := newArena()
+	a := testArena()
 
 	i := ArenaAlloc[int64](a)
 	*i = math.MaxInt64
@@ -25,7 +33,7 @@ func TestArenaAlloc__should_allocate_struct(t *testing.T) {
 		Int64 int64
 	}
 
-	a := newArena()
+	a := testArena()
 	s := ArenaAlloc[Struct](a)
 
 	s.Int8 = math.MaxInt8
@@ -37,7 +45,7 @@ func TestArenaAlloc__should_allocate_struct(t *testing.T) {
 // ArenaSlice
 
 func TestArenaSlice__should_allocate_slice(t *testing.T) {
-	a := newArena()
+	a := testArena()
 
 	s := ArenaSlice[int](a, 16)
 	s[0] = 1
@@ -56,9 +64,9 @@ func TestArenaSlice__should_allocate_slice(t *testing.T) {
 	assert.Equal(t, 16, cap(s))
 }
 
-// ArenaCopySlice
+// ArenaCopy
 
-func TestArenaCopySlice__should_copy_existing_slice_into_arena(t *testing.T) {
+func TestArenaCopy__should_copy_existing_slice_into_arena(t *testing.T) {
 	type Value struct {
 		A int64
 		B int64
@@ -71,8 +79,8 @@ func TestArenaCopySlice__should_copy_existing_slice_into_arena(t *testing.T) {
 		{100, 200, 300},
 	}
 
-	a := newArena()
-	v1 := ArenaCopySlice(a, v0)
+	a := testArena()
+	v1 := ArenaCopy(a, v0)
 
 	assert.Equal(t, v0, v1)
 }
@@ -80,7 +88,7 @@ func TestArenaCopySlice__should_copy_existing_slice_into_arena(t *testing.T) {
 // Bytes
 
 func TestArena_Bytes__should_allocate_bytes(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	buf := a.Bytes(16)
 
 	for i := 0; i < len(buf); i++ {
@@ -92,7 +100,7 @@ func TestArena_Bytes__should_allocate_bytes(t *testing.T) {
 }
 
 func TestArena_CopyBytes__should_allocate_bytes_copy(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	b := []byte("hello, world")
 	buf := a.CopyBytes(b)
 
@@ -102,7 +110,7 @@ func TestArena_CopyBytes__should_allocate_bytes_copy(t *testing.T) {
 // String
 
 func TestArena_String__should_return_string_copy(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	s0 := "hello, world"
 	s1 := a.String(s0)
 
@@ -113,7 +121,7 @@ func TestArena_String__should_return_string_copy(t *testing.T) {
 // Free
 
 func TestArena_Free__should_release_blocks(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	a.alloc(1)
 
 	last := a.last()
@@ -127,7 +135,7 @@ func TestArena_Free__should_release_blocks(t *testing.T) {
 // Used
 
 func TestArena_Used__should_return_allocated_memory(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	a.alloc(8)
 	a.alloc(32)
 
@@ -138,7 +146,7 @@ func TestArena_Used__should_return_allocated_memory(t *testing.T) {
 // alloc
 
 func TestArena_alloc__should_allocate_data(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	b := a.alloc(8)
 
 	v := (*int64)(b)
@@ -148,7 +156,7 @@ func TestArena_alloc__should_allocate_data(t *testing.T) {
 }
 
 func TestArena_alloc__should_add_padding_for_alignment(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	a.alloc(3)
 
 	block := a.last()
@@ -159,7 +167,7 @@ func TestArena_alloc__should_add_padding_for_alignment(t *testing.T) {
 }
 
 func TestArena_alloc__should_not_add_padding_when_already_aligned(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	a.alloc(8)
 
 	block := a.last()
@@ -167,7 +175,7 @@ func TestArena_alloc__should_not_add_padding_when_already_aligned(t *testing.T) 
 }
 
 func TestArena_alloc__should_allocate_next_block_when_not_enough_space(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	a.alloc(1)
 
 	n := a.last().cap()
@@ -181,7 +189,7 @@ func TestArena_alloc__should_allocate_next_block_when_not_enough_space(t *testin
 // allocBlock
 
 func TestArena_allocBlock__should_increment_size(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	a.alloc(1)
 	size := a.last().cap()
 	assert.Equal(t, int64(size), a.size)

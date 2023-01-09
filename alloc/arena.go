@@ -17,7 +17,7 @@ type Arena interface {
 	// Used returns the allocated arena memory size in bytes.
 	Used() int64
 
-	// Allocation
+	// Alloc
 
 	// Bytes allocates a byte slice with a given capacity in the arena.
 	Bytes(cap int) []byte
@@ -35,9 +35,9 @@ type Arena interface {
 	Free()
 }
 
-// NewArena returns a new arena with a global heap.
+// NewArena returns a new arena with the global allocator.
 func NewArena() *ref.R[Arena] {
-	a := newArenaHeap(globalHeap)
+	a := newArena(global)
 	return ref.Wrap[Arena](a)
 }
 
@@ -78,9 +78,9 @@ func ArenaSlice[T any](a Arena, cap int) []T {
 	return unsafe.Slice((*T)(ptr), cap)
 }
 
-// ArenaCopySlice allocates a new slice and copies items from src into it.
+// ArenaCopy allocates a new slice and copies items from src into it.
 // The slice capacity is len(src).
-func ArenaCopySlice[T any](a Arena, src []T) []T {
+func ArenaCopy[T any](a Arena, src []T) []T {
 	dst := ArenaSlice[T](a, len(src))
 	copy(dst, src)
 	return dst
@@ -89,7 +89,7 @@ func ArenaCopySlice[T any](a Arena, src []T) []T {
 // internal
 
 type arena struct {
-	heap *heap
+	a *allocator
 
 	spinlock int32
 	free     bool
@@ -98,14 +98,9 @@ type arena struct {
 	blocks []*block
 }
 
-// newArena returns a new arena with a new heap, for tests only.
-func newArena() *arena {
-	return newArenaHeap(newHeap())
-}
-
-// newArenaHeap returns a new arena with a given heap.
-func newArenaHeap(heap *heap) *arena {
-	return &arena{heap: heap}
+// newArena returns a new arena with the given allocator.
+func newArena(a *allocator) *arena {
+	return &arena{a: a}
 }
 
 // Size returns the total arena memory size in bytes.
@@ -128,7 +123,7 @@ func (a *arena) Used() int64 {
 	return total
 }
 
-// Allocation
+// Alloc
 
 // Bytes allocates a byte slice with a `size` capacity in the arena.
 func (a *arena) Bytes(cap int) []byte {
@@ -176,7 +171,7 @@ func (a *arena) Free() {
 	blocks := a.blocks
 	a.blocks = nil
 
-	a.heap.freeBlocks(blocks...)
+	a.a.freeBlocks(blocks...)
 }
 
 // alloc
@@ -234,7 +229,7 @@ func (a *arena) allocBlock(n int) *block {
 		size = n
 	}
 
-	block, _ := a.heap.allocBlock(size)
+	block, _ := a.a.allocBlock(size)
 	a.blocks = append(a.blocks, block)
 	a.size += int64(block.cap())
 	return block

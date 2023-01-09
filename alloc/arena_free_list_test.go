@@ -11,7 +11,7 @@ import (
 // NewArenaFreeList
 
 func TestNewArenaFreeList__should_allocate_free_list(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	list := NewArenaFreeList[int64](a)
 
 	v0 := list.Get()
@@ -27,7 +27,7 @@ func TestNewArenaFreeList__should_return_different_lists_for_different_types_wit
 		V int64
 	}
 
-	a := newArena()
+	a := testArena()
 	list0 := NewArenaFreeList[int64](a)
 	list1 := NewArenaFreeList[Value](a)
 
@@ -37,7 +37,7 @@ func TestNewArenaFreeList__should_return_different_lists_for_different_types_wit
 // Get
 
 func TestArenaFreeList_Get__should_allocate_new_object(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	list := newArenaFreeList[int64](a)
 
 	v := list.Get()
@@ -47,7 +47,7 @@ func TestArenaFreeList_Get__should_allocate_new_object(t *testing.T) {
 }
 
 func TestArenaFreeList_Get__should_return_free_object(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	list := newArenaFreeList[int64](a)
 
 	v0 := list.Get()
@@ -58,7 +58,7 @@ func TestArenaFreeList_Get__should_return_free_object(t *testing.T) {
 }
 
 func TestArenaFreeList_Get__should_consume_free_item(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	list := newArenaFreeList[int64](a)
 
 	v0 := list.Get()
@@ -69,7 +69,7 @@ func TestArenaFreeList_Get__should_consume_free_item(t *testing.T) {
 }
 
 func TestArenaFreeList_Get__should_swap_free_item_with_previous(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	list := newArenaFreeList[int64](a)
 
 	v0 := list.Get()
@@ -89,7 +89,7 @@ func TestArenaFreeList_Get__should_zero_object(t *testing.T) {
 		C int64
 	}
 
-	a := newArena()
+	a := testArena()
 	list := newArenaFreeList[Value](a)
 
 	v := list.Get()
@@ -106,7 +106,7 @@ func TestArenaFreeList_Get__should_zero_object(t *testing.T) {
 // Put
 
 func TestArenaFreeList_Put__should_swap_free_item_with_next(t *testing.T) {
-	a := newArena()
+	a := testArena()
 	list := newArenaFreeList[int64](a)
 
 	v0 := list.Get()
