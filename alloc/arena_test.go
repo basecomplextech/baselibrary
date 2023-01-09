@@ -132,15 +132,15 @@ func TestArena_Free__should_release_blocks(t *testing.T) {
 	assert.Equal(t, 0, len(last.buf))
 }
 
-// Used
+// Len
 
-func TestArena_Used__should_return_allocated_memory(t *testing.T) {
+func TestArena_Len__should_return_allocated_memory(t *testing.T) {
 	a := testArena()
 	a.alloc(8)
 	a.alloc(32)
 
-	used := a.Used()
-	assert.Equal(t, int64(40), used)
+	ln := a.Len()
+	assert.Equal(t, int64(40), ln)
 }
 
 // alloc
@@ -192,9 +192,9 @@ func TestArena_allocBlock__should_increment_size(t *testing.T) {
 	a := testArena()
 	a.alloc(1)
 	size := a.last().cap()
-	assert.Equal(t, int64(size), a.size)
+	assert.Equal(t, int64(size), a.cap)
 
 	a.allocBlock(1)
 	size += a.last().cap()
-	assert.Equal(t, int64(size), a.size)
+	assert.Equal(t, int64(size), a.cap)
 }

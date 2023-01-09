@@ -11,11 +11,11 @@ import (
 // Arena allocates objects in internal byte blocks.
 // It is goroutine-safe, but operations on a free arena panic.
 type Arena interface {
-	// Size returns the total arena memory size in bytes.
-	Size() int64
+	// Cap returns the total memory size in bytes.
+	Cap() int64
 
-	// Used returns the allocated arena memory size in bytes.
-	Used() int64
+	// Len returns the allocated memory size in bytes.
+	Len() int64
 
 	// Alloc
 
@@ -95,7 +95,7 @@ type arena struct {
 
 	spinlock int32
 	free     bool
-	size     int64 // total allocated size
+	cap      int64 // total allocated size
 
 	blocks []*block
 }
@@ -105,16 +105,16 @@ func newArena(a *allocator) *arena {
 	return &arena{a: a}
 }
 
-// Size returns the total arena memory size in bytes.
-func (a *arena) Size() int64 {
+// Cap returns the total memory size in bytes.
+func (a *arena) Cap() int64 {
 	a.lock()
 	defer a.unlock()
 
-	return a.size
+	return a.cap
 }
 
-// Used returns the allocated arena memory size in bytes.
-func (a *arena) Used() int64 {
+// Len returns the allocated memory size in bytes.
+func (a *arena) Len() int64 {
 	a.lock()
 	defer a.unlock()
 
@@ -168,7 +168,7 @@ func (a *arena) Free() {
 	}
 
 	a.free = true
-	a.size = 0
+	a.cap = 0
 
 	blocks := a.blocks
 	a.blocks = nil
@@ -233,7 +233,7 @@ func (a *arena) allocBlock(n int) *block {
 
 	block, _ := a.a.allocBlock(size)
 	a.blocks = append(a.blocks, block)
-	a.size += int64(block.cap())
+	a.cap += int64(block.cap())
 	return block
 }
 
