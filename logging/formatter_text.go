@@ -18,8 +18,9 @@ type textFormatter struct {
 	color bool
 	theme ColorTheme
 
-	loggerLength  int32
-	messageLength int32
+	timeLen    int32
+	loggerLen  int32
+	messageLen int32
 }
 
 func newTextFormatter(color bool) *textFormatter {
@@ -27,8 +28,8 @@ func newTextFormatter(color bool) *textFormatter {
 		color: color,
 		theme: DefaultColorTheme(),
 
-		loggerLength:  10,
-		messageLength: 20,
+		loggerLen:  10,
+		messageLen: 20,
 	}
 }
 
@@ -47,10 +48,13 @@ func (f *textFormatter) Format(w io.Writer, rec Record) error {
 
 // time
 
-func (f *textFormatter) writeTime(w *terminal.Writer, time time.Time) {
+func (f *textFormatter) writeTime(w *terminal.Writer, t time.Time) {
+	s := t.Format("2006-01-02T15:04:05.999Z07:00") // RFC3339 Millis
 	w.Color(f.theme.Time)
-	w.WriteString(time.Format("2006-01-02 15:04:05.000000"))
+	w.WriteString(s)
 	w.ResetColor()
+
+	f.maybePadding(w, s, 0, &f.timeLen)
 	w.WriteString("\t")
 }
 
@@ -61,36 +65,9 @@ func (f *textFormatter) writeLogger(w *terminal.Writer, logger string) {
 	w.WriteString(logger)
 	w.ResetColor()
 
-	f.writeLoggerPadding(w, logger)
+	f.maybePadding(w, logger, maxLoggerLength, &f.loggerLen)
 	w.WriteString(" ")
 	w.WriteString("\t")
-}
-
-func (f *textFormatter) writeLoggerPadding(w *terminal.Writer, logger string) {
-	n := f.loadLoggerLength()
-	if len(logger) <= n {
-		f.writePadding(w, logger, n)
-		return
-	}
-
-	n = len(logger)
-	f.storeLoggerLength(n)
-}
-
-func (f *textFormatter) loadLoggerLength() int {
-	length := atomic.LoadInt32(&f.loggerLength)
-	return int(length)
-}
-
-func (f *textFormatter) storeLoggerLength(length int) {
-	prev := atomic.LoadInt32(&f.loggerLength)
-	if prev == maxLoggerLength {
-		return
-	}
-	if length > maxLoggerLength {
-		length = maxLoggerLength
-	}
-	atomic.CompareAndSwapInt32(&f.loggerLength, prev, int32(length))
 }
 
 // level
@@ -114,33 +91,8 @@ func (f *textFormatter) writeMessage(w *terminal.Writer, rec Record) {
 	w.WriteString(rec.Message)
 	w.ResetColor()
 
-	f.writeMessagePadding(w, rec.Message)
+	f.maybePadding(w, rec.Message, maxMessageLength, &f.messageLen)
 	w.WriteString("\t")
-}
-
-func (f *textFormatter) writeMessagePadding(w *terminal.Writer, message string) {
-	pad := f.loadMessageLength()
-	if len(message) > int(pad) {
-		pad = len(message)
-		f.storeMessageLength(pad)
-	}
-	f.writePadding(w, message, pad)
-}
-
-func (f *textFormatter) loadMessageLength() int {
-	length := atomic.LoadInt32(&f.messageLength)
-	return int(length)
-}
-
-func (f *textFormatter) storeMessageLength(length int) {
-	prev := atomic.LoadInt32(&f.messageLength)
-	if prev == maxMessageLength {
-		return
-	}
-	if length > maxMessageLength {
-		length = maxMessageLength
-	}
-	atomic.CompareAndSwapInt32(&f.messageLength, prev, int32(length))
 }
 
 // fields
@@ -187,6 +139,29 @@ func (f *textFormatter) writeStack(w *terminal.Writer, stack []byte) {
 }
 
 // padding
+
+func (f *textFormatter) maybePadding(w *terminal.Writer, s string, max int32, ptr *int32) error {
+	n := len(s)
+	prev := atomic.LoadInt32(ptr)
+
+	// maybe write padding
+	if n <= int(prev) {
+		return f.writePadding(w, s, int(prev))
+	}
+
+	// check already max
+	if max > 0 && prev == max {
+		return nil
+	}
+
+	// update previous
+	next := int32(n)
+	if max > 0 && next > max {
+		next = max
+	}
+	atomic.CompareAndSwapInt32(ptr, prev, next)
+	return nil
+}
 
 func (f *textFormatter) writePadding(w *terminal.Writer, s string, n int) error {
 	for i := len(s); i < n; i++ {
