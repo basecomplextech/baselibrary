@@ -1,12 +1,15 @@
 package alloc
 
 import (
+	"unicode/utf8"
+
 	"github.com/complex1tech/baselibrary/buffer"
 	"github.com/complex1tech/baselibrary/ref"
 )
 
 var (
 	_ buffer.Buffer = (*Buffer)(nil)
+	_ buffer.Writer = (*Buffer)(nil)
 	_ ref.Freer     = (*Buffer)(nil)
 )
 
@@ -78,6 +81,30 @@ func (b *Buffer) Grow(n int) []byte {
 func (b *Buffer) Write(p []byte) (n int, err error) {
 	q := b.Grow(len(p))
 	n = copy(q, p)
+	return
+}
+
+// WriteByte writes a byte to the buffer.
+func (b *Buffer) WriteByte(c byte) error {
+	q := b.Grow(1)
+	q[0] = c
+	return nil
+}
+
+// WriteRune writes a rune to the buffer.
+func (b *Buffer) WriteRune(r rune) (n int, err error) {
+	p := [utf8.UTFMax]byte{}
+	n = utf8.EncodeRune(p[:], r)
+
+	q := b.Grow(n)
+	copy(q, p[:n])
+	return
+}
+
+// WriteString writes a string to the buffer.
+func (b *Buffer) WriteString(s string) (n int, err error) {
+	q := b.Grow(len(s))
+	n = copy(q, s)
 	return
 }
 

@@ -34,6 +34,18 @@ type Buffer interface {
 	Reset()
 }
 
+// Writer specifies additional methods for writing to a buffer.
+type Writer interface {
+	// WriteByte writes a byte to the buffer.
+	WriteByte(c byte) error
+
+	// WriteRune writes a rune to the buffer.
+	WriteRune(r rune) (n int, err error)
+
+	// WriteString writes a string to the buffer.
+	WriteString(s string) (n int, err error)
+}
+
 // New buffer returns a new buffer of a default size.
 func New() Buffer {
 	buf := make([]byte, 0, DefaultSize)
