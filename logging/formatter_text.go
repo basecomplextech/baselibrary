@@ -49,12 +49,12 @@ func (f *textFormatter) Format(w io.Writer, rec Record) error {
 // time
 
 func (f *textFormatter) writeTime(w *terminal.Writer, t time.Time) {
-	s := t.Format("2006-01-02T15:04:05.999Z07:00") // RFC3339 Millis
+	s := t.Format("2006-01-02T15:04:05.999Z07:00")
 	w.Color(f.theme.Time)
 	w.WriteString(s)
 	w.ResetColor()
 
-	f.maybePadding(w, s, 0, &f.timeLen)
+	f.maybePadding(w, len(s), 0, &f.timeLen)
 	w.WriteString("\t")
 }
 
@@ -65,7 +65,7 @@ func (f *textFormatter) writeLogger(w *terminal.Writer, logger string) {
 	w.WriteString(logger)
 	w.ResetColor()
 
-	f.maybePadding(w, logger, maxLoggerLength, &f.loggerLen)
+	f.maybePadding(w, len(logger), maxLoggerLength, &f.loggerLen)
 	w.WriteString(" ")
 	w.WriteString("\t")
 }
@@ -79,7 +79,7 @@ func (f *textFormatter) writeLevel(w *terminal.Writer, level Level) {
 	w.WriteString(s)
 	w.ResetColor()
 
-	f.writePadding(w, s, 6)
+	f.writePadding(w, len(s), 6)
 	w.WriteString("\t")
 }
 
@@ -91,13 +91,15 @@ func (f *textFormatter) writeMessage(w *terminal.Writer, rec Record) {
 	w.WriteString(rec.Message)
 	w.ResetColor()
 
-	f.maybePadding(w, rec.Message, maxMessageLength, &f.messageLen)
+	f.maybePadding(w, len(rec.Message), maxMessageLength, &f.messageLen)
 	w.WriteString("\t")
 }
 
 // fields
 
 func (f *textFormatter) writeFields(w *terminal.Writer, fields []Field) {
+	var valueBytes []byte // scratch buffer
+
 	for _, field := range fields {
 		w.WriteString(" ")
 
@@ -110,7 +112,7 @@ func (f *textFormatter) writeFields(w *terminal.Writer, fields []Field) {
 		case fmt.Stringer:
 			value = v.String()
 		default:
-			value = fmt.Sprintf("%v", v)
+			valueBytes = fmt.Appendf(valueBytes, "%v", v)
 		}
 
 		w.Color(f.theme.FieldKey)
@@ -122,7 +124,12 @@ func (f *textFormatter) writeFields(w *terminal.Writer, fields []Field) {
 		w.ResetColor()
 
 		w.Color(f.theme.FieldValue)
-		w.WriteString(value)
+		if len(valueBytes) > 0 {
+			w.Write(valueBytes)
+			valueBytes = valueBytes[:0]
+		} else {
+			w.WriteString(value)
+		}
 		w.ResetColor()
 	}
 }
@@ -140,13 +147,12 @@ func (f *textFormatter) writeStack(w *terminal.Writer, stack []byte) {
 
 // padding
 
-func (f *textFormatter) maybePadding(w *terminal.Writer, s string, max int32, ptr *int32) error {
-	n := len(s)
+func (f *textFormatter) maybePadding(w *terminal.Writer, n int, max int32, ptr *int32) error {
 	prev := atomic.LoadInt32(ptr)
 
 	// maybe write padding
 	if n <= int(prev) {
-		return f.writePadding(w, s, int(prev))
+		return f.writePadding(w, n, int(prev))
 	}
 
 	// check already max
@@ -163,8 +169,8 @@ func (f *textFormatter) maybePadding(w *terminal.Writer, s string, max int32, pt
 	return nil
 }
 
-func (f *textFormatter) writePadding(w *terminal.Writer, s string, n int) error {
-	for i := len(s); i < n; i++ {
+func (f *textFormatter) writePadding(w *terminal.Writer, n int, total int) error {
+	for i := n; i < total; i++ {
 		if _, err := w.WriteString(" "); err != nil {
 			return err
 		}

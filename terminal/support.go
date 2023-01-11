@@ -1,7 +1,6 @@
 package terminal
 
 import (
-	"fmt"
 	"os"
 	"regexp"
 
@@ -17,7 +16,6 @@ type FileDescriptor interface {
 // If the environment variables force no color, then returns false.
 func CheckColor(fd FileDescriptor) bool {
 	tty := isatty.IsTerminal(fd.Fd())
-	fmt.Println("TTY", fd.Fd(), tty)
 	if !tty {
 		return false
 	}
