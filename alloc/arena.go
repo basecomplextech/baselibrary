@@ -17,13 +17,8 @@ type Arena interface {
 	// Len returns the allocated memory size in bytes.
 	Len() int64
 
-	// Alloc
-
 	// Bytes allocates a byte slice with a given capacity in the arena.
-	Bytes(cap int) []byte
-
-	// String returns a string copy allocated in the arena.
-	String(s string) string
+	Bytes(cap int) Bytes
 
 	// Internal
 
@@ -54,6 +49,17 @@ func ArenaAlloc[T any](a Arena) *T {
 	return (*T)(ptr)
 }
 
+// ArenaBytes allocates a new byte slice.
+func ArenaBytes(a Arena, cap int) Bytes {
+	if cap == 0 {
+		return nil
+	}
+
+	arena := a.(*arena)
+	ptr := arena.alloc(cap)
+	return unsafe.Slice((*byte)(ptr), cap)
+}
+
 // ArenaSlice allocates a new slice of a generic type.
 //
 // Usage:
@@ -80,6 +86,25 @@ func ArenaCopy[T any](a Arena, src []T) []T {
 	dst := ArenaSlice[T](a, len(src))
 	copy(dst, src)
 	return dst
+}
+
+// ArenaCopyBytes allocates a new byte slice and copies items from src into it.
+// The slice capacity is len(src).
+func ArenaCopyBytes(a Arena, src []byte) Bytes {
+	dst := ArenaBytes(a, len(src))
+	copy(dst, src)
+	return dst
+}
+
+// ArenaString allocates a new string and copies data from src into it.
+func ArenaString(a Arena, src string) String {
+	if len(src) == 0 {
+		return ""
+	}
+
+	dst := ArenaBytes(a, len(src))
+	copy(dst, src)
+	return *(*String)(unsafe.Pointer(&dst))
 }
 
 // ArenaFreeList returns a new free list which allocates objects in the given arena.
@@ -125,35 +150,14 @@ func (a *arena) Len() int64 {
 	return total
 }
 
-// Alloc
-
 // Bytes allocates a byte slice with a `size` capacity in the arena.
-func (a *arena) Bytes(cap int) []byte {
+func (a *arena) Bytes(cap int) Bytes {
 	if cap == 0 {
 		return nil
 	}
 
 	ptr := a.alloc(cap)
 	return unsafe.Slice((*byte)(ptr), cap)
-}
-
-// String returns a string copy allocated in the arena.
-func (a *arena) String(s string) string {
-	if len(s) == 0 {
-		return ""
-	}
-
-	b := a.Bytes(len(s))
-	copy(b, s)
-	return *(*string)(unsafe.Pointer(&b))
-}
-
-// CopyBytes allocates a byte slice and copies items from src into it.
-// The slice capacity is len(src).
-func (a *arena) CopyBytes(src []byte) []byte {
-	dst := a.Bytes(len(src))
-	copy(dst, src)
-	return dst
 }
 
 // Internal

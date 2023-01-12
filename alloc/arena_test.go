@@ -99,22 +99,22 @@ func TestArena_Bytes__should_allocate_bytes(t *testing.T) {
 	assert.Equal(t, 16, cap(buf))
 }
 
-func TestArena_CopyBytes__should_allocate_bytes_copy(t *testing.T) {
+func TestArenaCopyBytes__should_allocate_bytes_copy(t *testing.T) {
 	a := testArena()
 	b := []byte("hello, world")
-	buf := a.CopyBytes(b)
+	buf := ArenaCopyBytes(a, b)
 
-	assert.Equal(t, b, buf)
+	assert.Equal(t, Bytes(b), buf)
 }
 
 // String
 
-func TestArena_String__should_return_string_copy(t *testing.T) {
+func TestArenaString__should_return_string_copy(t *testing.T) {
 	a := testArena()
 	s0 := "hello, world"
-	s1 := a.String(s0)
+	s1 := ArenaString(a, s0)
 
-	assert.Equal(t, s0, s1)
+	assert.Equal(t, String(s0), s1)
 	assert.NotSame(t, s0, s1)
 }
 
