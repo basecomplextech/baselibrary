@@ -17,11 +17,11 @@ type Record struct {
 	Stack   []byte    `json:"stack"`
 }
 
-// NewRecord returns a new record with info level.
-func NewRecord(logger string) *Record {
+// NewRecord returns a new record with the current time.
+func NewRecord(logger string, level Level) *Record {
 	return &Record{
 		Time:   time.Now(),
-		Level:  LevelInfo,
+		Level:  level,
 		Logger: logger,
 	}
 }

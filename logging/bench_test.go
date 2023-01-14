@@ -15,7 +15,7 @@ func BenchmarkLogger(b *testing.B) {
 	defer f.Close()
 
 	w := newConsoleWriter(LevelDebug, true, f)
-	l := newLogger("main", true, w)
+	l := (Logger)(newLogger("main", true, w))
 	start := time.Now()
 
 	b.ResetTimer()

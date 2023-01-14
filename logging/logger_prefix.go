@@ -46,6 +46,14 @@ func (l *prefixLogger) ClearPrefix() {
 	l.prefix.clear()
 }
 
+// Build
+
+// WithFields returns a chained logger with the default fields.
+func (l *prefixLogger) WithFields(keyValuePairs ...any) Logger {
+	child := l.logger.WithFields(keyValuePairs...)
+	return newPrefixLogger(child, l.prefix)
+}
+
 // Logger
 
 // Name returns the logger name.

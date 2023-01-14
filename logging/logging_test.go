@@ -18,4 +18,8 @@ func TestLogging(t *testing.T) {
 		Infof("Hello, %v", "world").
 		Fields("key", "value", "key1", 1234).
 		Send()
+
+	l1 := l.WithFields("key0", "value0", "key1", "value1")
+	l1.Error("With default fields", "key2", "value2")
+	l1.Error("With default fields", "key2", "another value2")
 }

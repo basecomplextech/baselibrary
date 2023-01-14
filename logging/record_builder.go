@@ -93,10 +93,10 @@ type recordBuilder struct {
 	r *Record
 }
 
-func newRecordBuilder(w Writer, logger string) *recordBuilder {
+func newRecordBuilder(w Writer, r *Record) *recordBuilder {
 	return &recordBuilder{
 		w: w,
-		r: NewRecord(logger),
+		r: r,
 	}
 }
 
