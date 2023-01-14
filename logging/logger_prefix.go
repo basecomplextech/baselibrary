@@ -3,6 +3,8 @@ package logging
 import (
 	"sync/atomic"
 	"unsafe"
+
+	"github.com/complex1tech/baselibrary/status"
 )
 
 // PrefixLogger is a logger that adds a prefix to messages, including messages from child loggers.
@@ -62,6 +64,15 @@ func (l *prefixLogger) Logger(name string) Logger {
 	return newPrefixLogger(child, l.prefix)
 }
 
+// Write writes a record.
+func (l *prefixLogger) Write(rec *Record) error {
+	if p := l.prefix.load(); p != "" {
+		rec.Message = p + rec.Message
+	}
+
+	return l.logger.Write(rec)
+}
+
 // Records
 
 // Trace logs a trace record.
@@ -118,6 +129,24 @@ func (l *prefixLogger) Error(msg string, keyValues ...any) {
 	l.logger.Error(msg, keyValues...)
 }
 
+// ErrorStack logs an error record with a stack trace.
+func (l *prefixLogger) ErrorStack(msg string, stack []byte, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.ErrorStack(msg, stack, keyValues...)
+}
+
+// ErrorStatus logs an error message with a status and a stack trace.
+func (l *prefixLogger) ErrorStatus(msg string, st status.Status, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.ErrorStatus(msg, st, keyValues...)
+}
+
 // Fatal logs a fatal record.
 func (l *prefixLogger) Fatal(msg string, keyValues ...any) {
 	if p := l.prefix.load(); p != "" {
@@ -125,6 +154,24 @@ func (l *prefixLogger) Fatal(msg string, keyValues ...any) {
 	}
 
 	l.logger.Fatal(msg, keyValues...)
+}
+
+// FatalStack logs a fatal record with a stack trace.
+func (l *prefixLogger) FatalStack(msg string, stack []byte, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.FatalStack(msg, stack, keyValues...)
+}
+
+// FatalStatus logs a fatal message with a status and a stack trace.
+func (l *prefixLogger) FatalStatus(msg string, st status.Status, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.FatalStatus(msg, st, keyValues...)
 }
 
 // Level checks

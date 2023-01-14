@@ -26,6 +26,12 @@ func TestLogger(t tests.T) Logger {
 	return newLogger("main", true /* root */, writer)
 }
 
+// TestLoggerLevel returns a new test logger with the specified level.
+func TestLoggerLevel(t tests.T, level Level) Logger {
+	writer := newConsoleWriter(level, true, os.Stdout)
+	return newLogger("main", true /* root */, writer)
+}
+
 // TestLevelEnv returns a log level from the env variable TEST_LOG or the default test level.
 func TestLevelEnv() Level {
 	if v := os.Getenv(TEST_LOG); v != "" {

@@ -2,7 +2,8 @@ package logging
 
 import (
 	"os"
-	"time"
+
+	"github.com/complex1tech/baselibrary/status"
 )
 
 var (
@@ -21,28 +22,43 @@ type Logger interface {
 	// Logger returns a child logger.
 	Logger(name string) Logger
 
+	// Write writes a record.
+	Write(rec *Record) error
+
 	// Records
 
-	// Trace logs a trace record.
+	// Trace logs a trace message.
 	Trace(msg string, keyValues ...any)
 
-	// Debug logs a debug record.
+	// Debug logs a debug message.
 	Debug(msg string, keyValues ...any)
 
-	// Info logs an info record.
+	// Info logs an info message.
 	Info(msg string, keyValues ...any)
 
-	// Notice logs a notice record.
+	// Notice logs a notice message.
 	Notice(msg string, keyValues ...any)
 
-	// Warn logs a warning record.
+	// Warn logs a warning message.
 	Warn(msg string, keyValues ...any)
 
-	// Error logs an error record.
+	// Error logs an error message.
 	Error(msg string, keyValues ...any)
 
-	// Fatal logs a fatal record.
+	// ErrorStack logs an error message with a stack trace.
+	ErrorStack(msg string, stack []byte, keyValues ...any)
+
+	// ErrorStatus logs an error message with a status and a stack trace.
+	ErrorStatus(msg string, st status.Status, keyValues ...any)
+
+	// Fatal logs a fatal mesage.
 	Fatal(msg string, keyValues ...any)
+
+	// FatalStack logs a fatal message with a stack trace.
+	FatalStack(msg string, stack []byte, keyValues ...any)
+
+	// FatalStatus logs a fatal message with a status and a stack trace.
+	FatalStatus(msg string, st status.Status, keyValues ...any)
 
 	// Level checks
 
@@ -110,89 +126,105 @@ func (l *logger) Logger(name string) Logger {
 	return newLogger(name, false, l.w)
 }
 
+// Write writes a record.
+func (l *logger) Write(rec *Record) error {
+	if rec.Logger == "" {
+		rec.Logger = l.name
+	}
+	return l.w.Write(rec)
+}
+
 // Records
 
-// Trace logs a trace record.
+// Trace logs a trace message.
 func (l *logger) Trace(msg string, keyValues ...any) {
-	rec := Record{
-		Time:    time.Now(),
-		Level:   LevelTrace,
-		Logger:  l.name,
-		Message: msg,
-		Fields:  NewFields(keyValues...),
-	}
+	rec := NewRecord(l.name).
+		WithLevel(LevelTrace).
+		WithFields(keyValues...)
 	l.w.Write(rec)
 }
 
-// Debug logs a debug record.
+// Debug logs a debug message.
 func (l *logger) Debug(msg string, keyValues ...any) {
-	rec := Record{
-		Time:    time.Now(),
-		Level:   LevelDebug,
-		Logger:  l.name,
-		Message: msg,
-		Fields:  NewFields(keyValues...),
-	}
+	rec := NewRecord(l.name).
+		WithLevel(LevelDebug).
+		WithFields(keyValues...)
 	l.w.Write(rec)
 }
 
-// Info logs an info record.
+// Info logs an info message.
 func (l *logger) Info(msg string, keyValues ...any) {
-	rec := Record{
-		Time:    time.Now(),
-		Level:   LevelInfo,
-		Logger:  l.name,
-		Message: msg,
-		Fields:  NewFields(keyValues...),
-	}
+	rec := NewRecord(l.name).
+		WithLevel(LevelInfo).
+		WithFields(keyValues...)
 	l.w.Write(rec)
 }
 
-// Notice logs a notice record.
+// Notice logs a notice message.
 func (l *logger) Notice(msg string, keyValues ...any) {
-	rec := Record{
-		Time:    time.Now(),
-		Level:   LevelNotice,
-		Logger:  l.name,
-		Message: msg,
-		Fields:  NewFields(keyValues...),
-	}
+	rec := NewRecord(l.name).
+		WithLevel(LevelNotice).
+		WithFields(keyValues...)
 	l.w.Write(rec)
 }
 
-// Warn logs a warning record.
+// Warn logs a warning message.
 func (l *logger) Warn(msg string, keyValues ...any) {
-	rec := Record{
-		Time:    time.Now(),
-		Level:   LevelWarn,
-		Logger:  l.name,
-		Message: msg,
-		Fields:  NewFields(keyValues...),
-	}
+	rec := NewRecord(l.name).
+		WithLevel(LevelWarn).
+		WithFields(keyValues...)
 	l.w.Write(rec)
 }
 
-// Error logs an error record.
+// Error logs an error message.
 func (l *logger) Error(msg string, keyValues ...any) {
-	rec := Record{
-		Time:    time.Now(),
-		Level:   LevelError,
-		Logger:  l.name,
-		Message: msg,
-		Fields:  NewFields(keyValues...),
-	}
+	rec := NewRecord(l.name).
+		WithLevel(LevelError).
+		WithFields(keyValues...)
 	l.w.Write(rec)
 }
 
-// Fatal logs a fatal record.
+// ErrorStack logs an error message with a stack trace.
+func (l *logger) ErrorStack(msg string, stack []byte, keyValues ...any) {
+	rec := NewRecord(l.name).
+		WithLevel(LevelError).
+		WithFields(keyValues...).
+		WithStack(stack)
+	l.w.Write(rec)
+}
+
+// ErrorStatus logs an error message with a status and a stack trace.
+func (l *logger) ErrorStatus(msg string, st status.Status, keyValues ...any) {
+	rec := NewRecord(l.name).
+		WithLevel(LevelError).
+		WithFields(keyValues...).
+		WithStatus(st)
+	l.w.Write(rec)
+}
+
+// Fatal logs a fatal mesage.
 func (l *logger) Fatal(msg string, keyValues ...any) {
-	rec := Record{
-		Time:    time.Now(),
-		Level:   LevelFatal,
-		Logger:  l.name,
-		Message: msg,
-		Fields:  NewFields(keyValues...),
-	}
+	rec := NewRecord(l.name).
+		WithLevel(LevelFatal).
+		WithFields(keyValues...)
+	l.w.Write(rec)
+}
+
+// FatalStack logs a fatal message with a stack trace.
+func (l *logger) FatalStack(msg string, stack []byte, keyValues ...any) {
+	rec := NewRecord(l.name).
+		WithLevel(LevelFatal).
+		WithFields(keyValues...).
+		WithStack(stack)
+	l.w.Write(rec)
+}
+
+// FatalStatus logs a fatal message with a status and a stack trace.
+func (l *logger) FatalStatus(msg string, st status.Status, keyValues ...any) {
+	rec := NewRecord(l.name).
+		WithLevel(LevelFatal).
+		WithFields(keyValues...).
+		WithStatus(st)
 	l.w.Write(rec)
 }
 

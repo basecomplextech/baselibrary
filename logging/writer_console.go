@@ -47,7 +47,7 @@ func (w *consoleWriter) Enabled(level Level) bool {
 }
 
 // Write writes a record.
-func (w *consoleWriter) Write(rec Record) error {
+func (w *consoleWriter) Write(rec *Record) error {
 	// check level
 	ok := w.Enabled(rec.Level)
 	if !ok {

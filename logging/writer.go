@@ -6,7 +6,7 @@ type Writer interface {
 	Enabled(level Level) bool
 
 	// Write writes a record.
-	Write(rec Record) error
+	Write(rec *Record) error
 }
 
 // null
@@ -25,6 +25,6 @@ func (w *nullWriter) Enabled(level Level) bool {
 }
 
 // Write writes a record.
-func (w *nullWriter) Write(rec Record) error {
+func (w *nullWriter) Write(rec *Record) error {
 	return nil
 }

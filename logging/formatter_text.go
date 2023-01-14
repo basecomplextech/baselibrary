@@ -34,7 +34,7 @@ func newTextFormatter(color bool) *textFormatter {
 }
 
 // Format formats the record as "time logger level message fields" separated by tabs.
-func (f *textFormatter) Format(w io.Writer, rec Record) error {
+func (f *textFormatter) Format(w io.Writer, rec *Record) error {
 	tw := terminal.NewWriterColor(w, f.color)
 	f.writeTime(tw, rec.Time)
 	f.writeLogger(tw, rec.Logger)
@@ -85,7 +85,7 @@ func (f *textFormatter) writeLevel(w *terminal.Writer, level Level) {
 
 // message
 
-func (f *textFormatter) writeMessage(w *terminal.Writer, rec Record) {
+func (f *textFormatter) writeMessage(w *terminal.Writer, rec *Record) {
 	color := f.theme.Level(rec.Level)
 	w.Color(color)
 	w.WriteString(rec.Message)

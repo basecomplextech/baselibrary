@@ -52,7 +52,7 @@ func (w *fileWriter) Enabled(level Level) bool {
 }
 
 // Write writes a record.
-func (w *fileWriter) Write(rec Record) error {
+func (w *fileWriter) Write(rec *Record) error {
 	// check level
 	ok := w.Enabled(rec.Level)
 	if !ok {

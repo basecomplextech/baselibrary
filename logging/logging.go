@@ -16,7 +16,7 @@ type Logging interface {
 	Enabled(level Level) bool
 
 	// Write writes a record.
-	Write(rec Record) error
+	Write(rec *Record) error
 }
 
 // New returns a new logging service.
@@ -98,7 +98,7 @@ func (l *logging) Enabled(level Level) bool {
 }
 
 // Write writes a record.
-func (l *logging) Write(rec Record) error {
+func (l *logging) Write(rec *Record) error {
 	for _, w := range l.writers {
 		if err := w.Write(rec); err != nil {
 			return err

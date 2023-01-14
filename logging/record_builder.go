@@ -1,25 +1,32 @@
 package logging
 
 import (
-	"fmt"
+	"github.com/complex1tech/baselibrary/status"
 )
 
 type RecordBuilder interface {
+	// Build builds and returns the record, but does not send it.
+	Build() *Record
+
 	// Send sends the record.
 	Send()
 
-	// Level
+	// Attrs
 
 	// Level sets the record level.
-	Level(level Level) RecordBuilder
-
-	// Message
+	Level(lv Level) RecordBuilder
 
 	// Message sets the record message.
 	Message(msg string) RecordBuilder
 
 	// Messagef formats and sets the record message.
 	Messagef(msg string, args ...any) RecordBuilder
+
+	// Stack adds a stack trace.
+	Stack(stack []byte) RecordBuilder
+
+	// Status adds a status with an optional stack trace.
+	Status(st status.Status) RecordBuilder
 
 	// Fields
 
@@ -31,9 +38,6 @@ type RecordBuilder interface {
 
 	// Fields adds fields to the record.
 	Fields(keyValuePairs ...any) RecordBuilder
-
-	// Stack adds a stack trace.
-	Stack(stack []byte) RecordBuilder
 
 	// Utility
 
@@ -86,7 +90,7 @@ var _ RecordBuilder = (*recordBuilder)(nil)
 
 type recordBuilder struct {
 	w Writer
-	r Record
+	r *Record
 }
 
 func newRecordBuilder(w Writer, logger string) *recordBuilder {
@@ -96,30 +100,45 @@ func newRecordBuilder(w Writer, logger string) *recordBuilder {
 	}
 }
 
+// Build builds and returns the record, but does not send it.
+func (b *recordBuilder) Build() *Record {
+	return b.r
+}
+
 // Send sends the record.
 func (b *recordBuilder) Send() {
 	b.w.Write(b.r)
 }
 
-// Level
+// Attrs
 
 // Level sets the record level.
-func (b *recordBuilder) Level(level Level) RecordBuilder {
-	b.r.Level = level
+func (b *recordBuilder) Level(lv Level) RecordBuilder {
+	b.r.WithLevel(lv)
 	return b
 }
 
-// Message
-
 // Message sets the record message.
 func (b *recordBuilder) Message(msg string) RecordBuilder {
-	b.r.Message = msg
+	b.r.WithMessage(msg)
 	return b
 }
 
 // Messagef formats and sets the record message.
 func (b *recordBuilder) Messagef(format string, args ...any) RecordBuilder {
-	b.r.Message = fmt.Sprintf(format, args...)
+	b.r.WithMessagef(format, args...)
+	return b
+}
+
+// Stack adds a stack trace.
+func (b *recordBuilder) Stack(stack []byte) RecordBuilder {
+	b.r.WithStack(stack)
+	return b
+}
+
+// Status adds a status with an optional stack trace.
+func (b *recordBuilder) Status(st status.Status) RecordBuilder {
+	b.r.WithStatus(st)
 	return b
 }
 
@@ -127,27 +146,19 @@ func (b *recordBuilder) Messagef(format string, args ...any) RecordBuilder {
 
 // Field adds a field to the record.
 func (b *recordBuilder) Field(key string, value any) RecordBuilder {
-	field := NewField(key, value)
-	b.r.Fields = append(b.r.Fields, field)
+	b.r.WithField(key, value)
 	return b
 }
 
 // Fieldf formats a field value and adds a field to the record.
 func (b *recordBuilder) Fieldf(key string, format string, a ...any) RecordBuilder {
-	value := fmt.Sprintf(format, a...)
-	return b.Field(key, value)
+	b.r.WithFieldf(key, format, a...)
+	return b
 }
 
 // Fields adds fields to the record.
 func (b *recordBuilder) Fields(keyValuePairs ...any) RecordBuilder {
-	fields := NewFields(keyValuePairs...)
-	b.r.Fields = append(b.r.Fields, fields...)
-	return b
-}
-
-// Stack adds a stack trace.
-func (b *recordBuilder) Stack(stack []byte) RecordBuilder {
-	b.r.Stack = stack
+	b.r.WithFields(keyValuePairs...)
 	return b
 }
 
@@ -155,70 +166,98 @@ func (b *recordBuilder) Stack(stack []byte) RecordBuilder {
 
 // Trace sets the level to trace and adds the message.
 func (b *recordBuilder) Trace(msg string) RecordBuilder {
-	return b.Level(LevelTrace).Message(msg)
+	b.r.WithLevel(LevelTrace).
+		WithMessage(msg)
+	return b
 }
 
 // Tracef sets the level to trace and formats the message.
 func (b *recordBuilder) Tracef(format string, args ...any) RecordBuilder {
-	return b.Level(LevelTrace).Messagef(format, args...)
+	b.r.WithLevel(LevelTrace).
+		WithMessagef(format, args...)
+	return b
 }
 
 // Debug sets the level to debug and adds the message.
 func (b *recordBuilder) Debug(msg string) RecordBuilder {
-	return b.Level(LevelDebug).Message(msg)
+	b.r.WithLevel(LevelDebug).
+		WithMessage(msg)
+	return b
 }
 
 // Debugf sets the level to debug and formats the message.
 func (b *recordBuilder) Debugf(format string, args ...any) RecordBuilder {
-	return b.Level(LevelDebug).Messagef(format, args...)
+	b.r.WithLevel(LevelDebug).
+		WithMessagef(format, args...)
+	return b
 }
 
 // Info sets the level to info and adds the message.
 func (b *recordBuilder) Info(msg string) RecordBuilder {
-	return b.Level(LevelInfo).Message(msg)
+	b.r.WithLevel(LevelInfo).
+		WithMessage(msg)
+	return b
 }
 
 // Infof sets the level to info and formats the message.
 func (b *recordBuilder) Infof(format string, args ...any) RecordBuilder {
-	return b.Level(LevelInfo).Messagef(format, args...)
+	b.r.WithLevel(LevelInfo).
+		WithMessagef(format, args...)
+	return b
 }
 
 // Notice sets the level to notice and adds the message.
 func (b *recordBuilder) Notice(msg string) RecordBuilder {
-	return b.Level(LevelNotice).Message(msg)
+	b.r.WithLevel(LevelNotice).
+		WithMessage(msg)
+	return b
 }
 
 // Noticef sets the level to notice and formats the message.
 func (b *recordBuilder) Noticef(format string, args ...any) RecordBuilder {
-	return b.Level(LevelNotice).Messagef(format, args...)
+	b.r.WithLevel(LevelNotice).
+		WithMessagef(format, args...)
+	return b
 }
 
 // Warn sets the level to warn and adds the message.
 func (b *recordBuilder) Warn(msg string) RecordBuilder {
-	return b.Level(LevelWarn).Message(msg)
+	b.r.WithLevel(LevelWarn).
+		WithMessage(msg)
+	return b
 }
 
 // Warnf sets the level to warn and formats the message.
 func (b *recordBuilder) Warnf(format string, args ...any) RecordBuilder {
-	return b.Level(LevelWarn).Messagef(format, args...)
+	b.r.WithLevel(LevelWarn).
+		WithMessagef(format, args...)
+	return b
 }
 
 // Error sets the level to error and adds the message.
 func (b *recordBuilder) Error(msg string) RecordBuilder {
-	return b.Level(LevelError).Message(msg)
+	b.r.WithLevel(LevelError).
+		WithMessage(msg)
+	return b
 }
 
 // Errorf sets the level to error and formats the message.
 func (b *recordBuilder) Errorf(format string, args ...any) RecordBuilder {
-	return b.Level(LevelError).Messagef(format, args...)
+	b.r.WithLevel(LevelError).
+		WithMessagef(format, args...)
+	return b
 }
 
 // Fatal sets the level to fatal and adds the message.
 func (b *recordBuilder) Fatal(msg string) RecordBuilder {
-	return b.Level(LevelFatal).Message(msg)
+	b.r.WithLevel(LevelFatal).
+		WithMessage(msg)
+	return b
 }
 
 // Fatalf sets the level to fatal and formats the message.
 func (b *recordBuilder) Fatalf(format string, args ...any) RecordBuilder {
-	return b.Level(LevelFatal).Messagef(format, args...)
+	b.r.WithLevel(LevelFatal).
+		WithMessagef(format, args...)
+	return b
 }
