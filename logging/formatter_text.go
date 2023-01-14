@@ -1,8 +1,10 @@
 package logging
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -125,12 +127,38 @@ func (f *textFormatter) writeFields(w *terminal.Writer, fields []Field) {
 
 		w.Color(f.theme.FieldValue)
 		if len(valueBytes) > 0 {
-			w.Write(valueBytes)
+			f.writeFieldValueBytes(w, valueBytes)
 			valueBytes = valueBytes[:0]
 		} else {
-			w.WriteString(value)
+			f.writeFieldValue(w, value)
 		}
 		w.ResetColor()
+	}
+}
+
+func (f *textFormatter) writeFieldValue(w *terminal.Writer, s string) {
+	i := strings.IndexAny(s, " \t")
+	if i > 0 {
+		w.WriteString("'")
+	}
+
+	w.WriteString(s)
+
+	if i > 0 {
+		w.WriteString("'")
+	}
+}
+
+func (f *textFormatter) writeFieldValueBytes(w *terminal.Writer, b []byte) {
+	i := bytes.IndexAny(b, " \t")
+	if i > 0 {
+		w.WriteString("'")
+	}
+
+	w.Write(b)
+
+	if i > 0 {
+		w.WriteString("'")
 	}
 }
 
@@ -145,7 +173,7 @@ func (f *textFormatter) writeStack(w *terminal.Writer, stack []byte) {
 	w.Write(stack)
 }
 
-// padding
+// private
 
 func (f *textFormatter) maybePadding(w *terminal.Writer, n int, max int32, ptr *int32) error {
 	prev := atomic.LoadInt32(ptr)
