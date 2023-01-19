@@ -2,10 +2,24 @@ package status
 
 import "fmt"
 
+var (
+	Closed    = New(CodeClosed, "")
+	Cancelled = New(CodeCancelled, "")
+	Timeout   = New(CodeTimeout, "")
+)
+
+// Closed
+
+// Closedf formats a message and returns a closed status.
+func Closedf(format string, a ...any) Status {
+	text := fmt.Sprintf(format, a...)
+	return Status{Code: CodeClosed, Text: text}
+}
+
 // Cancelled
 
 // Cancelledf formats a message and returns a cancelled status.
-func Cancelledf(format string, a ...interface{}) Status {
+func Cancelledf(format string, a ...any) Status {
 	text := fmt.Sprintf(format, a...)
 	return Status{Code: CodeCancelled, Text: text}
 }
@@ -13,7 +27,7 @@ func Cancelledf(format string, a ...interface{}) Status {
 // Timeout
 
 // Timeoutf returns a timeout status and formats its message.
-func Timeoutf(format string, a ...interface{}) Status {
+func Timeoutf(format string, a ...any) Status {
 	text := fmt.Sprintf(format, a...)
 	return Status{Code: CodeTimeout, Text: text}
 }
@@ -26,7 +40,20 @@ func Unavailable(text string) Status {
 }
 
 // Unavailablef returns an unavailable status and formats its message.
-func Unavailablef(format string, a ...interface{}) Status {
+func Unavailablef(format string, a ...any) Status {
 	text := fmt.Sprintf(format, a...)
 	return Status{Code: CodeUnavailable, Text: text}
+}
+
+// Unsupported
+
+// Unsupported returns an unsupported status.
+func Unsupported(text string) Status {
+	return Status{Code: CodeUnsupported, Text: text}
+}
+
+// Unsupportedf returns an unsupported status and formats its message.
+func Unsupportedf(format string, a ...any) Status {
+	text := fmt.Sprintf(format, a...)
+	return Status{Code: CodeUnsupported, Text: text}
 }

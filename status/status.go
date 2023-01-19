@@ -2,17 +2,6 @@ package status
 
 import "fmt"
 
-var (
-	OK     = New(CodeOK, "")
-	None   = New(CodeNone, "")
-	Wait   = New(CodeWait, "")
-	Closed = New(CodeClosed, "")
-
-	End       = New(CodeEnd, "")
-	Cancelled = New(CodeCancelled, "")
-	Timeout   = New(CodeTimeout, "")
-)
-
 // Status represents an operation status.
 type Status struct {
 	Code  Code
@@ -26,7 +15,7 @@ func New(code Code, text string) Status {
 }
 
 // Newf returns a new status and formats its message.
-func Newf(code Code, format string, a ...interface{}) Status {
+func Newf(code Code, format string, a ...any) Status {
 	text := fmt.Sprintf(format, a...)
 	return Status{Code: code, Text: text}
 }
@@ -36,9 +25,9 @@ func (s Status) OK() bool {
 	return s.Code == CodeOK
 }
 
-// Terminal returns true if the status code is terminal.
-func (s Status) Terminal() bool {
-	return s.Code == CodeTerminal
+// Fatal returns true if the status code is terminal.
+func (s Status) Fatal() bool {
+	return s.Code == CodeFatal
 }
 
 // String returns "code: text".
@@ -73,7 +62,7 @@ func (s Status) WrapText(text string) Status {
 }
 
 // WrapTextf returns a status clone with a new text and an appended previous text.
-func (s Status) WrapTextf(format string, a ...interface{}) Status {
+func (s Status) WrapTextf(format string, a ...any) Status {
 	text := fmt.Sprintf(format, a...)
 	s1 := s
 	s1.Text = text + ": " + s.Text

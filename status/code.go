@@ -2,7 +2,7 @@ package status
 
 type Code string
 
-// General codes
+// General class
 const (
 	// CodeNone indicates an undefined status code.
 	CodeNone Code = ""
@@ -10,14 +10,11 @@ const (
 	// CodeOK indicates that an operation completed successfully.
 	CodeOK Code = "ok"
 
-	// CodeClosed indicates that an object is closed and cannot be used anymore.
-	CodeClosed Code = "closed"
-
-	// CodeTerminal indicates that an operation or a state is terminal and cannot be continued.
-	CodeTerminal Code = "terminal"
+	// CodeTest is a status code for testing.
+	CodeTest Code = "test"
 )
 
-// Error codes
+// Error class
 const (
 	// CodeError is a generic error status code.
 	CodeError Code = "error"
@@ -25,15 +22,33 @@ const (
 	// CodeIOError indicates that an I/O error occurred, the operation can be retried later.
 	CodeIOError Code = "io_error"
 
-	// CodeNotFound indicates that an object is not found.
-	CodeNotFound Code = "not_found"
+	// CodeCorrupted indicates any data corruption or loss.
+	CodeCorrupted Code = "corruption"
 
-	// CodeCorruption indicates any data corruption.
-	CodeCorruption Code = "corruption"
+	// CodeFatal indicates that a fatal error occurred, the operation cannot be retried.
+	CodeFatal Code = "fatal"
 )
 
-// Unavailable codes
+// App/client class
 const (
+	// CodeInvalid indicates that a client request/operation/argument is invalid.
+	CodeInvalid Code = "invalid"
+
+	// CodeNotFound indicates that an object is not found.
+	CodeNotFound Code = "notfound"
+
+	// CodeForbidden indicates that an operation is forbidden.
+	CodeForbidden Code = "forbidden"
+
+	// CodeUnauthorized indicates that a user is not authorized.
+	CodeUnauthorized Code = "unauthorized"
+)
+
+// Unavailable class
+const (
+	// CodeClosed indicates that an object is closed and cannot be used anymore.
+	CodeClosed Code = "closed"
+
 	// CodeCancelled indicates that an operation was cancelled or stopped on a request.
 	CodeCancelled Code = "cancelled"
 
@@ -42,19 +57,16 @@ const (
 
 	// CodeUnavailable indicates that a service is temporarily unavailable, the operation can be retried.
 	CodeUnavailable Code = "unavailable"
+
+	// CodeUnsupported indicates that an operation is not supported or not implemented.
+	CodeUnsupported Code = "unsupported"
 )
 
-// Iteration/streaming codes
+// Iteration/streaming class
 const (
 	// CodeEnd indicates a file/channel/stream end.
 	CodeEnd Code = "end"
 
 	// CodeWait indicates that the caller should wait for the next events/messages/etc.
 	CodeWait Code = "wait"
-)
-
-// Test codes
-const (
-	// CodeTest is a status code for testing.
-	CodeTest Code = "test"
 )

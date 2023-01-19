@@ -2,8 +2,13 @@ package status
 
 import "fmt"
 
+var (
+	OK   = New(CodeOK, "")
+	None = New(CodeNone, "")
+)
+
 // OKf formats a message and returns an ok status.
-func OKf(format string, a ...interface{}) Status {
+func OKf(format string, a ...any) Status {
 	text := fmt.Sprintf(format, a...)
 	return Status{Code: CodeOK, Text: text}
 }
@@ -11,40 +16,9 @@ func OKf(format string, a ...interface{}) Status {
 // None
 
 // Nonef formats a message and returns a none status.
-func Nonef(format string, a ...interface{}) Status {
+func Nonef(format string, a ...any) Status {
 	text := fmt.Sprintf(format, a...)
 	return Status{Code: CodeNone, Text: text}
-}
-
-// Terminal
-
-// Terminal returns a terminal status.
-func Terminal(text string) Status {
-	return Status{Code: CodeTerminal, Text: text}
-}
-
-// Terminalf formats a message and returns a terminal status.
-func Terminalf(format string, a ...interface{}) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeTerminal, Text: text}
-}
-
-// TerminalError wraps an error and returns a terminal status.
-func TerminalError(err error) Status {
-	text := "terminated"
-	if err != nil {
-		text = err.Error()
-	}
-	return Status{Code: CodeTerminal, Text: text, Error: err}
-}
-
-// TerminalErrorf wraps an error, formats a message and returns a terminal status.
-func TerminalErrorf(err error, format string, a ...interface{}) Status {
-	text := fmt.Sprintf(format, a...)
-	if err != nil {
-		text += ": " + err.Error()
-	}
-	return Status{Code: CodeTerminal, Text: text, Error: err}
 }
 
 // Test
@@ -55,7 +29,7 @@ func Test(message string) Status {
 }
 
 // Testf formats a message and returns a test status.
-func Testf(format string, a ...interface{}) Status {
+func Testf(format string, a ...any) Status {
 	text := fmt.Sprintf(format, a...)
 	return Status{Code: CodeTest, Text: text}
 }
