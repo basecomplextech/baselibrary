@@ -4,7 +4,6 @@ import (
 	"math"
 	"testing"
 
-	"github.com/complex1tech/baselibrary/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -105,7 +104,7 @@ func TestArenaCopyBytes__should_allocate_bytes_copy(t *testing.T) {
 	b := []byte("hello, world")
 	buf := ArenaCopyBytes(a, b)
 
-	assert.Equal(t, types.BytesView(b), buf)
+	assert.Equal(t, Bytes(b), buf)
 }
 
 // String
@@ -115,7 +114,7 @@ func TestArenaString__should_return_string_copy(t *testing.T) {
 	s0 := "hello, world"
 	s1 := ArenaString(a, s0)
 
-	assert.Equal(t, types.StringView(s0), s1)
+	assert.Equal(t, String(s0), s1)
 	assert.NotSame(t, s0, s1)
 }
 

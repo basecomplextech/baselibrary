@@ -6,7 +6,6 @@ import (
 	"unsafe"
 
 	"github.com/complex1tech/baselibrary/ref"
-	"github.com/complex1tech/baselibrary/types"
 )
 
 // Arena allocates objects in internal byte blocks.
@@ -19,7 +18,7 @@ type Arena interface {
 	Len() int64
 
 	// Bytes allocates a byte slice with a given capacity in the arena.
-	Bytes(cap int) types.BytesView
+	Bytes(cap int) Bytes
 
 	// Internal
 
@@ -51,7 +50,7 @@ func ArenaAlloc[T any](a Arena) *T {
 }
 
 // ArenaBytes allocates a new byte slice.
-func ArenaBytes(a Arena, cap int) types.BytesView {
+func ArenaBytes(a Arena, cap int) Bytes {
 	if cap == 0 {
 		return nil
 	}
@@ -91,21 +90,21 @@ func ArenaCopy[T any](a Arena, src []T) []T {
 
 // ArenaCopyBytes allocates a new byte slice and copies items from src into it.
 // The slice capacity is len(src).
-func ArenaCopyBytes(a Arena, src []byte) types.BytesView {
+func ArenaCopyBytes(a Arena, src []byte) Bytes {
 	dst := ArenaBytes(a, len(src))
 	copy(dst, src)
 	return dst
 }
 
 // ArenaString allocates a new string and copies data from src into it.
-func ArenaString(a Arena, src string) types.StringView {
+func ArenaString(a Arena, src string) String {
 	if len(src) == 0 {
 		return ""
 	}
 
 	dst := ArenaBytes(a, len(src))
 	copy(dst, src)
-	return *(*types.StringView)(unsafe.Pointer(&dst))
+	return *(*String)(unsafe.Pointer(&dst))
 }
 
 // ArenaFreeList returns a new free list which allocates objects in the given arena.
@@ -152,7 +151,7 @@ func (a *arena) Len() int64 {
 }
 
 // Bytes allocates a byte slice with a `size` capacity in the arena.
-func (a *arena) Bytes(cap int) types.BytesView {
+func (a *arena) Bytes(cap int) Bytes {
 	if cap == 0 {
 		return nil
 	}
