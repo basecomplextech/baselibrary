@@ -4,6 +4,39 @@ import (
 	"encoding/binary"
 )
 
+// Size
+
+// ReverseSize decodes and returns the size of an int from the b end, or 0 on error.
+func ReverseSize(b []byte) int {
+	if len(b) == 0 {
+		return 0
+	}
+
+	f := b[len(b)-1]
+	switch f {
+	default:
+		return 1
+
+	case 0xfd:
+		if len(b) < 3 {
+			return 0
+		}
+		return 3
+
+	case 0xfe:
+		if len(b) < 5 {
+			return 0
+		}
+		return 5
+
+	case 0xff:
+		if len(b) < 9 {
+			return 0
+		}
+		return 9
+	}
+}
+
 // Signed
 
 // ReverseInt32 decodes an int32 value from the b end and the number of bytes read.

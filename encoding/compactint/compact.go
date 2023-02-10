@@ -4,12 +4,11 @@
 //
 // Encoding
 //
-//  Size                   Prefix  Example               Description
+//	Size                   Prefix  Example               Description
 //	<= 0xfc                -       0x12                  uint8_t
 //	<= 0xffff              0xfd    0xfd1234              0xfd followed by uint16
 //	<= 0xffffffff          0xfe    0xfe12345678          0xfe followed by uint32
 //	<= 0xffffffffffffffff  0xff    0xff1234567890abcdef  0xff followed by uint64
-//
 package compactint
 
 import (
@@ -21,6 +20,39 @@ const (
 	MaxLen32 = 5
 	MaxLen64 = 9
 )
+
+// Size
+
+// Size decodes and returns the size of an int, or 0 on error.
+func Size(b []byte) int {
+	if len(b) == 0 {
+		return 0
+	}
+
+	f := b[0]
+	switch f {
+	default:
+		return 1
+
+	case 0xfd:
+		if len(b) < 3 {
+			return 0
+		}
+		return 3
+
+	case 0xfe:
+		if len(b) < 5 {
+			return 0
+		}
+		return 5
+
+	case 0xff:
+		if len(b) < 9 {
+			return 0
+		}
+		return 9
+	}
+}
 
 // Signed
 
