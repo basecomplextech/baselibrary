@@ -1,17 +1,17 @@
 package blake3
 
 import (
-	"github.com/complex1tech/baselibrary/types"
+	"github.com/complex1tech/baselibrary/basic"
 	"github.com/zeebo/blake3"
 )
 
 // SumBin256 returns a Blake3 hash truncated from 64 bytes to Bin256.
-func SumBin256(b []byte) types.Bin256 {
+func SumBin256(b []byte) basic.Bin256 {
 	out := blake3.Sum256(b)
-	return (types.Bin256)(out)
+	return (basic.Bin256)(out)
 }
 
-var _ (types.HashBin256) = (*HashBin256)(nil)
+var _ (basic.HashBin256) = (*HashBin256)(nil)
 
 // HashBin256 computes a Blake3 hash and truncates it from 64 bytes to Bin256.
 type HashBin256 struct {
@@ -33,11 +33,11 @@ func (h *HashBin256) Write(p []byte) (int, error) {
 }
 
 // SumBin256 returns a hash as Bin256.
-func (h *HashBin256) SumBin256() types.Bin256 {
+func (h *HashBin256) SumBin256() basic.Bin256 {
 	out := [64]byte{}
 	h.h.Sum(out[:0])
 
-	u := types.Bin256{}
+	u := basic.Bin256{}
 	copy(u[:], out[:])
 	return u
 }

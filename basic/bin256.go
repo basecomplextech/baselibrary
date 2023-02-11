@@ -1,5 +1,5 @@
 // Package bin256 provides a binary 256-bit value.
-package types
+package basic
 
 import (
 	"bytes"
