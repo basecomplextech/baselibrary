@@ -3,9 +3,14 @@ package basic
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"regexp"
+	"sort"
+	"time"
 )
 
 const (
@@ -13,17 +18,103 @@ const (
 	Bin256CharLen = (Bin256ByteLen * 2)
 )
 
+var Bin256Pattern = regexp.MustCompile(`^[0-9A-Za-z]{64}$`)
+
 // Bin256 is a 32 byte value.
 type Bin256 [Bin256ByteLen]byte
 
-// Bin256FromInt64 converts an int64 into a big endian Bin256.
-func Bin256FromInt64(v int64) Bin256 {
+// Bin256FromInt converts an int into a big endian Bin256.
+func Bin256FromInt(v int) Bin256 {
 	b := Bin256{}
 	buf := b[24:]
 
 	binary.BigEndian.PutUint64(buf, uint64(v))
 	return b
 }
+
+// Random
+
+// RandomBin256 returns a random bin256.
+func RandomBin256() Bin256 {
+	u := Bin256{}
+	if _, err := rand.Read(u[:]); err != nil {
+		panic(err)
+	}
+	return u
+}
+
+// TimeRandomBin256 returns a time-random bin256 with a millisecond resolution.
+func TimeRandomBin256() Bin256 {
+	u := Bin256{}
+
+	now := time.Now()
+	ts := now.UnixNano() / int64(time.Millisecond)
+	binary.BigEndian.PutUint64(u[:], uint64(ts))
+
+	if _, err := rand.Read(u[8:]); err != nil {
+		panic(err)
+	}
+	return u
+}
+
+// Parse
+
+// ParseBin256 parses a bin256 from a 32-byte array.
+func ParseBin256(b []byte) (Bin256, error) {
+	switch {
+	case b == nil:
+		return Bin256{}, nil
+	case len(b) == 0:
+		return Bin256{}, nil
+	case len(b) != Bin256ByteLen:
+		return Bin256{}, errors.New("bin256: invalid bin256 length")
+	}
+
+	u := Bin256{}
+	copy(u[:], b)
+	return u, nil
+}
+
+// ParseBin256String parses a bin256 from 64-char string.
+func ParseBin256String(s string) (Bin256, error) {
+	switch {
+	case s == "":
+		return Bin256{}, nil
+	case len(s) == 0:
+		return Bin256{}, nil
+	case len(s) != Bin256CharLen:
+		return Bin256{}, errors.New("bin256: invalid bin256 length")
+	}
+
+	u := Bin256{}
+	_, err := hex.Decode(u[:], []byte(s))
+	if err != nil {
+		return u, err
+	}
+	return u, nil
+}
+
+// MustParseBin256String parses a bin256 from 32-char string or panics.
+func MustParseBin256String(s string) Bin256 {
+	u, err := ParseBin256String(s)
+	if err != nil {
+		panic(err)
+	}
+	return u
+}
+
+// Sort
+
+// SortBin256 sorts bin256 values.
+func SortBin256(vv []Bin256) {
+	sort.Slice(vv, func(i, j int) bool {
+		a := vv[i]
+		b := vv[j]
+		return a.Less(b)
+	})
+}
+
+// Methods
 
 // Bytes marshals an id to bytes.
 func (b Bin256) Bytes() []byte {
@@ -52,7 +143,7 @@ func (b Bin256) Size() int {
 	return len(b)
 }
 
-// String returns a 32-char lower-case hex-encoded string.
+// String returns a 64-char lower-case hex-encoded string.
 func (b Bin256) String() string {
 	buf := make([]byte, Bin256CharLen)
 	hex.Encode(buf, b[:])
@@ -94,7 +185,7 @@ func (b *Bin256) UnmarshalJSON(buf []byte) error {
 		return err
 	}
 
-	b0, err := ParseStringBin256(s)
+	b0, err := ParseBin256String(s)
 	if err != nil {
 		return err
 	}

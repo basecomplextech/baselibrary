@@ -2,9 +2,14 @@ package basic
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"regexp"
+	"sort"
+	"time"
 )
 
 const (
@@ -12,17 +17,94 @@ const (
 	Bin128CharLen = (Bin128ByteLen * 2) // 341a7d60bc5893a64bda3de06721534c
 )
 
+var Bin128Pattern = regexp.MustCompile(`^[0-9A-Za-z]{32}$`)
+
 // Bin128 is a 128-bit value.
 type Bin128 [Bin128ByteLen]byte
 
-// Bin128FromInt64 converts an int64 into a bin128.
-func Bin128FromInt64(v int64) Bin128 {
+// Bin128FromInt converts an int into a bin128.
+func Bin128FromInt(v int) Bin128 {
 	b := Bin128{}
 	buf := b[8:]
 
 	binary.BigEndian.PutUint64(buf, uint64(v))
 	return b
 }
+
+// Random
+
+// RandomBin128 returns a random bin128.
+func RandomBin128() Bin128 {
+	u := Bin128{}
+	if _, err := rand.Read(u[:]); err != nil {
+		panic(err)
+	}
+	return u
+}
+
+// TimeRandomBin128 returns a time-random bin128 with a millisecond resolution.
+func TimeRandomBin128() Bin128 {
+	u := Bin128{}
+
+	now := time.Now()
+	ts := now.UnixNano() / int64(time.Millisecond)
+	binary.BigEndian.PutUint64(u[:], uint64(ts))
+
+	if _, err := rand.Read(u[8:]); err != nil {
+		panic(err)
+	}
+	return u
+}
+
+// Sort
+
+// SortBin128 sorts bin128 values.
+func SortBin128(vv []Bin128) {
+	sort.Slice(vv, func(i, j int) bool {
+		a := vv[i]
+		b := vv[j]
+		return a.Less(b)
+	})
+}
+
+// Parse
+
+// ParseBin128 parses a bin128 value from a 16-byte array.
+func ParseBin128(b []byte) (Bin128, error) {
+	switch {
+	case b == nil:
+		return Bin128{}, nil
+	case len(b) == 0:
+		return Bin128{}, nil
+	case len(b) != Bin128ByteLen:
+		return Bin128{}, errors.New("bin128: invalid bin128 length")
+	}
+
+	u := Bin128{}
+	copy(u[:], b)
+	return u, nil
+}
+
+// ParseBin128String parses a bin128 from 32-char string.
+func ParseBin128String(s string) (Bin128, error) {
+	switch {
+	case s == "":
+		return Bin128{}, nil
+	case len(s) == 0:
+		return Bin128{}, nil
+	case len(s) != Bin128CharLen:
+		return Bin128{}, errors.New("bin128: invalid bin128 string length")
+	}
+
+	u := Bin128{}
+	_, err := hex.Decode(u[:], []byte(s))
+	if err != nil {
+		return u, err
+	}
+	return u, nil
+}
+
+// Methods
 
 // Compare compares two values.
 func (b0 Bin128) Compare(b1 Bin128) int {
@@ -81,7 +163,7 @@ func (b *Bin128) UnmarshalJSON(buf []byte) error {
 		return err
 	}
 
-	b0, err := ParseStringBin128(s)
+	b0, err := ParseBin128String(s)
 	if err != nil {
 		return err
 	}
