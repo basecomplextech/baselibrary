@@ -32,8 +32,8 @@ func New[V any, P any](compare compare.Func[P], items ...Item[V, P]) *Queue[V, P
 	return q
 }
 
-// Ordered returns a new priority queue with the priority natural order.
-func Ordered[V any, P constraints.Ordered](items ...Item[V, P]) *Queue[V, P] {
+// NewOrdered returns a new priority queue with the priority natural order.
+func NewOrdered[V any, P constraints.Ordered](items ...Item[V, P]) *Queue[V, P] {
 	compare := compare.Ordered[P]()
 	return New(compare, items...)
 }

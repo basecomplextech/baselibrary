@@ -37,8 +37,8 @@ func NewUnique[V comparable, P any](compare compare.Func[P], items ...Item[V, P]
 	return q
 }
 
-// OrderedUnique returns a unique priority queue with the priority natural order.
-func OrderedUnique[V comparable, P constraints.Ordered](items ...Item[V, P]) *UniqueQueue[V, P] {
+// NewUniqueOrdered returns a unique priority queue with the priority natural order.
+func NewUniqueOrdered[V comparable, P constraints.Ordered](items ...Item[V, P]) *UniqueQueue[V, P] {
 	compare := compare.Ordered[P]()
 	return NewUnique(compare, items...)
 }
