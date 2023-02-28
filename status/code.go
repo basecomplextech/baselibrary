@@ -46,6 +46,9 @@ const (
 
 // Unavailable class
 const (
+	// CodeAborted indicates that an operation was aborted or rollbacked.
+	CodeAborted Code = "aborted"
+
 	// CodeClosed indicates that an object is closed and cannot be used anymore.
 	CodeClosed Code = "closed"
 
