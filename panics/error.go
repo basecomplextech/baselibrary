@@ -7,7 +7,7 @@ import (
 
 // Error wraps a panic into an error, by default includes the stack trace.
 type Error struct {
-	E     interface{}
+	E     any
 	Stack []byte
 }
 
@@ -16,8 +16,14 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("%v", e.E)
 }
 
+// Panicf panics with a formatted message.
+func Panicf(format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	panic(msg)
+}
+
 // Recover wraps a panic into a *Error if e is not nil, includes the stack trace.
-func Recover(e interface{}) error {
+func Recover(e any) error {
 	if e == nil {
 		return nil
 	}
@@ -27,7 +33,7 @@ func Recover(e interface{}) error {
 }
 
 // RecoverStack wraps a panic into a *Error if e is not nil, includes the stack trace.
-func RecoverStack(e interface{}) (err error, stack []byte) {
+func RecoverStack(e any) (err error, stack []byte) {
 	if e == nil {
 		return nil, nil
 	}
@@ -38,7 +44,7 @@ func RecoverStack(e interface{}) (err error, stack []byte) {
 }
 
 // RecoverNoStack wraps a panic into a *Error if e is not nil, skips the stack trace.
-func RecoverNoStack(e interface{}) error {
+func RecoverNoStack(e any) error {
 	if e == nil {
 		return nil
 	}
