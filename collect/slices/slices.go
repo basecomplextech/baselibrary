@@ -23,6 +23,12 @@ func CloneTree[T any](tree [][]T) [][]T {
 	return tree1
 }
 
+// Contains returns true if the slice contains an item.
+func Contains[T comparable](s []T, item T) bool {
+	i := IndexOf(s, item)
+	return i >= 0
+}
+
 // IndexOf returns the index of the first occurrence of the item in the slice.
 // If the item is not found, -1 is returned.
 func IndexOf[T comparable](s []T, item T) int {
