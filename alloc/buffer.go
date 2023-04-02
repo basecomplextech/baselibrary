@@ -60,19 +60,19 @@ func (b *Buffer) Bytes() []byte {
 
 // Grow grows the buffer and returns an n-byte slice.
 func (b *Buffer) Grow(n int) []byte {
-	// maybe allocate block
+	// Maybe allocate block
 	last := b.last()
 	if last == nil || last.free() < n {
 		last = b.allocBlock(n)
 	}
 
-	// grow buffer
+	// Grow buffer
 	start := len(last.buf)
 	end := start + n
 	last.buf = last.buf[:end]
 	b.len += n
 
-	// slice buffer
+	// Slice buffer
 	p := last.buf[start:end:end] // start:end:max, cap=max-start
 	return p
 }
@@ -130,10 +130,10 @@ func (b *Buffer) merge() {
 		return
 	}
 
-	// alloc block
+	// Alloc block
 	one, _ := b.a.allocBlock(b.len)
 
-	// merge data
+	// Merge data
 	for _, block := range b.blocks {
 
 		// grow buffer
@@ -146,15 +146,15 @@ func (b *Buffer) merge() {
 		copy(p, block.buf)
 	}
 
-	// replace blocks
+	// Replace blocks
 	b.clearBlocks()
 	b.blocks = append(b.blocks, one)
 }
 
 // allocBlock allocates the next block.
 func (b *Buffer) allocBlock(n int) *block {
-	// double last block size
-	// limit it to maxBlockSize
+	// Double last block size
+	// Limit it to maxBlockSize
 	size := 0
 	last := b.last()
 
@@ -175,10 +175,10 @@ func (b *Buffer) allocBlock(n int) *block {
 
 // clearBlocks clears and frees blocks.
 func (b *Buffer) clearBlocks() {
-	// free blocks
+	// Free blocks
 	b.a.freeBlocks(b.blocks...)
 
-	// clear blocks for gc
+	// Clear blocks for gc
 	for i := range b.blocks {
 		b.blocks[i] = nil
 	}

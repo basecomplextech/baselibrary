@@ -34,7 +34,7 @@ func (b *block) free() int {
 
 // reset resets the block.
 func (b *block) reset() {
-	// zero out
+	// Zero out
 	for i := range b.buf {
 		b.buf[i] = 0
 	}

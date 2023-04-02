@@ -87,7 +87,7 @@ func (b *buffer) Grow(n int) []byte {
 	cp := cap(b.buf)
 	ln := len(b.buf)
 
-	// realloc
+	// Realloc
 	free := cp - ln
 	if free < n {
 		size := (cp * 2) + n
@@ -96,11 +96,11 @@ func (b *buffer) Grow(n int) []byte {
 		b.buf = buf
 	}
 
-	// grow buffer
+	// Grow buffer
 	size := ln + n
 	b.buf = b.buf[:size]
 
-	// return slice
+	// Return slice
 	return b.buf[ln:size]
 }
 

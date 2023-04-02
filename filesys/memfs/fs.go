@@ -190,7 +190,7 @@ func (fs *memFS) Rename(srcPath string, dstPath string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	// get source and its parent
+	// Get source and its parent
 	srcNames := splitPath(srcPath)
 	if len(srcNames) == 0 {
 		return filesys.ErrInvalid
@@ -201,7 +201,7 @@ func (fs *memFS) Rename(srcPath string, dstPath string) error {
 	}
 	srcParent := src.getParent()
 
-	// get dest parent
+	// Get dest parent
 	dstNames := splitPath(dstPath)
 	if len(dstNames) == 0 {
 		return filesys.ErrInvalid
@@ -215,7 +215,7 @@ func (fs *memFS) Rename(srcPath string, dstPath string) error {
 	}
 	dstName := dstNames[len(dstNames)-1]
 
-	// move source to dest
+	// Move source to dest
 	srcParent.removeEntry(src)
 	dstParent.addEntry(src, dstName)
 	return nil
@@ -247,7 +247,7 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 	}
 	dir = cleanPath(dir)
 
-	// find dir
+	// Find dir
 	parent := fs.root
 	if dir != "" {
 		names := splitPath(dir)
@@ -262,7 +262,7 @@ func (fs *memFS) TempDir(dir, pattern string) (path string, err error) {
 		}
 	}
 
-	// create file
+	// Create file
 	time := time.Now().UnixNano()
 	for i := 0; i < 100; i++ {
 		name := strings.Replace(pattern, "*", fmt.Sprintf("%v", time), -1)
@@ -294,7 +294,7 @@ func (fs *memFS) TempFile(dir, pattern string) (filesys.File, error) {
 	}
 	dir = cleanPath(dir)
 
-	// find dir
+	// Find dir
 	parent := fs.root
 	if dir != "" {
 		names := splitPath(dir)
@@ -309,7 +309,7 @@ func (fs *memFS) TempFile(dir, pattern string) (filesys.File, error) {
 		}
 	}
 
-	// create file
+	// Create file
 	time := time.Now().UnixNano()
 	for i := 0; i < 100; i++ {
 		name := strings.Replace(pattern, "*", fmt.Sprintf("%v", time), -1)

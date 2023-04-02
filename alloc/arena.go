@@ -193,13 +193,13 @@ func (a *arena) alloc(n int) unsafe.Pointer {
 		panic("operation on a free arena")
 	}
 
-	// maybe allocate block
+	// Maybe allocate block
 	last := a.last()
 	if last == nil || last.free() < n {
 		last = a.allocBlock(n)
 	}
 
-	// grow buffer, add end padding for alignement
+	// Grow buffer, add end padding for alignement
 	start := len(last.buf)
 	end := start + n
 	if end > last.cap() {
@@ -213,15 +213,15 @@ func (a *arena) alloc(n int) unsafe.Pointer {
 
 	last.buf = last.buf[:end]
 
-	// slice buffer
+	// Slice buffer
 	p := last.buf[start:end:end] // start:end:max, cap=max-start
 	ptr := unsafe.Pointer(&p[0])
 	return ptr
 }
 
 func (a *arena) allocBlock(n int) *block {
-	// double last block size
-	// limit it to maxBlockSize
+	// Double last block size
+	// Limit it to maxBlockSize
 	size := 0
 	last := a.last()
 

@@ -178,17 +178,17 @@ func (f *textFormatter) writeStack(w *terminal.Writer, stack []byte) {
 func (f *textFormatter) maybePadding(w *terminal.Writer, n int, max int32, ptr *int32) error {
 	prev := atomic.LoadInt32(ptr)
 
-	// maybe write padding
+	// Maybe write padding
 	if n <= int(prev) {
 		return f.writePadding(w, n, int(prev))
 	}
 
-	// check already max
+	// Check already max
 	if max > 0 && prev == max {
 		return nil
 	}
 
-	// update previous
+	// Update previous
 	next := int32(n)
 	if max > 0 && next > max {
 		next = max

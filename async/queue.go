@@ -65,10 +65,10 @@ func (q *Queue[T]) Pop() (v T, ok bool) {
 		return
 	}
 
-	// get value
+	// Get value
 	v = q.list[0]
 
-	// move remaining to front
+	// Move remaining to front
 	copy(q.list, q.list[1:])
 	q.list = q.list[:len(q.list)-1]
 	return v, true

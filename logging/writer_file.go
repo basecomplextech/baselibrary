@@ -53,13 +53,13 @@ func (w *fileWriter) Enabled(level Level) bool {
 
 // Write writes a record.
 func (w *fileWriter) Write(rec *Record) error {
-	// check level
+	// Check level
 	ok := w.Enabled(rec.Level)
 	if !ok {
 		return nil
 	}
 
-	// format record
+	// Format record
 	buf := alloc.NewBuffer()
 	defer buf.Free()
 
@@ -68,7 +68,7 @@ func (w *fileWriter) Write(rec *Record) error {
 	}
 	msg := buf.Bytes()
 
-	// write record
+	// Write record
 	_, err := w.out.Write(msg)
 	return err
 }
@@ -76,7 +76,7 @@ func (w *fileWriter) Write(rec *Record) error {
 // private
 
 func checkCanCreateFile(path string) error {
-	// open or create file
+	// Open or create file
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
 	if os.IsNotExist(err) {
 		file, err = os.Create(path)

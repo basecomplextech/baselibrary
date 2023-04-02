@@ -17,7 +17,7 @@ type memEntry interface {
 	WriteAt(p []byte, off int64) (n int, err error)
 	WriteString(s string) (ret int, err error)
 
-	// internal
+	// Internal
 
 	isDir() bool
 	isEmpty() bool

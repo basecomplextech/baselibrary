@@ -18,7 +18,7 @@ func Combine(err ...error) error {
 
 // Combines combines multiple non-nil errors into a *MultiError and returns it or nil.
 func Combinef(format string, err ...error) error {
-	// simple cases
+	// Simple cases
 	switch len(err) {
 	case 0:
 		return nil
@@ -26,7 +26,7 @@ func Combinef(format string, err ...error) error {
 		return err[0]
 	}
 
-	// filter nonnil errors
+	// Filter nonnil errors
 	nonnil := make([]error, 0, len(err))
 	for _, e := range err {
 		if e == nil {
@@ -35,7 +35,7 @@ func Combinef(format string, err ...error) error {
 		nonnil = append(nonnil, e)
 	}
 
-	// simple cases
+	// Simple cases
 	switch len(nonnil) {
 	case 0:
 		return nil
@@ -43,7 +43,7 @@ func Combinef(format string, err ...error) error {
 		return nonnil[0]
 	}
 
-	// return multi error
+	// Return multi error
 	return &MultiError{
 		Errors: nonnil,
 		Format: format,

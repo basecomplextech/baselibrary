@@ -100,15 +100,15 @@ func (b *memBuffer) _merge() {
 		return
 	}
 
-	// make buf
+	// Make buf
 	size := b.size()
 	data := make([]byte, 0, size)
 
-	// copy bufs
+	// Copy bufs
 	for _, buf := range b.bufs {
 		data = append(data, buf...)
 	}
 
-	// done
+	// Done
 	b.bufs = [][]byte{data}
 }

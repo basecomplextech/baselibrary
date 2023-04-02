@@ -8,7 +8,7 @@ type FileMode = os.FileMode
 // The defined file mode bits are the most significant bits of the FileMode.
 const (
 	// The single letters are the abbreviations
-	// used by the String method's formatting.
+	// Used by the String method's formatting.
 	ModeDir        = os.ModeDir        // d: is a directory
 	ModeAppend     = os.ModeAppend     // a: append-only
 	ModeExclusive  = os.ModeExclusive  // l: exclusive use

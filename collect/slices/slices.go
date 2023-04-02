@@ -77,16 +77,16 @@ func Remove[T comparable](s []T, item T) []T {
 
 // RemoveAt removes n items at an index, and truncates the slice.
 func RemoveAt[T any](s []T, index int, n int) []T {
-	// shift left
+	// Shift left
 	copy(s[index:], s[index+n:])
 
-	// clear n last elements for GC
+	// Clear n last elements for GC
 	for i := len(s) - n; i < len(s); i++ {
 		var zero T
 		s[i] = zero
 	}
 
-	// truncate slice
+	// Truncate slice
 	return s[:len(s)-n]
 }
 
@@ -118,4 +118,13 @@ func Shuffle[T any](s []T) {
 	rand.Shuffle(len(s), func(i, j int) {
 		s[i], s[j] = s[j], s[i]
 	})
+}
+
+// Zero zeros the slice and returns it.
+func Zero[T any](s []T) []T {
+	var zero T
+	for i := range s {
+		s[i] = zero
+	}
+	return s
 }

@@ -48,13 +48,13 @@ func (w *consoleWriter) Enabled(level Level) bool {
 
 // Write writes a record.
 func (w *consoleWriter) Write(rec *Record) error {
-	// check level
+	// Check level
 	ok := w.Enabled(rec.Level)
 	if !ok {
 		return nil
 	}
 
-	// format record
+	// Format record
 	buf := alloc.NewBuffer()
 	defer buf.Free()
 
@@ -63,7 +63,7 @@ func (w *consoleWriter) Write(rec *Record) error {
 	}
 	msg := buf.Bytes()
 
-	// write record
+	// Write record
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

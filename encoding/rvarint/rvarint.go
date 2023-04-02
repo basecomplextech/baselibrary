@@ -13,10 +13,9 @@ const (
 // the buf end and returns that value and the number of read bytes.
 // If an error occurred, the value is 0 and the number of bytes n is <= 0 meaning:
 //
-// 	n == 0: buf too small
-// 	n  < 0: value larger than 64 bits (overflow)
-// 	        and -n is the number of bytes read
-//
+//	n == 0: buf too small
+//	n  < 0: value larger than 64 bits (overflow)
+//	        and -n is the number of bytes read
 func Int64(buf []byte) (int64, int) {
 	ux, off := Uint64(buf) // ok to continue in presence of error
 	x := int64(ux >> 1)
@@ -30,10 +29,9 @@ func Int64(buf []byte) (int64, int) {
 // the buf end and returns that value and the number of read bytes.
 // If an error occurred, the value is 0 and the number of bytes n is <= 0 meaning:
 //
-// 	n == 0: buf too small
-// 	n  < 0: value larger than 64 bits (overflow)
-// 	        and -n is the number of bytes read]
-//
+//	n == 0: buf too small
+//	n  < 0: value larger than 64 bits (overflow)
+//	        and -n is the number of bytes read]
 func Uint32(buf []byte) (uint32, int) {
 	v, n := Uint64(buf)
 	return uint32(v), n
@@ -43,23 +41,22 @@ func Uint32(buf []byte) (uint32, int) {
 // the buf end and returns that value and the number of read bytes.
 // If an error occurred, the value is 0 and the number of bytes n is <= 0 meaning:
 //
-// 	n == 0: buf too small
-// 	n  < 0: value larger than 64 bits (overflow)
-// 	        and -n is the number of bytes read
+//	n == 0: buf too small
+//	n  < 0: value larger than 64 bits (overflow)
+//	        and -n is the number of bytes read
 //
 // This is a version of https://developers.google.com/protocol-buffers/docs/encoding#varints
 // which encodes uint64 in reverse byte order.
-//
 func Uint64(buf []byte) (uint64, int) {
 	var result uint64
 	var shift uint
 
-	// slice last bytes upto max varint64 len
+	// Slice last bytes upto max varint64 len
 	if len(buf) > MaxLen64 {
 		buf = buf[len(buf)-MaxLen64:]
 	}
 
-	// iterate in reverse order
+	// Iterate in reverse order
 	var n int
 	for i := len(buf) - 1; i >= 0; i-- {
 		b := buf[i]
@@ -108,7 +105,7 @@ func PutUint64(buf []byte, v uint64) int {
 	i := len(buf) - 1
 	n := 0
 
-	// while v is >= most significat bit
+	// While v is >= most significat bit
 	for v >= 0b1000_0000 {
 		// encode last 7 bit with msb set
 		buf[i] = byte(v) | 0b1000_0000
@@ -120,7 +117,7 @@ func PutUint64(buf []byte, v uint64) int {
 		n++
 	}
 
-	// last byte without msb
+	// Last byte without msb
 	buf[i] = byte(v)
 	return n + 1
 }

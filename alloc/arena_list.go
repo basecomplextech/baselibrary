@@ -27,7 +27,7 @@ func newArenaList[T any](arena *arena) *arenaList[T] {
 	var zero T
 	size := unsafe.Sizeof(zero)
 
-	// increase size to hold item
+	// Increase size to hold item
 	itemSize := unsafe.Sizeof(arenaListItem{})
 	if size < itemSize {
 		size = itemSize
@@ -63,17 +63,17 @@ func (l *arenaList[T]) Get() *T {
 		return result
 	}
 
-	// allocate new object
+	// Allocate new object
 	return ArenaAlloc[T](l.arena)
 }
 
 // Put puts an object back into the free list.
 func (l *arenaList[T]) Put(ptr *T) {
-	// reset object
+	// Reset object
 	var zero T
 	*ptr = zero
 
-	// cast it into item
+	// Cast it into item
 	item := (*arenaListItem)(unsafe.Pointer(ptr))
 
 	for i := 0; i < arenaListPutAttempts; i++ {

@@ -53,7 +53,7 @@ func (p *Profiling) Start() error {
 	}
 	ok := false
 
-	// cpu
+	// Cpu
 	if err := p.startCPU(); err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (p *Profiling) Start() error {
 		p.stopCPU()
 	}()
 
-	// memory
+	// Memory
 	if err := p.startMemory(); err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (p *Profiling) Start() error {
 		p.stopMemory()
 	}()
 
-	// block
+	// Block
 	if err := p.startBlock(); err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (p *Profiling) Start() error {
 		p.stopBlock()
 	}()
 
-	// mutex
+	// Mutex
 	if err := p.startMutex(); err != nil {
 		return err
 	}
@@ -122,18 +122,18 @@ func (p *Profiling) startCPU() error {
 		return nil
 	}
 
-	// create dir
+	// Create dir
 	if err := makeParentDir(cpu.Path); err != nil {
 		return err
 	}
 
-	// create file
+	// Create file
 	f, err := os.Create(cpu.Path)
 	if err != nil {
 		return err
 	}
 
-	// close on error
+	// Close on error
 	ok := false
 	defer func() {
 		if ok {
@@ -142,17 +142,17 @@ func (p *Profiling) startCPU() error {
 		f.Close()
 	}()
 
-	// set profile rate
+	// Set profile rate
 	if cpu.Rate > 0 {
 		runtime.SetCPUProfileRate(cpu.Rate)
 	}
 
-	// start profiling
+	// Start profiling
 	if err := pprof.StartCPUProfile(f); err != nil {
 		return err
 	}
 
-	// done
+	// Done
 	ok = true
 	p.cpuFile = f
 	return nil
@@ -167,10 +167,10 @@ func (p *Profiling) stopCPU() error {
 		p.cpuFile = nil
 	}()
 
-	// stop profiling
+	// Stop profiling
 	pprof.StopCPUProfile()
 
-	// close file
+	// Close file
 	if err := p.cpuFile.Close(); err != nil {
 		return err
 	}
@@ -185,18 +185,18 @@ func (p *Profiling) startMemory() error {
 		return nil
 	}
 
-	// create dir
+	// Create dir
 	if err := makeParentDir(mem.Path); err != nil {
 		return err
 	}
 
-	// create file
+	// Create file
 	f, err := os.Create(mem.Path)
 	if err != nil {
 		return err
 	}
 
-	// set profile rate
+	// Set profile rate
 	if mem.Rate > 0 {
 		runtime.MemProfileRate = mem.Rate
 	}
@@ -214,16 +214,16 @@ func (p *Profiling) stopMemory() error {
 		p.memFile = nil
 	}()
 
-	// get up-to-date stats
+	// Get up-to-date stats
 	runtime.GC()
 
-	// write memory profile
+	// Write memory profile
 	w := bufio.NewWriter(p.memFile)
 	if err := pprof.WriteHeapProfile(w); err != nil {
 		return err
 	}
 
-	// flush and close file
+	// Flush and close file
 	if err := w.Flush(); err != nil {
 		return err
 	}
@@ -241,18 +241,18 @@ func (p *Profiling) startBlock() error {
 		return nil
 	}
 
-	// create dir
+	// Create dir
 	if err := makeParentDir(block.Path); err != nil {
 		return err
 	}
 
-	// create file
+	// Create file
 	f, err := os.Create(block.Path)
 	if err != nil {
 		return err
 	}
 
-	// set profile rate
+	// Set profile rate
 	rate := block.Rate
 	if rate == 0 {
 		rate = DefaultBlockProfileRate
@@ -272,13 +272,13 @@ func (p *Profiling) stopBlock() (err error) {
 		p.blockFile = nil
 	}()
 
-	// write block profile
+	// Write block profile
 	w := bufio.NewWriter(p.blockFile)
 	if err := pprof.Lookup("block").WriteTo(w, 0); err != nil {
 		return err
 	}
 
-	// flush and close file
+	// Flush and close file
 	if err := w.Flush(); err != nil {
 		return err
 	}
@@ -296,18 +296,18 @@ func (p *Profiling) startMutex() error {
 		return nil
 	}
 
-	// create dir
+	// Create dir
 	if err := makeParentDir(mutex.Path); err != nil {
 		return err
 	}
 
-	// create file
+	// Create file
 	f, err := os.Create(mutex.Path)
 	if err != nil {
 		return err
 	}
 
-	// set profile rate
+	// Set profile rate
 	rate := mutex.Rate
 	if rate == 0 {
 		rate = DefalutMutexProfileRate
@@ -327,13 +327,13 @@ func (p *Profiling) stopMutex() (err error) {
 		p.mutexFile = nil
 	}()
 
-	// write mutex profile
+	// Write mutex profile
 	w := bufio.NewWriter(p.mutexFile)
 	if err := pprof.Lookup("mutex").WriteTo(w, 0); err != nil {
 		return err
 	}
 
-	// flush and close file
+	// Flush and close file
 	if err := w.Flush(); err != nil {
 		return err
 	}

@@ -36,11 +36,11 @@ type FileSystem interface {
 	Stat(filename string) (FileInfo, error)
 
 	// MkdirTemp creates a new temporary directory in the directory dir
-	// and returns the pathname of the new directory.
+	// And returns the pathname of the new directory.
 	TempDir(dir, pattern string) (name string, err error)
 
 	// TempFile creates a new temporary file in the directory dir,
-	// opens the file for reading and writing, and returns the resulting *os.File.
+	// Opens the file for reading and writing, and returns the resulting *os.File.
 	TempFile(dir, pattern string) (File, error)
 }
 

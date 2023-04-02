@@ -36,7 +36,7 @@ func (pp Threades[T]) WaitAny(cancel <-chan struct{}) (int, Thread[T], status.St
 		return -1, nil, status.OK
 	}
 
-	// make cancel case
+	// Make cancel case
 	cases := make([]reflect.SelectCase, 0, len(pp)+1)
 	stop_ := reflect.SelectCase{
 		Dir:  reflect.SelectRecv,
@@ -44,7 +44,7 @@ func (pp Threades[T]) WaitAny(cancel <-chan struct{}) (int, Thread[T], status.St
 	}
 	cases = append(cases, stop_)
 
-	// make wait cases
+	// Make wait cases
 	for _, p := range pp {
 		wait := p.Wait()
 		case_ := reflect.SelectCase{
@@ -54,13 +54,13 @@ func (pp Threades[T]) WaitAny(cancel <-chan struct{}) (int, Thread[T], status.St
 		cases = append(cases, case_)
 	}
 
-	// select case
+	// Select case
 	i, _, _ := reflect.Select(cases)
 	if i == 0 {
 		return -1, nil, status.Cancelled
 	}
 
-	// return routine
+	// Return routine
 	index := i - 1
 	p := pp[index]
 	return index, p, status.OK

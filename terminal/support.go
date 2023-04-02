@@ -83,13 +83,13 @@ func checkColorFlags() bool {
 }
 
 func checkColorEnv() bool {
-	// dump terminal
+	// Dump terminal
 	term := os.Getenv("TERM")
 	if term == "dumb" {
 		return true
 	}
 
-	// ci servers
+	// Ci servers
 	if _, ci := os.LookupEnv("CI"); ci {
 		var names = []string{"TRAVIS", "CIRCLECI", "APPVEYOR", "GITLAB_CI", "GITHUB_ACTIONS",
 			"BUILDKITE", "DRONE"}
@@ -107,12 +107,12 @@ func checkColorEnv() bool {
 		return false
 	}
 
-	// color terminal
+	// Color terminal
 	if _, ok := os.LookupEnv("COLORTERM"); ok {
 		return true
 	}
 
-	// terminal program
+	// Terminal program
 	term, ok := os.LookupEnv("TERM_PROGRAM")
 	if ok {
 		switch term {
@@ -123,13 +123,13 @@ func checkColorEnv() bool {
 		}
 	}
 
-	// term256
+	// Term256
 	var term256Regex = regexp.MustCompile("(?i)-256(color)?$")
 	if term256Regex.MatchString(term) {
 		return true
 	}
 
-	// term basic
+	// Term basic
 	var termBasicRegex = regexp.MustCompile("(?i)^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux")
 	if termBasicRegex.MatchString(term) {
 		return true

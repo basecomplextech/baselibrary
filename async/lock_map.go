@@ -80,7 +80,7 @@ type keyLock[K comparable] struct {
 	key  K
 	lock Lock
 
-	// guarded by map mutex
+	// Guarded by map mutex
 	refs int
 }
 

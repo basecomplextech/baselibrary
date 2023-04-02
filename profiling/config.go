@@ -35,8 +35,8 @@ type MemoryConfig struct {
 	Path    string `json:"path"`
 
 	// Rate controls the fraction of memory allocations that are recorded
-	// and reported in the memory profile. The profiler aims to sample
-	// an average of one allocation per MemProfileRate bytes allocated.
+	// And reported in the memory profile. The profiler aims to sample
+	// An average of one allocation per MemProfileRate bytes allocated.
 	//
 	// To include every allocated block in the profile, set MemProfileRate to 1.
 	//
@@ -49,8 +49,8 @@ type BlockConfig struct {
 	Path    string `json:"path"`
 
 	// SetBlockProfileRate controls the fraction of goroutine blocking events
-	// that are reported in the blocking profile. The profiler aims to sample
-	// an average of one blocking event per rate nanoseconds spent blocked.
+	// That are reported in the blocking profile. The profiler aims to sample
+	// An average of one blocking event per rate nanoseconds spent blocked.
 	//
 	// To include every blocking event in the profile, pass rate = 1.
 	//
@@ -63,7 +63,7 @@ type MutexConfig struct {
 	Path    string `json:"path"`
 
 	// Rate controls the fraction of mutex contention events that are reported
-	// in the mutex profile. On average 1/rate events are reported.
+	// In the mutex profile. On average 1/rate events are reported.
 	//
 	// 0 means the default rate (1/100), see runtime.SetMutexProfileFraction.
 	Rate int `json:"rate"`
@@ -93,19 +93,19 @@ func Default() *Config {
 
 // ReadConfig reads a profiling config from a json file.
 func ReadConfig(path string) (*Config, error) {
-	// init default
+	// Init default
 	config := Default()
 	if path == "" {
 		return config, nil
 	}
 
-	// read file
+	// Read file
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("profiling.ReadConfig: %w", err)
 	}
 
-	// parse json
+	// Parse json
 	if err := json.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("profiling.ReadConfig: %w", err)
 	}
