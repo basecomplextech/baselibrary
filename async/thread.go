@@ -91,7 +91,7 @@ func Execute[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Thread[T
 // The thread returns all the results and the first non-OK status.
 func Join[T any](threads ...Thread[T]) Thread[[]T] {
 	return Execute(func(cancel <-chan struct{}) ([]T, status.Status) {
-		// await all or cancel
+		// Await all or cancel
 		st := status.OK
 	loop:
 		for _, th := range threads {
@@ -103,12 +103,12 @@ func Join[T any](threads ...Thread[T]) Thread[[]T] {
 			}
 		}
 
-		// cancel all
+		// Cancel all
 		for _, th := range threads {
 			th.Cancel()
 		}
 
-		// collect results
+		// Collect results
 		results := make([]T, 0, len(threads))
 		for _, th := range threads {
 			<-th.Wait()

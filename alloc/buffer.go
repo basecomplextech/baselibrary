@@ -136,12 +136,12 @@ func (b *Buffer) merge() {
 	// Merge data
 	for _, block := range b.blocks {
 
-		// grow buffer
+		// Grow buffer
 		start := len(one.buf)
 		end := start + len(block.buf)
 		one.buf = one.buf[:end]
 
-		// copy data
+		// Copy data
 		p := one.buf[start:end]
 		copy(p, block.buf)
 	}

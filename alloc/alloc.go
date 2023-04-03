@@ -66,19 +66,19 @@ func (h *allocator) allocBlock(size int) (*block, int) {
 // freeBlock frees blocks.
 func (h *allocator) freeBlocks(blocks ...*block) {
 	for _, block := range blocks {
-		// get block class
+		// Get block class
 		cls := getBlockClass(block.cap())
 		if cls < 0 {
 			continue
 		}
 
-		// skip blocks of nonstandard sizes
+		// Skip blocks of nonstandard sizes
 		size := blockClassSizes[cls]
 		if block.cap() != size {
 			continue
 		}
 
-		// reset block and release it to pool
+		// Reset block and release it to pool
 		block.reset()
 		pool := h.pools[cls]
 		pool.Put(block)

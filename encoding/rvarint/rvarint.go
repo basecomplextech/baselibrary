@@ -61,24 +61,24 @@ func Uint64(buf []byte) (uint64, int) {
 	for i := len(buf) - 1; i >= 0; i-- {
 		b := buf[i]
 
-		// check if most significant bit (msb) is set
-		// this indicates that there are further bytes to come
+		// Check if most significant bit (msb) is set
+		// This indicates that there are further bytes to come
 		if b >= 0b1000_0000 {
 			if i == 0 {
-				// overflow, this is the last byte
-				// there can be no more bytes
+				// Overflow, this is the last byte
+				// There can be no more bytes
 				return 0, -(n + 1)
 			}
 
-			// disable msb and shift byte
+			// Disable msb and shift byte
 			result |= uint64(b&0b0111_1111) << shift
 			shift += 7
 			n++
 			continue
 		}
 
-		// no most significat bit (msb)
-		// this is the last byte
+		// No most significat bit (msb)
+		// This is the last byte
 		return result | uint64(b)<<shift, (n + 1)
 	}
 
@@ -107,10 +107,10 @@ func PutUint64(buf []byte, v uint64) int {
 
 	// While v is >= most significat bit
 	for v >= 0b1000_0000 {
-		// encode last 7 bit with msb set
+		// Encode last 7 bit with msb set
 		buf[i] = byte(v) | 0b1000_0000
 
-		// shift by 7 bit
+		// Shift by 7 bit
 		v >>= 7
 
 		i--

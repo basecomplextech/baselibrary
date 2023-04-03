@@ -44,20 +44,20 @@ func (l *arenaList[T]) Get() *T {
 	var zero T
 
 	for i := 0; i < arenaListGetAttempts; i++ {
-		// load current item
+		// Load current item
 		free := atomic.LoadUintptr(&l.free)
 		if free == 0 {
 			break
 		}
 		uptr := *(*unsafe.Pointer)(unsafe.Pointer(&free))
 
-		// swap it with previous
+		// Swap it with previous
 		item := (*arenaListItem)(uptr)
 		if !atomic.CompareAndSwapUintptr(&l.free, free, item.next) {
 			continue
 		}
 
-		// reset and return object
+		// Reset and return object
 		result := (*T)(uptr)
 		*result = zero
 		return result
@@ -77,11 +77,11 @@ func (l *arenaList[T]) Put(ptr *T) {
 	item := (*arenaListItem)(unsafe.Pointer(ptr))
 
 	for i := 0; i < arenaListPutAttempts; i++ {
-		// load current item
+		// Load current item
 		free := atomic.LoadUintptr(&l.free)
 		item.next = free
 
-		// swap it with next
+		// Swap it with next
 		next := (uintptr)(unsafe.Pointer(ptr))
 		if atomic.CompareAndSwapUintptr(&l.free, free, next) {
 			return
