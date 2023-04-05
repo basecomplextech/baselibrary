@@ -2,7 +2,7 @@ package alloc
 
 const (
 	minBlockSize = 1 << 10 // 1024
-	maxBlockSize = 1 << 24 // 16MB
+	maxBlockSize = 1 << 26 // 64MB
 )
 
 var blockClassSizes []int // powers of two
