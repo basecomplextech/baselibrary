@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/complex1tech/baselibrary/basic"
+	"github.com/complex1tech/baselibrary/bin"
 	"github.com/complex1tech/baselibrary/constraints"
 )
 
@@ -113,15 +113,15 @@ func Float64(a, b float64) int {
 	return 0
 }
 
-func Bin64(a, b basic.Bin64) int {
+func Bin64(a, b bin.Bin64) int {
 	return bytes.Compare(a[:], b[:])
 }
 
-func Bin128(a, b basic.Bin128) int {
+func Bin128(a, b bin.Bin128) int {
 	return bytes.Compare(a[:], b[:])
 }
 
-func Bin256(a, b basic.Bin256) int {
+func Bin256(a, b bin.Bin256) int {
 	return bytes.Compare(a[:], b[:])
 }
 

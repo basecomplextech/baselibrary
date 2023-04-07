@@ -1,4 +1,4 @@
-package basic
+package bin
 
 import (
 	"testing"
@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseBin256String(t *testing.T) {
-	u0 := RandomBin256()
+func TestParseString256(t *testing.T) {
+	u0 := Random256()
 	s := u0.String()
 
-	u1, err := ParseBin256String(s)
+	u1, err := ParseString256(s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,16 +18,16 @@ func TestParseBin256String(t *testing.T) {
 	assert.Equal(t, u0, u1)
 }
 
-func TestBin256Pattern__should_match_byte_string(t *testing.T) {
+func TestPattern256__should_match_byte_string(t *testing.T) {
 	s0 := (Bin256{}).String()
-	s1 := RandomBin256().String()
+	s1 := Random256().String()
 	s2 := " 341a7d60bc5893a64bda3de06721534c341a7d60bc5893a64bda3de06721534c "
 	s3 := "341a7d60bc5893a64bda3de06721534c-341a7d60bc5893a64bda3de06721534c"
 
-	m0 := Bin256Pattern.Match([]byte(s0))
-	m1 := Bin256Pattern.Match([]byte(s1))
-	m2 := Bin256Pattern.Match([]byte(s2))
-	m3 := Bin256Pattern.Match([]byte(s3))
+	m0 := Pattern256.Match([]byte(s0))
+	m1 := Pattern256.Match([]byte(s1))
+	m2 := Pattern256.Match([]byte(s2))
+	m3 := Pattern256.Match([]byte(s3))
 
 	assert.True(t, m0)
 	assert.True(t, m1)
@@ -35,16 +35,16 @@ func TestBin256Pattern__should_match_byte_string(t *testing.T) {
 	assert.False(t, m3)
 }
 
-func TestBin256Pattern__should_match_string(t *testing.T) {
+func TestPattern256__should_match_string(t *testing.T) {
 	s0 := (Bin256{}).String()
-	s1 := RandomBin256().String()
+	s1 := Random256().String()
 	s2 := " 341a7d60bc5893a64bda3de06721534c341a7d60bc5893a64bda3de06721534c "
 	s3 := "341a7d60bc5893a64bda3de06721534c-341a7d60bc5893a64bda3de06721534c"
 
-	m0 := Bin256Pattern.MatchString(s0)
-	m1 := Bin256Pattern.MatchString(s1)
-	m2 := Bin256Pattern.MatchString(s2)
-	m3 := Bin256Pattern.MatchString(s3)
+	m0 := Pattern256.MatchString(s0)
+	m1 := Pattern256.MatchString(s1)
+	m2 := Pattern256.MatchString(s2)
+	m3 := Pattern256.MatchString(s3)
 
 	assert.True(t, m0)
 	assert.True(t, m1)

@@ -3,7 +3,7 @@ package blake3
 import (
 	"testing"
 
-	"github.com/complex1tech/baselibrary/basic"
+	"github.com/complex1tech/baselibrary/bin"
 	"github.com/stretchr/testify/assert"
 	"github.com/zeebo/blake3"
 )
@@ -14,7 +14,7 @@ func TestSumBin128__should_compute_blake3_hash(t *testing.T) {
 	u := SumBin128(b)
 
 	assert.Equal(t, h[:16], u[:])
-	assert.NotEqual(t, basic.Bin128{}, u)
+	assert.NotEqual(t, bin.Bin128{}, u)
 }
 
 func TestHashBin128__should_compute_blake3_hash(t *testing.T) {
@@ -26,5 +26,5 @@ func TestHashBin128__should_compute_blake3_hash(t *testing.T) {
 	u := hash.SumBin128()
 
 	assert.Equal(t, h[:16], u[:])
-	assert.NotEqual(t, basic.Bin128{}, u)
+	assert.NotEqual(t, bin.Bin128{}, u)
 }
