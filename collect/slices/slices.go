@@ -7,6 +7,15 @@ import (
 	"github.com/complex1tech/baselibrary/constraints"
 )
 
+// Clear zeros the slice, truncates it to zero length and returns.
+func Clear[T any](s []T) []T {
+	var zero T
+	for i := range s {
+		s[i] = zero
+	}
+	return s[:0]
+}
+
 // Clone returns a copy of the slice.
 func Clone[T any](s []T) []T {
 	s1 := make([]T, len(s))
