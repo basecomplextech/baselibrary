@@ -1,9 +1,11 @@
-package alloc
+package buf
 
 import (
 	"unicode/utf8"
 
+	"github.com/complex1tech/baselibrary/alloc/internal/heap"
 	"github.com/complex1tech/baselibrary/buffer"
+	"github.com/complex1tech/baselibrary/collect/slices"
 	"github.com/complex1tech/baselibrary/ref"
 )
 
@@ -13,33 +15,30 @@ var (
 	_ ref.Freer     = (*Buffer)(nil)
 )
 
+// Buffer is a byte buffer, which internally allocates memory in blocks.
 type Buffer struct {
-	a *allocator
+	heap *heap.Heap
 
-	len    int
-	blocks []*block
+	blocks []*heap.Block
+	len    int // total length in bytes
 }
 
-// NewBuffer returns a new empty buffer with the global allocator.
-func NewBuffer() *Buffer {
-	return newBuffer(global)
+// New returns a new buffer.
+func New(heap *heap.Heap) *Buffer {
+	return &Buffer{heap: heap}
 }
 
-// NewBuffer returns a new empty buffer with a preallocated memory storage in the global allocator.
-func NewBufferSize(size int) *Buffer {
-	b := newBuffer(global)
+// NewSize returns a new buffer with a preallocated memory storage.
+func NewSize(heap *heap.Heap, size int) *Buffer {
+	b := New(heap)
 	b.allocBlock(size)
 	return b
 }
 
-func newBuffer(a *allocator) *Buffer {
-	return &Buffer{a: a}
-}
-
-// Free frees the buffer and releases its memory to the allocator.
+// Free frees the buffer and releases its memory to the heap.
 func (b *Buffer) Free() {
 	b.len = 0
-	b.clearBlocks()
+	b.freeBlocks()
 }
 
 // Len returns the number of bytes in the buffer; b.Len() == len(b.Bytes()).
@@ -55,25 +54,18 @@ func (b *Buffer) Bytes() []byte {
 	}
 
 	b.merge()
-	return b.blocks[0].buf
+	return b.blocks[0].Bytes()
 }
 
 // Grow grows the buffer and returns an n-byte slice.
 func (b *Buffer) Grow(n int) []byte {
-	// Maybe allocate block
 	last := b.last()
-	if last == nil || last.free() < n {
+	if last == nil || last.Free() < n {
 		last = b.allocBlock(n)
 	}
 
-	// Grow buffer
-	start := len(last.buf)
-	end := start + n
-	last.buf = last.buf[:end]
+	p := last.Grow(n)
 	b.len += n
-
-	// Slice buffer
-	p := last.buf[start:end:end] // start:end:max, cap=max-start
 	return p
 }
 
@@ -108,16 +100,23 @@ func (b *Buffer) WriteString(s string) (n int, err error) {
 	return
 }
 
-// Reset resets the buffer to be empty, releases its memory storage to the allocator.
+// Reset resets the buffer to be empty.
 func (b *Buffer) Reset() {
 	b.len = 0
-	b.clearBlocks()
+
+	// Free blocks except for the last
+	last := b.blocks[len(b.blocks)-1]
+	last.Reset()
+	b.heap.FreeMany(b.blocks[:len(b.blocks)-1]...)
+
+	b.blocks = slices.Zero(b.blocks)[:0]
+	b.blocks = append(b.blocks, last)
 }
 
 // private
 
 // last returns the last block or nil.
-func (b *Buffer) last() *block {
+func (b *Buffer) last() *heap.Block {
 	if len(b.blocks) == 0 {
 		return nil
 	}
@@ -130,57 +129,37 @@ func (b *Buffer) merge() {
 		return
 	}
 
-	// Alloc block
-	one, _ := b.a.allocBlock(b.len)
-
-	// Merge data
+	merged := b.heap.Alloc(b.len)
 	for _, block := range b.blocks {
-
-		// Grow buffer
-		start := len(one.buf)
-		end := start + len(block.buf)
-		one.buf = one.buf[:end]
-
-		// Copy data
-		p := one.buf[start:end]
-		copy(p, block.buf)
+		b := block.Bytes()
+		p := merged.Grow(len(b))
+		copy(p, b)
 	}
 
-	// Replace blocks
-	b.clearBlocks()
-	b.blocks = append(b.blocks, one)
+	b.freeBlocks()
+	b.blocks = append(b.blocks, merged)
 }
 
 // allocBlock allocates the next block.
-func (b *Buffer) allocBlock(n int) *block {
-	// Double last block size
-	// Limit it to maxBlockSize
+func (b *Buffer) allocBlock(n int) *heap.Block {
+	// Double last block capacity
 	size := 0
-	last := b.last()
-
-	if last != nil {
-		size = last.cap() * 2
-	}
-	if size > maxBlockSize {
-		size = maxBlockSize
+	if last := b.last(); last != nil {
+		size = last.Cap() * 2
 	}
 	if n > size {
 		size = n
 	}
 
-	block, _ := b.a.allocBlock(size)
+	block := b.heap.Alloc(size)
 	b.blocks = append(b.blocks, block)
 	return block
 }
 
-// clearBlocks clears and frees blocks.
-func (b *Buffer) clearBlocks() {
-	// Free blocks
-	b.a.freeBlocks(b.blocks...)
+// freeBlocks clears and frees the blocks.
+func (b *Buffer) freeBlocks() {
+	b.heap.FreeMany(b.blocks...)
 
-	// Clear blocks for gc
-	for i := range b.blocks {
-		b.blocks[i] = nil
-	}
+	slices.Zero(b.blocks) // for gc
 	b.blocks = b.blocks[:0]
 }

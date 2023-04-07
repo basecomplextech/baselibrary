@@ -1,14 +1,16 @@
-package alloc
+package buf
 
 import (
 	"testing"
 
+	"github.com/complex1tech/baselibrary/alloc/internal/heap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func testBuffer() *Buffer {
-	return &Buffer{a: newAllocator()}
+	h := heap.New()
+	return New(h)
 }
 
 // Bytes
@@ -56,7 +58,7 @@ func TestBuffer_Grow__should_grow_buffer(t *testing.T) {
 
 func TestBuffer_Grow__should_alloc_next_block(t *testing.T) {
 	b := testBuffer()
-	size := blockClassSizes[0]
+	size := 1024
 
 	b.Grow(size)
 	b.Grow(1)
@@ -81,15 +83,15 @@ func TestBuffer_Write__should_append_bytes(t *testing.T) {
 
 // Reset
 
-func TestBuffer_Reset__should_clear_buffer(t *testing.T) {
+func TestBuffer_Reset__should_free_blocks_except_for_last(t *testing.T) {
 	b := testBuffer()
-	data := []byte("hello, world")
 
-	b.Write(data)
+	b.Grow(1024)
+	b.Grow(1)
 	b.Reset()
 
 	assert.Equal(t, 0, b.len)
-	assert.Len(t, b.blocks, 0)
+	assert.Len(t, b.blocks, 1)
 }
 
 func TestBuffer_Reset__should_clear_and_free_blocks(t *testing.T) {
@@ -100,5 +102,5 @@ func TestBuffer_Reset__should_clear_and_free_blocks(t *testing.T) {
 	block := b.blocks[0]
 	b.Reset()
 
-	assert.Equal(t, 0, len(block.buf))
+	assert.Equal(t, 0, len(block.Bytes()))
 }

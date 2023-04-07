@@ -1,49 +1,66 @@
-package alloc
+package arena
 
 import (
 	"sync/atomic"
 	"unsafe"
 )
 
-// internal
-
 const (
-	arenaListGetAttempts = 5
-	arenaListPutAttempts = 5
+	maxListGet = 5
+	maxListPut = 5
 )
 
-// arenaList keeps a linked list of free objects in the arena.
-type arenaList[T any] struct {
+// FreeList keeps a linked list of free objects.
+type FreeList[T any] interface {
+	// Get returns a free object from the list, or allocates a new one.
+	Get() *T
+
+	// Put puts an object back into the free list.
+	Put(obj *T)
+}
+
+// NewFreeList returns a new free list which allocates objects in the given arena.
+func NewFreeList[T any](a Arena) FreeList[T] {
+	arena := a.(*arena)
+	return newFreeList[T](arena)
+}
+
+// internal
+
+var _ FreeList[struct{}] = (*freeList[struct{}])(nil)
+
+// freeList keeps a linked list of free objects in the arena.
+type freeList[T any] struct {
 	arena *arena
 	size  uintptr
 	free  uintptr // last free item
 }
 
-type arenaListItem struct {
+type freeListItem struct {
 	next uintptr // next free item
 }
 
-func newArenaList[T any](arena *arena) *arenaList[T] {
+func newFreeList[T any](arena *arena) *freeList[T] {
 	var zero T
 	size := unsafe.Sizeof(zero)
 
 	// Increase size to hold item
-	itemSize := unsafe.Sizeof(arenaListItem{})
+	itemSize := unsafe.Sizeof(freeListItem{})
 	if size < itemSize {
 		size = itemSize
 	}
 
-	return &arenaList[T]{
+	return &freeList[T]{
 		arena: arena,
 		size:  size,
 	}
 }
 
 // Get returns a free object from the list or allocates a new one in the arena.
-func (l *arenaList[T]) Get() *T {
+func (l *freeList[T]) Get() *T {
 	var zero T
 
-	for i := 0; i < arenaListGetAttempts; i++ {
+	for i := 0; i < maxListGet; i++ {
 		// Load current item
 		free := atomic.LoadUintptr(&l.free)
 		if free == 0 {
@@ -52,7 +69,7 @@ func (l *arenaList[T]) Get() *T {
 		uptr := *(*unsafe.Pointer)(unsafe.Pointer(&free))
 
 		// Swap it with previous
-		item := (*arenaListItem)(uptr)
+		item := (*freeListItem)(uptr)
 		if !atomic.CompareAndSwapUintptr(&l.free, free, item.next) {
 			continue
 		}
@@ -64,19 +81,19 @@ func (l *arenaList[T]) Get() *T {
 	}
 
 	// Allocate new object
-	return ArenaAlloc[T](l.arena)
+	return Alloc[T](l.arena)
 }
 
 // Put puts an object back into the free list.
-func (l *arenaList[T]) Put(ptr *T) {
+func (l *freeList[T]) Put(ptr *T) {
 	// Reset object
 	var zero T
 	*ptr = zero
 
 	// Cast it into item
-	item := (*arenaListItem)(unsafe.Pointer(ptr))
+	item := (*freeListItem)(unsafe.Pointer(ptr))
 
-	for i := 0; i < arenaListPutAttempts; i++ {
+	for i := 0; i < maxListPut; i++ {
 		// Load current item
 		free := atomic.LoadUintptr(&l.free)
 		item.next = free

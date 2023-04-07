@@ -1,4 +1,4 @@
-package alloc
+package arena
 
 import (
 	"math"
@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// ArenaFreeList
+// NewFreeList
 
 func TestArenaList__should_allocate_free_list(t *testing.T) {
 	a := testArena()
-	list := ArenaFreeList[int64](a)
+	list := NewFreeList[int64](a)
 
 	v0 := list.Get()
 	*v0 = math.MaxInt64
@@ -28,8 +28,8 @@ func TestArenaList__should_return_different_lists_for_different_types_with_same_
 	}
 
 	a := testArena()
-	list0 := ArenaFreeList[int64](a)
-	list1 := ArenaFreeList[Value](a)
+	list0 := NewFreeList[int64](a)
+	list1 := NewFreeList[Value](a)
 
 	assert.NotSame(t, list0, list1)
 }
@@ -38,7 +38,7 @@ func TestArenaList__should_return_different_lists_for_different_types_with_same_
 
 func TestArenaList_Get__should_allocate_new_object(t *testing.T) {
 	a := testArena()
-	list := newArenaList[int64](a)
+	list := newFreeList[int64](a)
 
 	v := list.Get()
 	*v = math.MaxInt64
@@ -48,7 +48,7 @@ func TestArenaList_Get__should_allocate_new_object(t *testing.T) {
 
 func TestArenaList_Get__should_return_free_object(t *testing.T) {
 	a := testArena()
-	list := newArenaList[int64](a)
+	list := newFreeList[int64](a)
 
 	v0 := list.Get()
 	list.Put(v0)
@@ -59,7 +59,7 @@ func TestArenaList_Get__should_return_free_object(t *testing.T) {
 
 func TestArenaList_Get__should_consume_free_item(t *testing.T) {
 	a := testArena()
-	list := newArenaList[int64](a)
+	list := newFreeList[int64](a)
 
 	v0 := list.Get()
 	list.Put(v0)
@@ -70,7 +70,7 @@ func TestArenaList_Get__should_consume_free_item(t *testing.T) {
 
 func TestArenaList_Get__should_swap_free_item_with_previous(t *testing.T) {
 	a := testArena()
-	list := newArenaList[int64](a)
+	list := newFreeList[int64](a)
 
 	v0 := list.Get()
 	v1 := list.Get()
@@ -90,7 +90,7 @@ func TestArenaList_Get__should_zero_object(t *testing.T) {
 	}
 
 	a := testArena()
-	list := newArenaList[Value](a)
+	list := newFreeList[Value](a)
 
 	v := list.Get()
 	v.A = 1
@@ -107,7 +107,7 @@ func TestArenaList_Get__should_zero_object(t *testing.T) {
 
 func TestArenaList_Put__should_swap_free_item_with_next(t *testing.T) {
 	a := testArena()
-	list := newArenaList[int64](a)
+	list := newFreeList[int64](a)
 
 	v0 := list.Get()
 	v1 := list.Get()
