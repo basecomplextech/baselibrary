@@ -34,7 +34,7 @@ func (b *Block) Bytes() []byte {
 
 // Reset resets the block.
 func (b *Block) Reset() {
-	b.buf = b.buf[:0]
+	b.reset()
 }
 
 // Alloc

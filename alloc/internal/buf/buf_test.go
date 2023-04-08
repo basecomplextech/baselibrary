@@ -13,6 +13,11 @@ func testBuffer() *Buffer {
 	return New(h)
 }
 
+func testBufferSize(size int) *Buffer {
+	h := heap.New()
+	return NewSize(h, size)
+}
+
 // Bytes
 
 func TestBuffer_Bytes__should_return_bytes(t *testing.T) {
@@ -83,18 +88,7 @@ func TestBuffer_Write__should_append_bytes(t *testing.T) {
 
 // Reset
 
-func TestBuffer_Reset__should_free_blocks_except_for_last(t *testing.T) {
-	b := testBuffer()
-
-	b.Grow(1024)
-	b.Grow(1)
-	b.Reset()
-
-	assert.Equal(t, 0, b.len)
-	assert.Len(t, b.blocks, 1)
-}
-
-func TestBuffer_Reset__should_clear_and_free_blocks(t *testing.T) {
+func TestBuffer_Reset__should_free_blocks(t *testing.T) {
 	b := testBuffer()
 	data := []byte("hello, world")
 
@@ -102,5 +96,19 @@ func TestBuffer_Reset__should_clear_and_free_blocks(t *testing.T) {
 	block := b.blocks[0]
 	b.Reset()
 
+	assert.Equal(t, 0, b.len)
+	assert.Len(t, b.blocks, 0)
 	assert.Equal(t, 0, len(block.Bytes()))
+}
+
+func TestBuffer_Reset__should_free_blocks_except_for_first_when_capacity_matches(t *testing.T) {
+	b := testBufferSize(128)
+
+	b.Grow(1024)
+	b.Grow(1)
+	assert.Len(t, b.blocks, 2)
+
+	b.Reset()
+	assert.Equal(t, 0, b.len)
+	assert.Len(t, b.blocks, 1)
 }

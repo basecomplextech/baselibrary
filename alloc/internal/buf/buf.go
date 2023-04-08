@@ -17,7 +17,8 @@ var (
 
 // Buffer is a byte buffer, which internally allocates memory in blocks.
 type Buffer struct {
-	heap *heap.Heap
+	heap    *heap.Heap
+	initCap int // initial capacity
 
 	blocks []*heap.Block
 	len    int // total length in bytes
@@ -31,7 +32,9 @@ func New(heap *heap.Heap) *Buffer {
 // NewSize returns a new buffer with a preallocated memory storage.
 func NewSize(heap *heap.Heap, size int) *Buffer {
 	b := New(heap)
-	b.allocBlock(size)
+	if size > 0 {
+		b.initCap = b.allocBlock(size).Cap()
+	}
 	return b
 }
 
@@ -103,14 +106,25 @@ func (b *Buffer) WriteString(s string) (n int, err error) {
 // Reset resets the buffer to be empty.
 func (b *Buffer) Reset() {
 	b.len = 0
+	if len(b.blocks) == 0 {
+		return
+	}
 
-	// Free blocks except for the last
-	last := b.blocks[len(b.blocks)-1]
-	last.Reset()
-	b.heap.FreeMany(b.blocks[:len(b.blocks)-1]...)
+	// Maybe just reset the first block
+	n := 0
+	if f := b.blocks[0]; f.Cap() == b.initCap {
+		n = 1
+		f.Reset()
 
-	b.blocks = slices.Zero(b.blocks)[:0]
-	b.blocks = append(b.blocks, last)
+		if len(b.blocks) == 1 {
+			return
+		}
+	}
+
+	// Free other blocks
+	b.heap.FreeMany(b.blocks[n:]...)
+	slices.Zero(b.blocks[n:]) // for gc
+	b.blocks = b.blocks[:n]
 }
 
 // private
@@ -142,9 +156,12 @@ func (b *Buffer) merge() {
 
 // allocBlock allocates the next block.
 func (b *Buffer) allocBlock(n int) *heap.Block {
-	// Double last block capacity
+	// Use initial size or double last block capacity
 	size := 0
-	if last := b.last(); last != nil {
+	if len(b.blocks) == 0 {
+		size = b.initCap
+	} else {
+		last := b.blocks[len(b.blocks)-1]
 		size = last.Cap() * 2
 	}
 	if n > size {

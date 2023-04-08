@@ -9,10 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// testArena returns a new arena with a new heap, for tests only.
 func testArena() *arena {
 	h := heap.New()
-	return newArena(h)
+	return newArena(h, 0)
+}
+
+func testArenaSize(size int) *arena {
+	h := heap.New()
+	return newArena(h, size)
 }
 
 // Free
@@ -21,12 +25,12 @@ func TestArena_Free__should_release_blocks(t *testing.T) {
 	a := testArena()
 	a.alloc(1)
 
-	last := a.lastBlock()
-	require.Equal(t, 1, last.Len())
+	b := a.blocks[0]
+	require.Equal(t, 1, b.Len())
 
 	a.Free()
 	assert.Len(t, a.blocks, 0)
-	assert.Equal(t, 0, last.Len())
+	assert.Equal(t, 0, b.Len())
 }
 
 // Len
@@ -38,6 +42,32 @@ func TestArena_Len__should_return_allocated_memory(t *testing.T) {
 
 	ln := a.Len()
 	assert.Equal(t, int64(40), ln)
+}
+
+// Reset
+
+func TestArena_Reset__should_free_blocks(t *testing.T) {
+	a := testArena()
+
+	a.Bytes(16)
+	b := a.blocks[0]
+	a.Reset()
+
+	assert.Equal(t, int64(0), a.cap)
+	assert.Len(t, a.blocks, 0)
+	assert.Equal(t, 0, len(b.Bytes()))
+}
+
+func TestArena_Reset__should_free_blocks_except_for_first_when_capacity_matches(t *testing.T) {
+	a := testArenaSize(128)
+
+	a.Bytes(1024)
+	a.Bytes(1)
+	assert.Len(t, a.blocks, 2)
+
+	a.Reset()
+	assert.Equal(t, int64(0), a.cap)
+	assert.Len(t, a.blocks, 1)
 }
 
 // alloc
@@ -56,42 +86,42 @@ func TestArena_alloc__should_align_allocations(t *testing.T) {
 	a := testArena()
 	a.alloc(3)
 
-	block := a.lastBlock()
-	assert.Equal(t, 3, block.Len())
+	b := a.blocks[0]
+	assert.Equal(t, 3, b.Len())
 
 	a.alloc(9)
-	assert.Equal(t, 8+9, block.Len())
+	assert.Equal(t, 8+9, b.Len())
 }
 
 func TestArena_alloc__should_not_add_padding_when_already_aligned(t *testing.T) {
 	a := testArena()
 	a.alloc(8)
 
-	block := a.lastBlock()
-	assert.Equal(t, 8, block.Len())
+	b := a.blocks[0]
+	assert.Equal(t, 8, b.Len())
 }
 
 func TestArena_alloc__should_allocate_next_block_when_not_enough_space(t *testing.T) {
 	a := testArena()
 	a.alloc(1)
 
-	n := a.lastBlock().Cap()
+	n := a.blocks[0].Cap()
 	a.alloc(n)
 
-	last := a.lastBlock()
+	b1 := a.blocks[1]
 	assert.Len(t, a.blocks, 2)
-	assert.Equal(t, last.Len(), n)
+	assert.Equal(t, n, b1.Len())
 }
 
 // allocBlock
 
-func TestArena_allocBlock__should_increment_size(t *testing.T) {
+func TestArena_allocBlock__should_increment_capacity(t *testing.T) {
 	a := testArena()
 	a.alloc(1)
-	size := a.lastBlock().Cap()
-	assert.Equal(t, int64(size), a.cap)
+	cp := a.blocks[0].Cap()
+	assert.Equal(t, int64(cp), a.cap)
 
 	a.allocBlock(1)
-	size += a.lastBlock().Cap()
-	assert.Equal(t, int64(size), a.cap)
+	cp += a.blocks[1].Cap()
+	assert.Equal(t, int64(cp), a.cap)
 }

@@ -30,15 +30,21 @@ type Arena interface {
 	Free()
 }
 
-// New returns a new arena with the global allocator.
+// New returns an empty arena.
 func New(heap *heap.Heap) Arena {
-	return newArena(heap)
+	return newArena(heap, 0)
+}
+
+// NewSize returns an arena with a preallocated memory storage.
+func NewSize(heap *heap.Heap, size int) Arena {
+	return newArena(heap, size)
 }
 
 // internal
 
 type arena struct {
-	heap *heap.Heap
+	heap    *heap.Heap
+	initCap int // initial capacity
 
 	spinlock int32
 	free     bool
@@ -47,9 +53,12 @@ type arena struct {
 	blocks []*heap.Block
 }
 
-// newArena returns a new arena with the given allocator.
-func newArena(heap *heap.Heap) *arena {
-	return &arena{heap: heap}
+func newArena(heap *heap.Heap, size int) *arena {
+	a := &arena{heap: heap}
+	if size > 0 {
+		a.initCap = a.allocBlock(size).Cap()
+	}
+	return a
 }
 
 // Cap returns the arena capacity.
@@ -91,13 +100,25 @@ func (a *arena) Reset() {
 		return
 	}
 
-	// Free blocks except for the last
-	last := a.blocks[len(a.blocks)-1]
-	last.Reset()
-	a.heap.FreeMany(a.blocks[:len(a.blocks)-1]...)
+	// Maybe just reset the first block
+	n := 0
+	if b := a.blocks[0]; b.Cap() == a.initCap {
+		n = 1
 
-	a.blocks = slices.Zero(a.blocks)[:0]
-	a.blocks = append(a.blocks, last)
+		b.Reset()
+		a.cap = int64(b.Cap())
+
+		if len(a.blocks) == 1 {
+			return
+		}
+	}
+
+	// Free other blocks
+	a.heap.FreeMany(a.blocks[n:]...)
+	slices.Zero(a.blocks[n:]) // for gc
+
+	a.cap = 0
+	a.blocks = a.blocks[:n]
 }
 
 // Internal
@@ -130,15 +151,15 @@ func (a *arena) alloc(n int) unsafe.Pointer {
 		panic("operation on a free arena")
 	}
 
-	b := a.lastBlock()
-	if b != nil {
+	if len(a.blocks) > 0 {
+		b := a.blocks[len(a.blocks)-1]
 		ptr := b.Alloc(n)
 		if ptr != nil {
 			return ptr
 		}
 	}
 
-	b = a.allocBlock(n)
+	b := a.allocBlock(n)
 	return b.Alloc(n)
 }
 
@@ -158,13 +179,6 @@ func (a *arena) allocBlock(n int) *heap.Block {
 	a.blocks = append(a.blocks, b)
 	a.cap += int64(b.Cap())
 	return b
-}
-
-func (a *arena) lastBlock() *heap.Block {
-	if len(a.blocks) == 0 {
-		return nil
-	}
-	return a.blocks[len(a.blocks)-1]
 }
 
 // lock
