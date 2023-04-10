@@ -8,8 +8,6 @@ import (
 const (
 	minIndex = 10 // 1024
 	maxIndex = 27 // 128MB
-	minSize  = 1 << minIndex
-	maxSize  = 1 << maxIndex
 )
 
 type pools [maxIndex + 1]*sync.Pool

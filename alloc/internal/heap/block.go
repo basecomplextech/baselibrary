@@ -2,6 +2,11 @@ package heap
 
 import "unsafe"
 
+const (
+	MinBlockSize = 1 << minIndex
+	MaxBlockSize = 1 << maxIndex
+)
+
 type Block struct {
 	buf []byte
 }
@@ -53,6 +58,15 @@ func (b *Block) Alloc(size int) unsafe.Pointer {
 
 	// Grow buffer
 	b.buf = b.buf[:end]
+
+	// Handle zero size
+	if size == 0 {
+		if len(b.buf) == 0 {
+			return b.Alloc(1)
+		}
+		ptr := unsafe.Pointer(&b.buf[start])
+		return ptr
+	}
 
 	// Slice buffer
 	p := b.buf[start:end:end] // start:end:max, cap=max-start

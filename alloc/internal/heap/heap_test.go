@@ -9,7 +9,7 @@ import (
 func TestHeap_Alloc_Free__should_allocate_and_free_block(t *testing.T) {
 	h := New()
 
-	for size := 1; size <= (maxSize << 2); size *= 2 {
+	for size := 1; size <= (MaxBlockSize << 2); size *= 2 {
 		b := h.Alloc(size)
 		require.True(t, cap(b.buf) >= size, "size=%d, cap=%d", size, cap(b.buf))
 		h.Free(b)
