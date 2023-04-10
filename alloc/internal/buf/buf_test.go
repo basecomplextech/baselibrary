@@ -29,19 +29,21 @@ func TestBuffer_Bytes__should_return_bytes(t *testing.T) {
 	assert.Equal(t, data, data1)
 }
 
-func TestBuffer_Bytes__should_return_nil_when_empty(t *testing.T) {
+func TestBuffer_Bytes__should_return_empty_buffer_when_empty(t *testing.T) {
 	b := testBuffer()
 	data := b.Bytes()
 
-	assert.Nil(t, data)
+	assert.Equal(t, []byte{}, data)
 }
 
 func TestBuffer_Bytes__should_merge_multiple_blocks(t *testing.T) {
 	b := testBuffer()
 	data := []byte("hello, world")
 
-	for _, ch := range data {
-		b.allocBlock(1)
+	for i, ch := range data {
+		if i != 0 {
+			b.allocBlock(1)
+		}
 		b.Write([]byte{ch})
 	}
 	require.Len(t, b.blocks, len(data))
@@ -97,7 +99,7 @@ func TestBuffer_Reset__should_free_blocks(t *testing.T) {
 	b.Reset()
 
 	assert.Equal(t, 0, b.len)
-	assert.Len(t, b.blocks, 0)
+	assert.Len(t, b.blocks, 1)
 	assert.Equal(t, 0, len(block.Bytes()))
 }
 

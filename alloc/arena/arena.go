@@ -31,8 +31,8 @@ type Arena interface {
 }
 
 // New returns an empty arena.
-func New(heap *heap.Heap) Arena {
-	return newArena(heap, 0)
+func New(h *heap.Heap) Arena {
+	return newArena(h, heap.MinBlockSize)
 }
 
 // NewSize returns an arena with a preallocated memory storage.

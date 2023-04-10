@@ -25,13 +25,13 @@ type Buffer struct {
 }
 
 // New returns a new buffer.
-func New(heap *heap.Heap) *Buffer {
-	return &Buffer{heap: heap}
+func New(h *heap.Heap) *Buffer {
+	return NewSize(h, heap.MinBlockSize)
 }
 
 // NewSize returns a new buffer with a preallocated memory storage.
 func NewSize(heap *heap.Heap, size int) *Buffer {
-	b := New(heap)
+	b := &Buffer{heap: heap}
 	if size > 0 {
 		b.initCap = b.allocBlock(size).Cap()
 	}
