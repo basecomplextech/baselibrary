@@ -1,4 +1,4 @@
-package ref
+package mod
 
 // Ext is a wrapper which indicates that an object is external, not owned and must not be retained.
 //
@@ -10,8 +10,8 @@ type Ext[T any] struct {
 	obj T
 }
 
-// WrapExt returns an unowned reference of an object.
-func WrapExt[T any](obj T) Ext[T] {
+// NewExt wraps an object into an external modifier.
+func NewExt[T any](obj T) Ext[T] {
 	return Ext[T]{obj}
 }
 
