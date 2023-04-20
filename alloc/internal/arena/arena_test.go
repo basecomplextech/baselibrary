@@ -49,7 +49,7 @@ func TestArena_Len__should_return_allocated_memory(t *testing.T) {
 func TestArena_Reset__should_free_blocks(t *testing.T) {
 	a := testArena()
 
-	a.Bytes(16)
+	a.Alloc(16)
 	b := a.blocks[0]
 	a.Reset()
 
@@ -61,8 +61,8 @@ func TestArena_Reset__should_free_blocks(t *testing.T) {
 func TestArena_Reset__should_free_blocks_except_for_first_when_capacity_matches(t *testing.T) {
 	a := testArenaSize(128)
 
-	a.Bytes(1024)
-	a.Bytes(1)
+	a.Alloc(1024)
+	a.Alloc(1)
 	assert.Len(t, a.blocks, 2)
 
 	a.Reset()

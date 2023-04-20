@@ -1,14 +1,16 @@
-package arena
+package alloc
 
 import (
 	"math"
 	"testing"
 	"time"
 	"unsafe"
+
+	"github.com/complex1tech/baselibrary/alloc/internal/arena"
 )
 
 func Benchmark_AllocInt64(b *testing.B) {
-	a := testArena()
+	a := arena.Test()
 	size := unsafe.Sizeof(int64(0))
 
 	b.ResetTimer()
@@ -29,9 +31,9 @@ func Benchmark_AllocInt64(b *testing.B) {
 
 	sec := time.Since(t0).Seconds()
 	ops := float64(b.N) / float64(sec)
-	capacity := a.cap / (1024 * 1024)
+	capacity := a.Cap() / (1024 * 1024)
 
-	b.ReportMetric(ops, "ops")
+	b.ReportMetric(ops/1000_000, "mops")
 	b.ReportMetric(float64(size), "size")
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
@@ -44,7 +46,7 @@ func Benchmark_AllocStruct(b *testing.B) {
 		Int64 int64
 	}
 
-	a := testArena()
+	a := arena.Test()
 	size := unsafe.Sizeof(Struct{})
 
 	b.ResetTimer()
@@ -64,15 +66,15 @@ func Benchmark_AllocStruct(b *testing.B) {
 
 	sec := time.Since(t0).Seconds()
 	ops := float64(b.N) / float64(sec)
-	capacity := a.cap / (1024 * 1024)
+	capacity := a.Cap() / (1024 * 1024)
 
-	b.ReportMetric(ops, "ops")
+	b.ReportMetric(ops/1000_000, "mops")
 	b.ReportMetric(float64(size), "size")
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
 func Benchmark_AllocBytes(b *testing.B) {
-	a := testArena()
+	a := arena.Test()
 	size := 16
 
 	b.ResetTimer()
@@ -83,7 +85,7 @@ func Benchmark_AllocBytes(b *testing.B) {
 
 	var v []byte
 	for i := 0; i < b.N; i++ {
-		v = a.Bytes(size)
+		v = Bytes(a, size)
 		if len(v) != size {
 			b.Fatal()
 		}
@@ -91,15 +93,15 @@ func Benchmark_AllocBytes(b *testing.B) {
 
 	sec := time.Since(t0).Seconds()
 	ops := float64(b.N) / float64(sec)
-	capacity := a.cap / (1024 * 1024)
+	capacity := a.Cap() / (1024 * 1024)
 
-	b.ReportMetric(ops, "ops")
+	b.ReportMetric(ops/1000_000, "mops")
 	b.ReportMetric(float64(size), "size")
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
 func Benchmark_AllocSlice(b *testing.B) {
-	a := testArena()
+	a := arena.Test()
 	n := 4
 	size := n * 4
 
@@ -119,15 +121,15 @@ func Benchmark_AllocSlice(b *testing.B) {
 
 	sec := time.Since(t0).Seconds()
 	ops := float64(b.N) / float64(sec)
-	capacity := a.cap / (1024 * 1024)
+	capacity := a.Cap() / (1024 * 1024)
 
-	b.ReportMetric(ops, "ops")
+	b.ReportMetric(ops/1000_000, "mops")
 	b.ReportMetric(float64(size), "size")
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
 func Benchmark_Alloc(b *testing.B) {
-	a := testArena()
+	a := arena.Test()
 	size := 8
 
 	b.ResetTimer()
@@ -138,7 +140,7 @@ func Benchmark_Alloc(b *testing.B) {
 
 	var v unsafe.Pointer
 	for i := 0; i < b.N; i++ {
-		v = a.alloc(size)
+		v = a.Alloc(size)
 		if uintptr(v) == 0 {
 			b.Fatal()
 		}
@@ -146,16 +148,16 @@ func Benchmark_Alloc(b *testing.B) {
 
 	sec := time.Since(t0).Seconds()
 	ops := float64(b.N) / float64(sec)
-	capacity := a.cap / (1024 * 1024)
+	capacity := a.Cap() / (1024 * 1024)
 
-	b.ReportMetric(ops, "ops")
+	b.ReportMetric(ops/1000_000, "mops")
 	b.ReportMetric(float64(size), "size")
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
 func Benchmark_FreeList_Get_Put(b *testing.B) {
-	a := testArena()
-	list := newFreeList[int64](a)
+	a := arena.Test()
+	list := NewFreeList[int64](a)
 	size := 8
 
 	b.ResetTimer()
@@ -171,9 +173,9 @@ func Benchmark_FreeList_Get_Put(b *testing.B) {
 
 	sec := time.Since(t0).Seconds()
 	ops := float64(b.N) / float64(sec)
-	capacity := a.cap / (1024 * 1024)
+	capacity := a.Cap() / (1024 * 1024)
 
-	b.ReportMetric(ops, "ops")
+	b.ReportMetric(ops/1000_000, "mops")
 	b.ReportMetric(float64(size), "size")
 	b.ReportMetric(float64(capacity), "cap,mb")
 }

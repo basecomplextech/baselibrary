@@ -1,16 +1,17 @@
-package arena
+package alloc
 
 import (
 	"math"
 	"testing"
 
+	"github.com/complex1tech/baselibrary/alloc/internal/arena"
 	"github.com/stretchr/testify/assert"
 )
 
 // Alloc
 
 func TestAlloc__should_allocate_pointer(t *testing.T) {
-	a := testArena()
+	a := arena.Test()
 
 	i := Alloc[int64](a)
 	*i = math.MaxInt64
@@ -26,7 +27,7 @@ func TestAlloc__should_allocate_struct(t *testing.T) {
 		Int64 int64
 	}
 
-	a := testArena()
+	a := arena.Test()
 	s := Alloc[Struct](a)
 
 	s.Int8 = math.MaxInt8
@@ -38,7 +39,7 @@ func TestAlloc__should_allocate_struct(t *testing.T) {
 // Slice
 
 func TestSlice__should_allocate_slice(t *testing.T) {
-	a := testArena()
+	a := arena.Test()
 
 	s := Slice[int](a, 16)
 	s[0] = 1
@@ -72,7 +73,7 @@ func TestCopy__should_copy_existing_slice_into_arena(t *testing.T) {
 		{100, 200, 300},
 	}
 
-	a := testArena()
+	a := arena.Test()
 	v1 := Copy(a, v0)
 
 	assert.Equal(t, v0, v1)
@@ -81,8 +82,8 @@ func TestCopy__should_copy_existing_slice_into_arena(t *testing.T) {
 // Bytes
 
 func TestBytes__should_allocate_bytes(t *testing.T) {
-	a := testArena()
-	buf := a.Bytes(16)
+	a := arena.Test()
+	buf := Bytes(a, 16)
 
 	for i := 0; i < len(buf); i++ {
 		buf[i] = byte(i)
@@ -93,7 +94,7 @@ func TestBytes__should_allocate_bytes(t *testing.T) {
 }
 
 func TestCopyBytes__should_allocate_bytes_copy(t *testing.T) {
-	a := testArena()
+	a := arena.Test()
 	b := []byte("hello, world")
 	buf := CopyBytes(a, b)
 
@@ -103,7 +104,7 @@ func TestCopyBytes__should_allocate_bytes_copy(t *testing.T) {
 // String
 
 func TestString__should_return_string_copy(t *testing.T) {
-	a := testArena()
+	a := arena.Test()
 	s0 := "hello, world"
 	s1 := String(a, s0)
 

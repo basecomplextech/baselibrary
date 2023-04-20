@@ -18,8 +18,8 @@ type Arena interface {
 	// Len calculates and returns the arena used size.
 	Len() int64
 
-	// Bytes allocates a byte slice.
-	Bytes(cap int) []byte
+	// Alloc allocates a memory block and returns a pointer to it.
+	Alloc(size int) unsafe.Pointer
 
 	// Reset resets the arena.
 	Reset()
@@ -35,7 +35,7 @@ func New(h *heap.Heap) Arena {
 	return newArena(h, heap.MinBlockSize)
 }
 
-// NewSize returns an arena with a preallocated memory storage.
+// NewSize returns an arena with an initial capacity.
 func NewSize(heap *heap.Heap, size int) Arena {
 	return newArena(heap, size)
 }
@@ -81,14 +81,9 @@ func (a *arena) Len() int64 {
 	return n
 }
 
-// Bytes allocates a byte slice.
-func (a *arena) Bytes(cap int) []byte {
-	if cap == 0 {
-		return nil
-	}
-
-	ptr := a.alloc(cap)
-	return unsafe.Slice((*byte)(ptr), cap)
+// Alloc allocates a memory block and returns a pointer to it.
+func (a *arena) Alloc(size int) unsafe.Pointer {
+	return a.alloc(size)
 }
 
 // Reset resets the arena.
@@ -143,7 +138,7 @@ func (a *arena) Free() {
 // alloc
 
 // alloc allocates data and returns a pointer to it.
-func (a *arena) alloc(n int) unsafe.Pointer {
+func (a *arena) alloc(size int) unsafe.Pointer {
 	a.lock()
 	defer a.unlock()
 
@@ -153,14 +148,14 @@ func (a *arena) alloc(n int) unsafe.Pointer {
 
 	if len(a.blocks) > 0 {
 		b := a.blocks[len(a.blocks)-1]
-		ptr := b.Alloc(n)
+		ptr := b.Alloc(size)
 		if ptr != nil {
 			return ptr
 		}
 	}
 
-	b := a.allocBlock(n)
-	return b.Alloc(n)
+	b := a.allocBlock(size)
+	return b.Alloc(size)
 }
 
 func (a *arena) allocBlock(n int) *heap.Block {

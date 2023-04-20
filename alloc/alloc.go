@@ -1,62 +1,146 @@
 package alloc
 
-import (
-	"github.com/complex1tech/baselibrary/alloc/arena"
-	"github.com/complex1tech/baselibrary/alloc/internal/buf"
-	"github.com/complex1tech/baselibrary/alloc/internal/heap"
-)
+import "unsafe"
 
-// Allocator allocates arenas and buffers.
-type Allocator interface {
-	// Arena allocates a new arena.
-	Arena() arena.Arena
+// Alloc allocates a new object and returns a pointer to it.
+//
+// Usage:
+//
+//	var foo *float64
+//	var bar *MyStruct
+//	foo = Alloc[float64](arena)
+//	bar = Alloc[MyStruct](arena)
+func Alloc[T any](a Arena) *T {
+	var zero T
+	size := int(unsafe.Sizeof(zero))
 
-	// ArenaSize allocates a new arena with a preallocated capacity.
-	ArenaSize(size int) arena.Arena
-
-	// Buffer allocates a new buffer.
-	Buffer() *Buffer
-
-	// BufferSize allocates a new buffer with a preallocated capacity.
-	BufferSize(size int) *Buffer
+	ptr := a.Alloc(size)
+	return (*T)(ptr)
 }
 
-// Buffer is a buffer allocated by an allocator.
-// The buffer must be freed after usage.
-type Buffer = buf.Buffer
+// Bytes
 
-// New returns a new allocator.
-func New() Allocator {
-	h := heap.New()
-	return newAllocator(h)
+// Bytes allocates a new byte slice.
+func Bytes(a Arena, len int) []byte {
+	if len == 0 {
+		return nil
+	}
+
+	ptr := a.Alloc(len)
+	return unsafe.Slice((*byte)(ptr), len)
 }
 
-// internal
-
-type allocator struct {
-	heap *heap.Heap
+// CopyBytes allocates a new byte slice and copies items from src into it.
+// The slice capacity is len(src).
+func CopyBytes(a Arena, src []byte) []byte {
+	dst := Bytes(a, len(src))
+	copy(dst, src)
+	return dst
 }
 
-func newAllocator(heap *heap.Heap) *allocator {
-	return &allocator{heap: heap}
+// Slice
+
+// Append appends a new item to a slice, grows the slice if required, and returns the modified slice.
+func Append[T any](a Arena, s []T, item T) []T {
+	dst := growSlice(a, s, len(s)+1)
+	dst = dst[:len(s)+1]
+	dst[len(s)] = item
+	return dst
 }
 
-// Arena allocates a new arena.
-func (a *allocator) Arena() arena.Arena {
-	return arena.New(a.heap)
+// Copy allocates a new slice and copies items from src into it.
+// The slice capacity is len(src).
+func Copy[T any](a Arena, src []T) []T {
+	dst := Slice[T](a, len(src))
+	copy(dst, src)
+	return dst
 }
 
-// ArenaSize allocates a new arena with a preallocated capacity.
-func (a *allocator) ArenaSize(size int) arena.Arena {
-	return arena.NewSize(a.heap, size)
+// Slice allocates a new slice of a generic type.
+//
+// Usage:
+//
+//	var foo []MyStruct
+//	foo = Slice[MyStruct](arena, 16)
+func Slice[T any](a Arena, len int) []T {
+	return allocSlice[T](a, len, len)
 }
 
-// Buffer allocates a new buffer.
-func (a *allocator) Buffer() *Buffer {
-	return buf.New(a.heap)
+// String
+
+// String allocates a new string and copies data from src into it.
+func String(a Arena, src string) string {
+	if len(src) == 0 {
+		return ""
+	}
+
+	dst := Bytes(a, len(src))
+	copy(dst, src)
+	return *(*string)(unsafe.Pointer(&dst))
 }
 
-// BufferSize allocates a new buffer with a preallocated capacity.
-func (a *allocator) BufferSize(size int) *Buffer {
-	return buf.NewSize(a.heap, size)
+// StringBytes allocates a new string and copies data from src into it.
+func StringBytes(a Arena, src []byte) string {
+	if len(src) == 0 {
+		return ""
+	}
+
+	dst := Bytes(a, len(src))
+	copy(dst, src)
+	return *(*string)(unsafe.Pointer(&dst))
+}
+
+// private
+
+func allocSlice[T any](a Arena, len int, cap int) []T {
+	if len > cap {
+		panic("len > cap")
+	}
+	if cap == 0 {
+		return nil // TODO: Maybe return a zero-length slice
+	}
+
+	var zero T
+	elem := int(unsafe.Sizeof(zero))
+	size := elem * cap
+
+	ptr := a.Alloc(size)
+	s := unsafe.Slice((*T)(ptr), cap)
+	return s[:len]
+}
+
+func growSlice[T any](a Arena, src []T, capacity int) []T {
+	if cap(src) >= capacity {
+		return src
+	}
+
+	oldCap := cap(src)
+	newCap := growCapacity(oldCap, capacity)
+
+	dst := allocSlice[T](a, oldCap, newCap)
+	copy(dst, src)
+	return dst
+}
+
+func growCapacity(oldCap int, capacity int) int {
+	var newCap int
+
+	if oldCap < 1024 {
+		newCap = oldCap + oldCap
+	} else {
+		// Detect overflow and prevent an infinite loop.
+		for 0 < newCap && newCap < capacity {
+			newCap += newCap / 4
+		}
+
+		// Handle overflow.
+		if newCap <= 0 {
+			newCap = capacity
+		}
+	}
+
+	if capacity > newCap {
+		newCap = capacity
+	}
+	return newCap
 }
