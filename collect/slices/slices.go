@@ -7,6 +7,16 @@ import (
 	"github.com/complex1tech/baselibrary/constraints"
 )
 
+// CastAny casts a slice of any type to a slice of another type.
+func CastAny[T any](s []any) []T {
+	s1 := make([]T, 0, len(s))
+	for _, v := range s {
+		v1 := v.(T)
+		s1 = append(s1, v1)
+	}
+	return s1
+}
+
 // Clear zeros the slice, truncates it to zero length and returns.
 func Clear[T any](s []T) []T {
 	var zero T
@@ -127,6 +137,15 @@ func Shuffle[T any](s []T) {
 	rand.Shuffle(len(s), func(i, j int) {
 		s[i], s[j] = s[j], s[i]
 	})
+}
+
+// ToAny converts a slice of any type to a slice of any.
+func ToAny[T any](s []T) []any {
+	s1 := make([]any, len(s))
+	for i, v := range s {
+		s1[i] = v
+	}
+	return s1
 }
 
 // Zero zeros the slice and returns it.
