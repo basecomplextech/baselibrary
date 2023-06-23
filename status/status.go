@@ -4,20 +4,20 @@ import "fmt"
 
 // Status represents an operation status.
 type Status struct {
-	Code  Code
-	Text  string
-	Error error
+	Code    Code
+	Message string
+	Error   error
 }
 
 // New returns a new status.
-func New(code Code, text string) Status {
-	return Status{Code: code, Text: text}
+func New(code Code, msg string) Status {
+	return Status{Code: code, Message: msg}
 }
 
 // Newf returns a new status and formats its message.
 func Newf(code Code, format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: code, Text: text}
+	msg := fmt.Sprintf(format, a...)
+	return Status{Code: code, Message: msg}
 }
 
 // OK returns true if the status code is OK.
@@ -25,12 +25,12 @@ func (s Status) OK() bool {
 	return s.Code == CodeOK
 }
 
-// String returns "code: text".
+// String returns "code: msg".
 func (s Status) String() string {
-	if len(s.Text) == 0 {
+	if len(s.Message) == 0 {
 		return string(s.Code)
 	}
-	return fmt.Sprintf("%s: %s", s.Code, s.Text)
+	return fmt.Sprintf("%s: %s", s.Code, s.Message)
 }
 
 // With
@@ -49,17 +49,17 @@ func (s Status) WithError(err error) Status {
 	return s1
 }
 
-// WrapText returns a status clone with a new text and an appended previous text.
-func (s Status) WrapText(text string) Status {
+// WrapText returns a status clone with a new msg and an appended previous msg.
+func (s Status) WrapText(msg string) Status {
 	s1 := s
-	s1.Text = text + ": " + s.Text
+	s1.Message = msg + ": " + s.Message
 	return s1
 }
 
-// WrapTextf returns a status clone with a new text and an appended previous text.
+// WrapTextf returns a status clone with a new msg and an appended previous msg.
 func (s Status) WrapTextf(format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
+	msg := fmt.Sprintf(format, a...)
 	s1 := s
-	s1.Text = text + ": " + s.Text
+	s1.Message = msg + ": " + s.Message
 	return s1
 }

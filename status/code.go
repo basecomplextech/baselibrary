@@ -32,7 +32,7 @@ const (
 // Invalid class
 const (
 	// CodeNotFound indicates that an object is not found.
-	CodeNotFound Code = "notfound"
+	CodeNotFound Code = "not_found"
 
 	// CodeForbidden indicates that an operation is forbidden.
 	CodeForbidden Code = "forbidden"

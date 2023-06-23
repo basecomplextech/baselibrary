@@ -85,7 +85,7 @@ func (r *Record) WithStack(stack []byte) *Record {
 func (r *Record) WithStatus(st status.Status) *Record {
 	r.Fields = append(r.Fields, Field{
 		Key:   "status",
-		Value: st.Text,
+		Value: st.Message,
 	})
 
 	err := st.Error

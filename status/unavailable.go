@@ -12,61 +12,61 @@ var (
 
 // Closedf formats a message and returns a closed status.
 func Closedf(format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeClosed, Text: text}
+	msg := fmt.Sprintf(format, a...)
+	return Status{Code: CodeClosed, Message: msg}
 }
 
 // Cancelled
 
 // Cancelledf formats a message and returns a cancelled status.
 func Cancelledf(format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeCancelled, Text: text}
+	msg := fmt.Sprintf(format, a...)
+	return Status{Code: CodeCancelled, Message: msg}
 }
 
 // Rollback
 
 // Rollback returns a rollback status.
-func Rollback(text string) Status {
-	return Status{Code: CodeRollback, Text: text}
+func Rollback(msg string) Status {
+	return Status{Code: CodeRollback, Message: msg}
 }
 
 // Rollbackf formats a message and returns a rollback status.
 func Rollbackf(format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeRollback, Text: text}
+	msg := fmt.Sprintf(format, a...)
+	return Status{Code: CodeRollback, Message: msg}
 }
 
 // Timeout
 
 // Timeoutf returns a timeout status and formats its message.
 func Timeoutf(format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeTimeout, Text: text}
+	msg := fmt.Sprintf(format, a...)
+	return Status{Code: CodeTimeout, Message: msg}
 }
 
 // Unavailable
 
 // Unavailable returns an unavailable status.
-func Unavailable(text string) Status {
-	return Status{Code: CodeUnavailable, Text: text}
+func Unavailable(msg string) Status {
+	return Status{Code: CodeUnavailable, Message: msg}
 }
 
 // Unavailablef returns an unavailable status and formats its message.
 func Unavailablef(format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeUnavailable, Text: text}
+	msg := fmt.Sprintf(format, a...)
+	return Status{Code: CodeUnavailable, Message: msg}
 }
 
 // Unsupported
 
 // Unsupported returns an unsupported status.
-func Unsupported(text string) Status {
-	return Status{Code: CodeUnsupported, Text: text}
+func Unsupported(msg string) Status {
+	return Status{Code: CodeUnsupported, Message: msg}
 }
 
 // Unsupportedf returns an unsupported status and formats its message.
 func Unsupportedf(format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeUnsupported, Text: text}
+	msg := fmt.Sprintf(format, a...)
+	return Status{Code: CodeUnsupported, Message: msg}
 }

@@ -11,8 +11,8 @@ import (
 // Error returns an internal error status.
 func Error(msg string) Status {
 	return Status{
-		Code: CodeError,
-		Text: msg,
+		Code:    CodeError,
+		Message: msg,
 	}
 }
 
@@ -24,8 +24,8 @@ func Errorf(format string, a ...any) Status {
 	}
 
 	return Status{
-		Code: CodeError,
-		Text: msg,
+		Code:    CodeError,
+		Message: msg,
 	}
 }
 
@@ -37,9 +37,9 @@ func WrapError(err error) Status {
 	}
 
 	return Status{
-		Code:  CodeError,
-		Text:  msg,
-		Error: err,
+		Code:    CodeError,
+		Message: msg,
+		Error:   err,
 	}
 }
 
@@ -54,9 +54,9 @@ func WrapErrorf(err error, format string, a ...any) Status {
 	}
 
 	return Status{
-		Code:  CodeError,
-		Text:  msg,
-		Error: err,
+		Code:    CodeError,
+		Message: msg,
+		Error:   err,
 	}
 }
 
@@ -65,8 +65,8 @@ func WrapErrorf(err error, format string, a ...any) Status {
 // ExternalError returns an external error status.
 func ExternalError(msg string) Status {
 	return Status{
-		Code: CodeExternalError,
-		Text: msg,
+		Code:    CodeExternalError,
+		Message: msg,
 	}
 }
 
@@ -78,8 +78,8 @@ func ExternalErrorf(format string, a ...any) Status {
 	}
 
 	return Status{
-		Code: CodeExternalError,
-		Text: msg,
+		Code:    CodeExternalError,
+		Message: msg,
 	}
 }
 
@@ -91,9 +91,9 @@ func WrapExternalError(err error) Status {
 	}
 
 	return Status{
-		Code:  CodeExternalError,
-		Text:  msg,
-		Error: err,
+		Code:    CodeExternalError,
+		Message: msg,
+		Error:   err,
 	}
 }
 
@@ -108,9 +108,9 @@ func WrapExternalErrorf(err error, format string, a ...any) Status {
 	}
 
 	return Status{
-		Code:  CodeExternalError,
-		Text:  msg,
-		Error: err,
+		Code:    CodeExternalError,
+		Message: msg,
+		Error:   err,
 	}
 }
 
@@ -119,8 +119,8 @@ func WrapExternalErrorf(err error, format string, a ...any) Status {
 // Corrupted returns a data corruption error status.
 func Corrupted(msg string) Status {
 	return Status{
-		Code: CodeCorrupted,
-		Text: msg,
+		Code:    CodeCorrupted,
+		Message: msg,
 	}
 }
 
@@ -132,8 +132,8 @@ func Corruptedf(format string, a ...any) Status {
 	}
 
 	return Status{
-		Code: CodeCorrupted,
-		Text: msg,
+		Code:    CodeCorrupted,
+		Message: msg,
 	}
 }
 
@@ -145,9 +145,9 @@ func WrapCorrupted(err error) Status {
 	}
 
 	return Status{
-		Code:  CodeCorrupted,
-		Text:  msg,
-		Error: err,
+		Code:    CodeCorrupted,
+		Message: msg,
+		Error:   err,
 	}
 }
 
@@ -162,9 +162,9 @@ func WrapCorruptedf(err error, format string, a ...any) Status {
 	}
 
 	return Status{
-		Code:  CodeCorrupted,
-		Text:  msg,
-		Error: err,
+		Code:    CodeCorrupted,
+		Message: msg,
+		Error:   err,
 	}
 }
 
@@ -173,8 +173,8 @@ func WrapCorruptedf(err error, format string, a ...any) Status {
 // Fatal returns a fatal error status.
 func Fatal(msg string) Status {
 	return Status{
-		Code: CodeFatal,
-		Text: msg,
+		Code:    CodeFatal,
+		Message: msg,
 	}
 }
 
@@ -186,8 +186,8 @@ func Fatalf(format string, a ...any) Status {
 	}
 
 	return Status{
-		Code: CodeFatal,
-		Text: msg,
+		Code:    CodeFatal,
+		Message: msg,
 	}
 }
 
@@ -199,9 +199,9 @@ func WrapFatal(err error) Status {
 	}
 
 	return Status{
-		Code:  CodeFatal,
-		Text:  msg,
-		Error: err,
+		Code:    CodeFatal,
+		Message: msg,
+		Error:   err,
 	}
 }
 
@@ -216,9 +216,9 @@ func WrapFatalf(err error, format string, a ...any) Status {
 	}
 
 	return Status{
-		Code:  CodeFatal,
-		Text:  msg,
-		Error: err,
+		Code:    CodeFatal,
+		Message: msg,
+		Error:   err,
 	}
 }
 
