@@ -24,6 +24,19 @@ func Cancelledf(format string, a ...any) Status {
 	return Status{Code: CodeCancelled, Text: text}
 }
 
+// Rollback
+
+// Rollback returns a rollback status.
+func Rollback(text string) Status {
+	return Status{Code: CodeRollback, Text: text}
+}
+
+// Rollbackf formats a message and returns a rollback status.
+func Rollbackf(format string, a ...any) Status {
+	text := fmt.Sprintf(format, a...)
+	return Status{Code: CodeRollback, Text: text}
+}
+
 // Timeout
 
 // Timeoutf returns a timeout status and formats its message.

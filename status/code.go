@@ -43,14 +43,14 @@ const (
 
 // Unavailable class
 const (
-	// CodeAborted indicates that an operation was aborted or rollbacked.
-	CodeAborted Code = "aborted"
-
 	// CodeClosed indicates that an object is closed and cannot be used anymore.
 	CodeClosed Code = "closed"
 
 	// CodeCancelled indicates that an operation was cancelled or stopped on a request.
 	CodeCancelled Code = "cancelled"
+
+	// CodeRollback indicates that an operation was rolled backed.
+	CodeRollback Code = "rollback"
 
 	// CodeTimeout indicates that an operation timed out.
 	CodeTimeout Code = "timeout"
