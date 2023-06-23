@@ -16,24 +16,21 @@ const (
 
 // Error class
 const (
-	// CodeError is a generic error status code.
+	// CodeError indicates an internal general purpose error.
 	CodeError Code = "error"
 
-	// CodeIOError indicates that an I/O error occurred, the operation can be retried later.
-	CodeIOError Code = "io_error"
+	// CodeFatal indicates a fatal error, i.e. a panic.
+	CodeFatal Code = "fatal"
 
 	// CodeCorrupted indicates any data corruption or loss.
-	CodeCorrupted Code = "corruption"
+	CodeCorrupted Code = "corrupted"
 
-	// CodeFatal indicates that a fatal error occurred, the operation cannot be retried.
-	CodeFatal Code = "fatal"
+	// CodeExternalError indicates an external error, i.e. an invalid argument, validation error, etc.
+	CodeExternalError Code = "external_error"
 )
 
-// App/client class
+// Invalid class
 const (
-	// CodeInvalid indicates that a client request/operation/argument is invalid.
-	CodeInvalid Code = "invalid"
-
 	// CodeNotFound indicates that an object is not found.
 	CodeNotFound Code = "notfound"
 

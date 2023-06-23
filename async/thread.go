@@ -1,7 +1,6 @@
 package async
 
 import (
-	"github.com/complex1tech/baselibrary/panics"
 	"github.com/complex1tech/baselibrary/status"
 )
 
@@ -27,8 +26,7 @@ func Run(fn func(cancel <-chan struct{}) status.Status) Thread[struct{}] {
 				return
 			}
 
-			err := panics.Recover(e)
-			st := status.WrapError(err)
+			st := status.Recover(e)
 			th.Complete(struct{}{}, st)
 		}()
 
@@ -50,8 +48,7 @@ func RunSelf(fn func(cancel <-chan struct{}, th Thread[struct{}]) status.Status)
 				return
 			}
 
-			err := panics.Recover(e)
-			st := status.WrapError(err)
+			st := status.Recover(e)
 			th.Complete(struct{}{}, st)
 		}()
 
@@ -73,10 +70,8 @@ func Execute[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Thread[T
 				return
 			}
 
-			err := panics.Recover(e)
-			st := status.WrapError(err)
-
 			var zero T
+			st := status.Recover(e)
 			th.Complete(zero, st)
 		}()
 

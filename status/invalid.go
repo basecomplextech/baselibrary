@@ -2,19 +2,6 @@ package status
 
 import "fmt"
 
-// Invalid
-
-// Invalid returns an invalid status.
-func Invalid(text string) Status {
-	return Status{Code: CodeInvalid, Text: text}
-}
-
-// Invalidf formats a message and returns an invalid status.
-func Invalidf(format string, a ...any) Status {
-	text := fmt.Sprintf(format, a...)
-	return Status{Code: CodeInvalid, Text: text}
-}
-
 // NotFound
 
 // NotFound returns a not found status.

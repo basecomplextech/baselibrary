@@ -25,11 +25,6 @@ func (s Status) OK() bool {
 	return s.Code == CodeOK
 }
 
-// Fatal returns true if the status code is terminal.
-func (s Status) Fatal() bool {
-	return s.Code == CodeFatal
-}
-
 // String returns "code: text".
 func (s Status) String() string {
 	if len(s.Text) == 0 {
@@ -38,7 +33,7 @@ func (s Status) String() string {
 	return fmt.Sprintf("%s: %s", s.Code, s.Text)
 }
 
-// With methods
+// With
 
 // WithCode returns a status clone with a new code.
 func (s Status) WithCode(code Code) Status {

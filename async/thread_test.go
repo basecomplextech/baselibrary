@@ -31,7 +31,7 @@ func TestRun__should_return_on_on_success(t *testing.T) {
 }
 
 func TestRun__should_return_status_on_error(t *testing.T) {
-	st := status.Error("test")
+	st := status.Test("test")
 	p := Run(func(cancel <-chan struct{}) status.Status {
 		return st
 	})
@@ -102,7 +102,7 @@ func TestExecute__should_return_result_on_success(t *testing.T) {
 }
 
 func TestExecute__should_return_status_on_error(t *testing.T) {
-	st := status.Error("test")
+	st := status.Test("test")
 	p := Execute(func(cancel <-chan struct{}) (string, status.Status) {
 		return "", st
 	})

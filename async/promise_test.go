@@ -22,7 +22,7 @@ func TestPromise_Resolve__should_complete_future(t *testing.T) {
 
 func TestPromise_Reject__should_fail_future(t *testing.T) {
 	p := NewPromise[string]()
-	st := status.Error("test")
+	st := status.Test("test")
 
 	ok := p.Complete("", st)
 	require.True(t, ok)
@@ -45,7 +45,7 @@ func TestPromise_Complete__should_resolve_promise(t *testing.T) {
 
 func TestPromise_Complete__should_reject_promise(t *testing.T) {
 	p := NewPromise[string]()
-	st := status.Error("test")
+	st := status.Test("test")
 
 	ok := p.Complete("failed", st)
 	require.True(t, ok)
