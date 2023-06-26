@@ -11,7 +11,7 @@ const (
 	DefalutMutexProfileRate = 100        // 1/100 events
 )
 
-// Config specifies a profiling config.
+// Config specifies a profiling configuration.
 type Config struct {
 	Enabled bool         `json:"enabled"`
 	CPU     CPUConfig    `json:"cpu"`
