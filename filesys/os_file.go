@@ -1,12 +1,12 @@
 package filesys
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sync"
 	"syscall"
 
-	"github.com/complex1tech/baselibrary/errors2"
 	"github.com/edsrzf/mmap-go"
 )
 
@@ -36,7 +36,7 @@ func (f *file) Close() error {
 	}
 
 	err1 := f.File.Close()
-	return errors2.Combine(err0, err1)
+	return errors.Join(err0, err1)
 }
 
 // Filename returns a file name, not a path as in *os.File.

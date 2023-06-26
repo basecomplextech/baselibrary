@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"sync"
-
-	"github.com/complex1tech/baselibrary/errors2"
 )
 
 type Profiling struct {
@@ -111,7 +109,7 @@ func (p *Profiling) Stop() error {
 	err2 := p.stopBlock()
 	err3 := p.stopMutex()
 
-	return errors2.Combine(err0, err1, err2, err3)
+	return errors.Join(err0, err1, err2, err3)
 }
 
 // cpu
