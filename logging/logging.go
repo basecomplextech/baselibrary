@@ -1,6 +1,8 @@
 package logging
 
 import (
+	"os"
+
 	"github.com/complex1tech/baselibrary/collect/slices"
 )
 
@@ -19,13 +21,23 @@ type Logging interface {
 	Write(rec *Record) error
 }
 
-// New returns a new logging service.
-func New(writers ...Writer) Logging {
-	return newLogging(writers...)
+// Init initializes and returns a new logging service, uses the default config when config is nil.
+func Init(config *Config) (Logging, error) {
+	if config == nil {
+		config = DefaultConfig()
+	}
+	return initLogging(config)
 }
 
-// Init initializes and returns a new logging service.
-func Init(config *Config) (Logging, error) {
+// Load loads a logging config from a JSON/YAML file if it exists and returns a new logging service.
+func Load(path string) (Logging, error) {
+	config, err := LoadConfig(path)
+	switch {
+	case os.IsNotExist(err):
+		config = DefaultConfig()
+	case err != nil:
+		return nil, err
+	}
 	return initLogging(config)
 }
 

@@ -1,8 +1,10 @@
 package logging
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -54,17 +56,43 @@ func DefaultConfig() *Config {
 	}
 }
 
-// ReadConfig reads a configuration from a YAML file.
-func ReadConfig(path string) (*Config, error) {
+// LoadConfig reads a configuration from a JSON or YAML file.
+func LoadConfig(path string) (*Config, error) {
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".yaml", ".yml":
+		return loadConfigYAML(path)
+	}
+	return loadConfigJSON(path)
+}
+
+// private
+
+func loadConfigJSON(path string) (*Config, error) {
+	config := DefaultConfig()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(data, config); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func loadConfigYAML(path string) (*Config, error) {
+	config := DefaultConfig()
+
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	result := DefaultConfig()
-	if err := yaml.NewDecoder(file).Decode(&result); err != nil {
+	if err := yaml.NewDecoder(file).Decode(config); err != nil {
 		return nil, err
 	}
-	return result, nil
+	return config, nil
 }

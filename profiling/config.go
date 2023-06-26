@@ -69,8 +69,8 @@ type MutexConfig struct {
 	Rate int `json:"rate"`
 }
 
-// Default returns the default profiling config.
-func Default() *Config {
+// DefaultConfig returns the default profiling config.
+func DefaultConfig() *Config {
 	return &Config{
 		Enabled: false,
 
@@ -91,10 +91,10 @@ func Default() *Config {
 	}
 }
 
-// ReadConfig reads a profiling config from a json file.
-func ReadConfig(path string) (*Config, error) {
+// LoadConfig reads a profiling config from a json file.
+func LoadConfig(path string) (*Config, error) {
 	// Init default
-	config := Default()
+	config := DefaultConfig()
 	if path == "" {
 		return config, nil
 	}

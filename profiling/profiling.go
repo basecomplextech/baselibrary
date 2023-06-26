@@ -21,7 +21,7 @@ func Init(config *Config) error {
 	}
 
 	if config == nil {
-		config = Default()
+		config = DefaultConfig()
 	}
 
 	prof = newProfiler(config)
@@ -30,10 +30,10 @@ func Init(config *Config) error {
 
 // Load loads a profiling config from a json file if it exists and initializes the profiling service.
 func Load(path string) error {
-	config, err := ReadConfig(path)
+	config, err := LoadConfig(path)
 	switch {
 	case os.IsNotExist(err):
-		config = Default()
+		config = DefaultConfig()
 	case err != nil:
 		return err
 	}

@@ -16,19 +16,19 @@ type Logger interface {
 	// Name returns the logger name.
 	Name() string
 
-	// Begin returns a record builder with the info level.
-	Begin() RecordBuilder
-
 	// Logger returns a child logger.
 	Logger(name string) Logger
 
-	// Write sets the logger if abset, adds the default fields and writes the record.
-	Write(rec *Record) error
-
-	// Build
-
 	// WithFields returns a chained logger with the default fields.
 	WithFields(keyValuePairs ...any) Logger
+
+	// Write
+
+	// Begin returns a record builder with the info level.
+	Begin() RecordBuilder
+
+	// Write sets the logger if abset, adds the default fields and writes the record.
+	Write(rec *Record) error
 
 	// Records
 
@@ -118,12 +118,6 @@ func (l *logger) Name() string {
 	return l.name
 }
 
-// Begin returns a record builder with the info level.
-func (l *logger) Begin() RecordBuilder {
-	r := NewRecord(l.name, LevelInfo)
-	return newRecordBuilder(l, r)
-}
-
 // Logger returns a child logger.
 func (l *logger) Logger(name string) Logger {
 	if !l.root {
@@ -132,21 +126,6 @@ func (l *logger) Logger(name string) Logger {
 
 	return newLogger(name, false, l.w)
 }
-
-// Write sets the logger if abset, adds the default fields and writes the record.
-func (l *logger) Write(rec *Record) error {
-	if rec.Logger == "" {
-		rec.Logger = l.name
-	}
-
-	if l.fields != nil {
-		rec.Fields = append(rec.Fields, l.fields...)
-	}
-
-	return l.w.Write(rec)
-}
-
-// Build
 
 // WithFields returns a chained logger with the default fields.
 func (l *logger) WithFields(keyValuePairs ...any) Logger {
@@ -162,6 +141,27 @@ func (l *logger) WithFields(keyValuePairs ...any) Logger {
 		w: l,
 	}
 	return l1
+}
+
+// Write
+
+// Begin returns a record builder with the info level.
+func (l *logger) Begin() RecordBuilder {
+	r := NewRecord(l.name, LevelInfo)
+	return newRecordBuilder(l, r)
+}
+
+// Write sets the logger if abset, adds the default fields and writes the record.
+func (l *logger) Write(rec *Record) error {
+	if rec.Logger == "" {
+		rec.Logger = l.name
+	}
+
+	if l.fields != nil {
+		rec.Fields = append(rec.Fields, l.fields...)
+	}
+
+	return l.w.Write(rec)
 }
 
 // Records
