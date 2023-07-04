@@ -30,6 +30,7 @@ func New[T Freer](obj T) *R[T] {
 //
 //	// *ref.R[*revision]
 //	src := machine.Head()
+//	defer src.Release()
 //
 //	// *ref.R[blockchain.Revision]
 //	dst := ref.Map(src, func(r Revision) blockchain.Revision {
