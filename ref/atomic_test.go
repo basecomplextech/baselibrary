@@ -28,7 +28,7 @@ func (v *testValue) Free()     { v.v = 0 }
 
 func TestCast__should_cast_interface_and_share_refcount(t *testing.T) {
 	v := &testValue{10}
-	r0 := Wrap[testInterface0](v)
+	r0 := New[testInterface0](v)
 	r1 := Cast[testInterface0, testInterface1](r0)
 
 	assert.Same(t, r0.obj, r1.obj)

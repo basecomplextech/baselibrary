@@ -21,5 +21,5 @@ func NewArenaSize(size int) Arena {
 
 // NewArenaRef allocates an arena in the global allocator and returns a reference to it.
 func NewArenaRef() *ref.R[Arena] {
-	return ref.Wrap(NewArena())
+	return ref.New(NewArena())
 }

@@ -13,8 +13,8 @@ type R[T Freer] struct {
 	_refs int64  // actual refcount value
 }
 
-// Wrap wraps an object into a reference.
-func Wrap[T Freer](obj T) *R[T] {
+// New returns a new reference with refcount 1.
+func New[T Freer](obj T) *R[T] {
 	r := &R[T]{
 		obj:   obj,
 		_refs: 1,
