@@ -6,38 +6,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testInterface0 interface {
+type testInterface interface {
 	Set(int)
 	Get() int
 	Free()
 }
 
-type testInterface1 interface {
-	Get() int
-	Free()
-}
+type testObject struct{ v int }
 
-var _ testInterface0 = (*testValue)(nil)
-var _ testInterface1 = (*testValue)(nil)
+func (o *testObject) Set(i int) { o.v = i }
+func (o *testObject) Get() int  { return o.v }
+func (o *testObject) Free()     { o.v = 0 }
 
-type testValue struct{ v int }
+func TestMap__should_map_referenced_object(t *testing.T) {
+	obj := &testObject{10}
+	r0 := New[*testObject](obj)
+	r1 := Map[*testObject, testInterface](r0, func(o *testObject) testInterface {
+		return o
+	})
 
-func (v *testValue) Set(i int) { v.v = i }
-func (v *testValue) Get() int  { return v.v }
-func (v *testValue) Free()     { v.v = 0 }
-
-func TestCast__should_cast_interface_and_share_refcount(t *testing.T) {
-	v := &testValue{10}
-	r0 := New[testInterface0](v)
-	r1 := Cast[testInterface0, testInterface1](r0)
-
-	assert.Same(t, r0.obj, r1.obj)
-	assert.Same(t, r0.refs, r1.refs)
-	assert.Equal(t, int64(0), r1._refs)
+	assert.Equal(t, int64(2), r0.refs)
 	assert.Equal(t, 10, r1.Unwrap().Get())
 
-	r0.Release()
-	assert.Equal(t, int64(0), r0.Refcount())
-	assert.Equal(t, int64(0), r1.Refcount())
-	assert.Equal(t, 0, v.v)
+	r1.Release()
+	assert.Equal(t, int64(1), r0.refs)
 }
