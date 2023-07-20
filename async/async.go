@@ -21,7 +21,7 @@ type Waiter interface {
 // Methods
 
 // CancelWait cancels and awaits an operation.
-func CancelWait(w CancelWaiter) {
+func CancelWait(w Canceller) {
 	<-w.Cancel()
 }
 
