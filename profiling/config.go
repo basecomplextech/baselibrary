@@ -102,7 +102,7 @@ func LoadConfig(path string) (*Config, error) {
 	// Read file
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("profiling.ReadConfig: %w", err)
+		return nil, err
 	}
 
 	// Parse json
