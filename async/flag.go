@@ -2,7 +2,7 @@ package async
 
 import "sync"
 
-// Flag is a thread-safe boolean flag that can be set, reset, and waited on until set.
+// Flag is a routine-safe boolean flag that can be set, reset, and waited on until set.
 //
 // Example:
 //

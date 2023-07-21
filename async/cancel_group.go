@@ -20,7 +20,7 @@ func NewCancelGroup() *CancelGroup {
 	return &CancelGroup{}
 }
 
-// Add adds a thread to the group, or immediately cancels it if the group is cancelled.
+// Add adds a routine to the group, or immediately cancels it if the group is cancelled.
 func (g *CancelGroup) Add(c CancelWaiter) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
