@@ -3,10 +3,10 @@ package buf
 import (
 	"unicode/utf8"
 
-	"github.com/complex1tech/baselibrary/alloc/internal/heap"
-	"github.com/complex1tech/baselibrary/buffer"
-	"github.com/complex1tech/baselibrary/collect/slices"
-	"github.com/complex1tech/baselibrary/ref"
+	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/buffer"
+	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 var (

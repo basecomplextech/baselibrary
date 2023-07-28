@@ -3,7 +3,7 @@ package async
 import (
 	"sync"
 
-	"github.com/complex1tech/baselibrary/status"
+	"github.com/basecomplextech/baselibrary/status"
 )
 
 // Promise is a future which can be completed.

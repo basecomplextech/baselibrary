@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/complex1tech/baselibrary/bin"
-	"github.com/complex1tech/baselibrary/constraints"
+	"github.com/basecomplextech/baselibrary/bin"
+	"github.com/basecomplextech/baselibrary/constraints"
 )
 
 type (

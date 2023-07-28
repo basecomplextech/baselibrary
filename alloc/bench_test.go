@@ -6,7 +6,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/complex1tech/baselibrary/alloc/internal/arena"
+	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 )
 
 func Benchmark_AllocInt64(b *testing.B) {

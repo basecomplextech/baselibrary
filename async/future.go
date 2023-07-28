@@ -1,7 +1,7 @@
 package async
 
 import (
-	"github.com/complex1tech/baselibrary/status"
+	"github.com/basecomplextech/baselibrary/status"
 )
 
 var _ Waiter = (Future[any])(nil)

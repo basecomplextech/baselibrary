@@ -3,7 +3,7 @@ package memfs
 import (
 	"time"
 
-	"github.com/complex1tech/baselibrary/filesys"
+	"github.com/basecomplextech/baselibrary/filesys"
 )
 
 var _ filesys.FileInfo = (*memInfo)(nil)

@@ -3,7 +3,7 @@ package memfs
 import (
 	"testing"
 
-	"github.com/complex1tech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/stretchr/testify/assert"
 )
 

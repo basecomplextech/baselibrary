@@ -3,7 +3,7 @@ package blake3
 import (
 	"testing"
 
-	"github.com/complex1tech/baselibrary/bin"
+	"github.com/basecomplextech/baselibrary/bin"
 	"github.com/stretchr/testify/assert"
 	"github.com/zeebo/blake3"
 )

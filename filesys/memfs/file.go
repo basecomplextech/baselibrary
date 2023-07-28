@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/complex1tech/baselibrary/filesys"
+	"github.com/basecomplextech/baselibrary/filesys"
 )
 
 // NewFile returns a new in-memory file detached from a file system.

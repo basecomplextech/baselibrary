@@ -3,8 +3,8 @@ package refmap
 import (
 	"testing"
 
-	"github.com/complex1tech/baselibrary/collect/slices"
-	"github.com/complex1tech/baselibrary/ref"
+	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

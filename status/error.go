@@ -3,7 +3,7 @@ package status
 import (
 	"fmt"
 
-	"github.com/complex1tech/baselibrary/panics"
+	"github.com/basecomplextech/baselibrary/panics"
 )
 
 // Error

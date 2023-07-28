@@ -1,6 +1,6 @@
 package ranges
 
-import "github.com/complex1tech/baselibrary/compare"
+import "github.com/basecomplextech/baselibrary/compare"
 
 // BytesRange is a type alias for Range[[]byte].
 type BytesRange = Range[[]byte]

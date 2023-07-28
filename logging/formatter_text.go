@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/complex1tech/baselibrary/terminal"
+	"github.com/basecomplextech/baselibrary/terminal"
 )
 
 const (

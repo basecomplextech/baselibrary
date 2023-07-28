@@ -4,10 +4,10 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/complex1tech/baselibrary/collect/slices"
-	"github.com/complex1tech/baselibrary/compare"
-	"github.com/complex1tech/baselibrary/ref"
-	"github.com/complex1tech/baselibrary/tests"
+	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/compare"
+	"github.com/basecomplextech/baselibrary/ref"
+	"github.com/basecomplextech/baselibrary/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

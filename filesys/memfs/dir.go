@@ -3,7 +3,7 @@ package memfs
 import (
 	"errors"
 
-	"github.com/complex1tech/baselibrary/filesys"
+	"github.com/basecomplextech/baselibrary/filesys"
 )
 
 type memDir struct {

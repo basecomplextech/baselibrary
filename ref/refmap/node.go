@@ -1,8 +1,8 @@
 package refmap
 
 import (
-	"github.com/complex1tech/baselibrary/compare"
-	"github.com/complex1tech/baselibrary/ref"
+	"github.com/basecomplextech/baselibrary/compare"
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 type node[K any, V ref.Ref] interface {

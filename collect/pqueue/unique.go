@@ -3,8 +3,8 @@ package pqueue
 import (
 	"container/heap"
 
-	"github.com/complex1tech/baselibrary/compare"
-	"github.com/complex1tech/baselibrary/constraints"
+	"github.com/basecomplextech/baselibrary/compare"
+	"github.com/basecomplextech/baselibrary/constraints"
 )
 
 // UniqueQueue is a priority queue that contains unique elements.

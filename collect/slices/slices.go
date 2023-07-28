@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/complex1tech/baselibrary/constraints"
+	"github.com/basecomplextech/baselibrary/constraints"
 )
 
 // CastAny casts a slice of any type to a slice of another type.

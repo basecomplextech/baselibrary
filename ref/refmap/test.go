@@ -1,8 +1,8 @@
 package refmap
 
 import (
-	"github.com/complex1tech/baselibrary/ref"
-	"github.com/complex1tech/baselibrary/tests"
+	"github.com/basecomplextech/baselibrary/ref"
+	"github.com/basecomplextech/baselibrary/tests"
 )
 
 func testIterate[K any, V ref.Ref](t tests.T, it Iterator[K, V]) []Item[K, V] {

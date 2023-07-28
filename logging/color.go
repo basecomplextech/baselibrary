@@ -1,6 +1,6 @@
 package logging
 
-import "github.com/complex1tech/baselibrary/terminal"
+import "github.com/basecomplextech/baselibrary/terminal"
 
 // ColorTheme specifies the terminal colors.
 type ColorTheme struct {

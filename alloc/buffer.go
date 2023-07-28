@@ -1,7 +1,7 @@
 package alloc
 
 import (
-	"github.com/complex1tech/baselibrary/alloc/internal/buf"
+	"github.com/basecomplextech/baselibrary/alloc/internal/buf"
 )
 
 // Buffer is a buffer allocated by an allocator.

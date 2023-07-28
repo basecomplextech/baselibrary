@@ -1,7 +1,7 @@
 package logging
 
 import (
-	"github.com/complex1tech/baselibrary/status"
+	"github.com/basecomplextech/baselibrary/status"
 )
 
 type RecordBuilder interface {

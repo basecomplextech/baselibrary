@@ -1,7 +1,7 @@
 package async
 
 import (
-	"github.com/complex1tech/baselibrary/status"
+	"github.com/basecomplextech/baselibrary/status"
 )
 
 // Routine is a generic async routine which returns the result as a future, and can be cancelled.

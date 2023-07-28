@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/complex1tech/baselibrary/filesys"
+	"github.com/basecomplextech/baselibrary/filesys"
 )
 
 var _ filesys.File = (*memHandle)(nil)

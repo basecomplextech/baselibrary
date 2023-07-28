@@ -1,6 +1,6 @@
 package memfs
 
-import "github.com/complex1tech/baselibrary/filesys"
+import "github.com/basecomplextech/baselibrary/filesys"
 
 type memEntry interface {
 	Size() (int64, error)

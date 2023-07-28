@@ -1,9 +1,9 @@
 package alloc
 
 import (
-	"github.com/complex1tech/baselibrary/alloc/internal/arena"
-	"github.com/complex1tech/baselibrary/alloc/internal/buf"
-	"github.com/complex1tech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
+	"github.com/basecomplextech/baselibrary/alloc/internal/buf"
+	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 )
 
 var global = newAllocator(heap.Global())

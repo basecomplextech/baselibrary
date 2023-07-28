@@ -3,7 +3,7 @@ package async
 import (
 	"sync"
 
-	"github.com/complex1tech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices"
 )
 
 // Queue is an unbounded FIFO queue.

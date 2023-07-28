@@ -3,7 +3,7 @@ package buf
 import (
 	"testing"
 
-	"github.com/complex1tech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/complex1tech/baselibrary/alloc/internal/heap"
-	"github.com/complex1tech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/collect/slices"
 )
 
 // Arena is an arena allocator, which internally allocates memory in blocks.

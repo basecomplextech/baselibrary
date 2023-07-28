@@ -1,6 +1,6 @@
 package alloc
 
-import "github.com/complex1tech/baselibrary/alloc/internal/freelist"
+import "github.com/basecomplextech/baselibrary/alloc/internal/freelist"
 
 // FreeList keeps a linked list of free objects.
 type FreeList[T any] interface {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/complex1tech/baselibrary/panics"
-	"github.com/complex1tech/baselibrary/status"
+	"github.com/basecomplextech/baselibrary/panics"
+	"github.com/basecomplextech/baselibrary/status"
 )
 
 type Record struct {

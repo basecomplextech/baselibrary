@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/complex1tech/baselibrary/alloc/internal/arena"
+	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 )
 
 const (

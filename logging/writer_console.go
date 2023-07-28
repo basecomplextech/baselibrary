@@ -4,8 +4,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/complex1tech/baselibrary/alloc"
-	"github.com/complex1tech/baselibrary/terminal"
+	"github.com/basecomplextech/baselibrary/alloc"
+	"github.com/basecomplextech/baselibrary/terminal"
 )
 
 var _ Writer = (*consoleWriter)(nil)

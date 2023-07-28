@@ -3,7 +3,7 @@ package ranges
 import (
 	"testing"
 
-	"github.com/complex1tech/baselibrary/compare"
+	"github.com/basecomplextech/baselibrary/compare"
 	"github.com/stretchr/testify/assert"
 )
 

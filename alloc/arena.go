@@ -1,8 +1,8 @@
 package alloc
 
 import (
-	"github.com/complex1tech/baselibrary/alloc/internal/arena"
-	"github.com/complex1tech/baselibrary/ref"
+	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 // Arena is an arena memory allocator.

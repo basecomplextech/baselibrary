@@ -1,8 +1,8 @@
 package memfs
 
 import (
-	"github.com/complex1tech/baselibrary/filesys"
-	"github.com/complex1tech/baselibrary/tests"
+	"github.com/basecomplextech/baselibrary/filesys"
+	"github.com/basecomplextech/baselibrary/tests"
 )
 
 func testDir(t tests.T, fs filesys.FileSystem, path string) {

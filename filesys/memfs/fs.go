@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/complex1tech/baselibrary/filesys"
+	"github.com/basecomplextech/baselibrary/filesys"
 )
 
 // New returns a new in-memory file system.

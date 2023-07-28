@@ -1,4 +1,4 @@
-module github.com/complex1tech/baselibrary
+module github.com/basecomplextech/baselibrary
 
 go 1.18
 

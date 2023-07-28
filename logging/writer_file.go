@@ -3,7 +3,7 @@ package logging
 import (
 	"os"
 
-	"github.com/complex1tech/baselibrary/alloc"
+	"github.com/basecomplextech/baselibrary/alloc"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 

@@ -3,7 +3,7 @@ package logging
 import (
 	"os"
 
-	"github.com/complex1tech/baselibrary/status"
+	"github.com/basecomplextech/baselibrary/status"
 )
 
 var (

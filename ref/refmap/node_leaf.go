@@ -4,8 +4,8 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/complex1tech/baselibrary/compare"
-	"github.com/complex1tech/baselibrary/ref"
+	"github.com/basecomplextech/baselibrary/compare"
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 var _ node[any, ref.Ref] = (*leafNode[any, ref.Ref])(nil)
