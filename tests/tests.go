@@ -12,6 +12,7 @@ type T interface {
 	Cleanup(f func())
 	Error(...any)
 	Fatal(...any)
+	Fatalf(format string, args ...any)
 	Helper()
 }
 
