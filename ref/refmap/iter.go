@@ -72,6 +72,7 @@ type iterator[K any, V ref.Ref] struct {
 	tree *btree[K, V]
 
 	st    status.Status           // current iterator status
+	mod   int                     // track concurrent modifications
 	pos   position                // current iterator position
 	stack []iteratorElement[K, V] // the last element is always a leaf node
 }
@@ -86,7 +87,8 @@ func newIterator[K any, V ref.Ref](tree *btree[K, V]) *iterator[K, V] {
 	return &iterator[K, V]{
 		tree: tree,
 
-		st: status.None,
+		st:  status.None,
+		mod: tree.mod,
 	}
 }
 
@@ -139,6 +141,11 @@ func (it *iterator[K, V]) Next() bool {
 		status.CodeNone:
 	default:
 		return false
+	}
+
+	if it.mod != it.tree.mod {
+		it.st = status.Errorf("refmap concurrent modification error")
+		panic("refmap concurrent modification error")
 	}
 
 	switch it.pos {
@@ -224,6 +231,11 @@ func (it *iterator[K, V]) Previous() bool {
 		return false
 	}
 
+	if it.mod != it.tree.mod {
+		it.st = status.Errorf("refmap concurrent modification error")
+		panic("refmap concurrent modification error")
+	}
+
 	switch it.pos {
 	case positionStart:
 		// Cannot proceed
@@ -302,6 +314,7 @@ func (it *iterator[K, V]) SeekToStart() bool {
 	}
 
 	it.st = status.None
+	it.mod = it.tree.mod
 	it.pos = positionStart
 	it.stack = it.stack[:0]
 	return true
@@ -318,6 +331,7 @@ func (it *iterator[K, V]) SeekToEnd() bool {
 	}
 
 	it.st = status.None
+	it.mod = it.tree.mod
 	it.pos = positionEnd
 	it.stack = it.stack[:0]
 	return true
@@ -368,13 +382,15 @@ func (it *iterator[K, V]) SeekToKey(key K) bool {
 	}
 
 	if len(it.stack) == 0 {
-		it.pos = positionEnd
 		it.st = status.End
+		it.mod = it.tree.mod
+		it.pos = positionEnd
 		return false
 	}
 
-	it.pos = positionBefore
 	it.st = status.None
+	it.mod = it.tree.mod
+	it.pos = positionBefore
 	return true
 
 }

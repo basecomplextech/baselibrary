@@ -213,3 +213,35 @@ func TestIterator_SeekToKey__should_position_at_end_when_all_keys_less_than_soug
 	slices.Reverse(items1)
 	assert.Equal(t, items, items1)
 }
+
+// Concurrent modification
+
+func TestIterator_Next__should_panic_on_concurrent_modification(t *testing.T) {
+	items := testItemsN(10)
+	btree := testBtree(t, items[:5]...)
+	it := btree.Iterator().(*iterator[int, *ref.R[*Value]])
+
+	ok := it.Next()
+	assert.True(t, ok)
+
+	btree.Put(items[5].Key, items[5].Value)
+
+	assert.Panics(t, func() {
+		it.Next()
+	})
+}
+
+func TestIterator_Previous__should_panic_on_concurrent_modification(t *testing.T) {
+	items := testItemsN(10)
+	btree := testBtree(t, items[:5]...)
+	it := btree.Iterator().(*iterator[int, *ref.R[*Value]])
+
+	ok := it.SeekToEnd()
+	assert.True(t, ok)
+
+	btree.Put(items[5].Key, items[5].Value)
+
+	assert.Panics(t, func() {
+		it.Previous()
+	})
+}

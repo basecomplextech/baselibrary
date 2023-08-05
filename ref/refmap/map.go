@@ -83,6 +83,7 @@ type btree[K any, V ref.Ref] struct {
 	compare compare.Func[K]
 
 	root    node[K, V]
+	mod     int // track concurrent modifications
 	height  int
 	length  int64
 	mutable bool
@@ -173,13 +174,17 @@ func (t *btree[K, V]) Put(key K, value V) {
 	// Split if full
 	t.maybeSplitRoot()
 
-	// Insert item
+	// Mutate root
 	node := t.mutateRoot()
+
+	// Insert item
 	mod := node.put(key, value, t.compare)
 	if !mod {
 		return
 	}
 
+	// Increment length
+	t.mod++
 	t.length++
 }
 
@@ -199,6 +204,7 @@ func (t *btree[K, V]) Delete(key K) {
 	}
 
 	// Decrement length
+	t.mod++
 	t.length--
 }
 
@@ -228,6 +234,7 @@ func (t *btree[K, V]) mutateRoot() node[K, V] {
 	// Clone and replace root
 	next := t.root.clone()
 	t.root = next
+	t.mod++
 
 	// Release previous
 	prev.release()
@@ -249,6 +256,8 @@ func (t *btree[K, V]) maybeSplitRoot() {
 	// Make new root, move children to it
 	t.root = newBranchNode(node, next)
 	t.height++
+	t.mod++
+	return
 }
 
 // for tests
