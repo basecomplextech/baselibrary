@@ -44,8 +44,13 @@ func (s Status) WithCode(code Code) Status {
 
 // WithError returns a status clone with a new error.
 func (s Status) WithError(err error) Status {
+	if err == nil {
+		return s
+	}
+
 	s1 := s
 	s1.Error = err
+	s1 = s1.WrapText(err.Error())
 	return s1
 }
 
