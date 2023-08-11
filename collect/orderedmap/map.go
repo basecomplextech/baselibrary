@@ -30,6 +30,14 @@ func New[K comparable, V any](items ...Item[K, V]) *Map[K, V] {
 	return m
 }
 
+// NewSize returns a new ordered map with the given size hint.
+func NewSize[K comparable, V any](size int) *Map[K, V] {
+	return &Map[K, V]{
+		list: make([]Item[K, V], 0, size),
+		map_: make(map[K]int, size),
+	}
+}
+
 // Index returns the index of the given key, or -1.
 func (m *Map[K, V]) Index(key K) int {
 	i, ok := m.map_[key]
@@ -44,10 +52,10 @@ func (m *Map[K, V]) Len() int {
 	return len(m.map_)
 }
 
-// Item returns at item at the given index.
-func (m *Map[K, V]) Item(index int) (K, V) {
-	item := m.list[index]
-	return item.Key, item.Value
+// Contains returns true if the map contains the given key.
+func (m *Map[K, V]) Contains(key K) bool {
+	_, ok := m.map_[key]
+	return ok
 }
 
 // Get returns the value for the given key, or false.
@@ -114,6 +122,29 @@ func (m *Map[K, V]) Iterate(yield func(key K, value V) bool) bool {
 		}
 	}
 	return true
+}
+
+// Item returns an item at the given index.
+func (m *Map[K, V]) Item(index int) (K, V) {
+	item := m.list[index]
+	return item.Key, item.Value
+}
+
+// Key returns a key at the given index.
+func (m *Map[K, V]) Key(index int) K {
+	return m.list[index].Key
+}
+
+// Value returns a value at the given index.
+func (m *Map[K, V]) Value(index int) V {
+	return m.list[index].Value
+}
+
+// Items returns a slice of items in the order they were inserted.
+func (m *Map[K, V]) Items() []Item[K, V] {
+	items := make([]Item[K, V], len(m.list))
+	copy(items, m.list)
+	return items
 }
 
 // Keys returns a slice of keys in the order they were inserted.
