@@ -44,6 +44,12 @@ func (m *Map[K, V]) Len() int {
 	return len(m.map_)
 }
 
+// Item returns at item at the given index.
+func (m *Map[K, V]) Item(index int) (K, V) {
+	item := m.list[index]
+	return item.Key, item.Value
+}
+
 // Get returns the value for the given key, or false.
 func (m *Map[K, V]) Get(key K) (value V, ok bool) {
 	i, ok := m.map_[key]
