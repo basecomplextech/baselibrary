@@ -1,7 +1,6 @@
 package refmap
 
 import (
-	"github.com/basecomplextech/baselibrary/compare"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -58,8 +57,11 @@ type Item[K any, V ref.Ref] struct {
 	Value V
 }
 
+// CompareFunc compares two keys, and returns -1 if a < b, 0 if a == b, 1 if a > b.
+type CompareFunc[K any] func(a, b K) int
+
 // New returns an empty map.
-func New[K any, V ref.Ref](mutable bool, compare compare.Func[K]) Map[K, V] {
+func New[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) Map[K, V] {
 	m := newBtree[K, V](compare)
 	if !mutable {
 		m.Freeze()
@@ -68,7 +70,7 @@ func New[K any, V ref.Ref](mutable bool, compare compare.Func[K]) Map[K, V] {
 }
 
 // New returns an empty map wrapped in a ref.
-func NewRef[K any, V ref.Ref](mutable bool, compare compare.Func[K]) *ref.R[Map[K, V]] {
+func NewRef[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) *ref.R[Map[K, V]] {
 	m := New[K, V](mutable, compare)
 	return ref.New(m)
 }
@@ -80,7 +82,7 @@ const maxItems = 16
 var _ Map[any, ref.Ref] = (*btree[any, ref.Ref])(nil)
 
 type btree[K any, V ref.Ref] struct {
-	compare compare.Func[K]
+	compare CompareFunc[K]
 
 	root    node[K, V]
 	mod     int // track concurrent modifications
@@ -89,7 +91,7 @@ type btree[K any, V ref.Ref] struct {
 	mutable bool
 }
 
-func newBtree[K any, V ref.Ref](compare compare.Func[K]) *btree[K, V] {
+func newBtree[K any, V ref.Ref](compare CompareFunc[K]) *btree[K, V] {
 	return &btree[K, V]{
 		compare: compare,
 		mutable: true,

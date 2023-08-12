@@ -2,9 +2,6 @@ package priorityq
 
 import (
 	"container/heap"
-
-	"github.com/basecomplextech/baselibrary/compare"
-	"github.com/basecomplextech/baselibrary/constraints"
 )
 
 // UniqueQueue is a priority queue that contains unique elements.
@@ -13,7 +10,7 @@ type UniqueQueue[V comparable, P any] struct {
 }
 
 // NewUnique returns a unique priority queue with a priority compare function.
-func NewUnique[V comparable, P any](compare compare.Func[P], items ...Item[V, P]) *UniqueQueue[V, P] {
+func NewUnique[V comparable, P any](compare CompareFunc[P], items ...Item[V, P]) *UniqueQueue[V, P] {
 	q := &UniqueQueue[V, P]{
 		queue: &uniqueHeap[V, P]{
 			compare: compare,
@@ -35,12 +32,6 @@ func NewUnique[V comparable, P any](compare compare.Func[P], items ...Item[V, P]
 
 	heap.Init(q.queue)
 	return q
-}
-
-// NewUniqueOrdered returns a unique priority queue with the priority natural order.
-func NewUniqueOrdered[V comparable, P constraints.Ordered](items ...Item[V, P]) *UniqueQueue[V, P] {
-	compare := compare.Ordered[P]()
-	return NewUnique(compare, items...)
 }
 
 // Len returns the number of elements in the queue.
@@ -111,7 +102,7 @@ func (q *UniqueQueue[V, P]) Remove(value V) (p P, ok bool) {
 var _ heap.Interface = (*uniqueHeap[int, any])(nil)
 
 type uniqueHeap[V comparable, P any] struct {
-	compare compare.Func[P]
+	compare CompareFunc[P]
 	items   []uniqueItem[V, P]
 	indexes map[V]int
 }

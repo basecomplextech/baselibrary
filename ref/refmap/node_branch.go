@@ -4,7 +4,6 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/basecomplextech/baselibrary/compare"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -149,7 +148,7 @@ func (n *branchNode[K, V]) mutable() bool {
 
 // indexOf returns a child node index which range contains a key.
 // indexOf finds the first node after a key and return  theprevious node.
-func (n *branchNode[K, V]) indexOf(key K, compare compare.Func[K]) int {
+func (n *branchNode[K, V]) indexOf(key K, compare CompareFunc[K]) int {
 	index := sort.Search(len(n.items), func(i int) bool {
 		minKey := n.items[i].minKey
 		cmp := compare(minKey, key)
@@ -161,13 +160,13 @@ func (n *branchNode[K, V]) indexOf(key K, compare compare.Func[K]) int {
 	return 0
 }
 
-func (n *branchNode[K, V]) get(key K, compare compare.Func[K]) (V, bool) {
+func (n *branchNode[K, V]) get(key K, compare CompareFunc[K]) (V, bool) {
 	index := n.indexOf(key, compare)
 	node := n.child(index)
 	return node.get(key, compare)
 }
 
-func (n *branchNode[K, V]) put(key K, value V, compare compare.Func[K]) bool {
+func (n *branchNode[K, V]) put(key K, value V, compare CompareFunc[K]) bool {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -192,7 +191,7 @@ func (n *branchNode[K, V]) put(key K, value V, compare compare.Func[K]) bool {
 	return mod
 }
 
-func (n *branchNode[K, V]) delete(key K, compare compare.Func[K]) bool {
+func (n *branchNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -218,7 +217,7 @@ func (n *branchNode[K, V]) delete(key K, compare compare.Func[K]) bool {
 	return true
 }
 
-func (n *branchNode[K, V]) contains(key K, compare compare.Func[K]) bool {
+func (n *branchNode[K, V]) contains(key K, compare CompareFunc[K]) bool {
 	index := n.indexOf(key, compare)
 	if index >= len(n.items) {
 		return false

@@ -4,8 +4,6 @@ import (
 	"container/heap"
 
 	"github.com/basecomplextech/baselibrary/collect/slices"
-	"github.com/basecomplextech/baselibrary/compare"
-	"github.com/basecomplextech/baselibrary/constraints"
 )
 
 // Queue is a priority queue that is implemented using a heap.
@@ -19,8 +17,11 @@ type Item[V any, P any] struct {
 	Priority P
 }
 
+// CompareFunc compares two priorities, and returns -1 if a < b, 0 if a == b, 1 if a > b.
+type CompareFunc[P any] func(a, b P) int
+
 // New returns a new priority queue with a priority compare function.
-func New[V any, P any](compare compare.Func[P], items ...Item[V, P]) *Queue[V, P] {
+func New[V any, P any](compare CompareFunc[P], items ...Item[V, P]) *Queue[V, P] {
 	q := &Queue[V, P]{
 		queue: &heapq[V, P]{
 			compare: compare,
@@ -30,12 +31,6 @@ func New[V any, P any](compare compare.Func[P], items ...Item[V, P]) *Queue[V, P
 
 	heap.Init(q.queue)
 	return q
-}
-
-// NewOrdered returns a new priority queue with the priority natural order.
-func NewOrdered[V any, P constraints.Ordered](items ...Item[V, P]) *Queue[V, P] {
-	compare := compare.Ordered[P]()
-	return New(compare, items...)
 }
 
 // Len returns the number of elements in the queue.
@@ -73,7 +68,7 @@ func (q *Queue[V, P]) Push(value V, priority P) {
 var _ heap.Interface = (*heapq[any, any])(nil)
 
 type heapq[V any, P any] struct {
-	compare compare.Func[P]
+	compare CompareFunc[P]
 	items   []Item[V, P]
 }
 

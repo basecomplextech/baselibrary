@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/basecomplextech/baselibrary/collect/slices"
-	"github.com/basecomplextech/baselibrary/compare"
 	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/basecomplextech/baselibrary/tests"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +12,8 @@ import (
 )
 
 func testBtree(t tests.T, items ...Item[int, *ref.R[*Value]]) *btree[int, *ref.R[*Value]] {
-	btree := newBtree[int, *ref.R[*Value]](compare.Int)
+	compare := func(a, b int) int { return a - b }
+	btree := newBtree[int, *ref.R[*Value]](compare)
 
 	for _, item := range items {
 		btree.Put(item.Key, item.Value)

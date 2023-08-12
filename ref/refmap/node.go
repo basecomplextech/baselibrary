@@ -1,7 +1,6 @@
 package refmap
 
 import (
-	"github.com/basecomplextech/baselibrary/compare"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -18,11 +17,11 @@ type node[K any, V ref.Ref] interface {
 	minKey() K
 	maxKey() K
 
-	indexOf(key K, compare compare.Func[K]) int
-	get(key K, compare compare.Func[K]) (V, bool)
-	put(key K, value V, compare compare.Func[K]) bool
-	delete(key K, compare compare.Func[K]) bool
-	contains(key K, compare compare.Func[K]) bool
+	indexOf(key K, cmp CompareFunc[K]) int
+	get(key K, cmp CompareFunc[K]) (V, bool)
+	put(key K, value V, cmp CompareFunc[K]) bool
+	delete(key K, cmp CompareFunc[K]) bool
+	contains(key K, cmp CompareFunc[K]) bool
 	split() (node[K, V], bool)
 }
 

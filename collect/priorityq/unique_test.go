@@ -22,8 +22,9 @@ func TestUniqueQueue_Init_Pop__should_init_queue_and_pop_items_in_order(t *testi
 
 	items1 := slices.Clone(items)
 	slices.Shuffle(items1)
+	compare := func(a, b int) int { return a - b }
 
-	q := NewUniqueOrdered(items1...)
+	q := NewUnique(compare, items1...)
 	items2 := make([]Item[string, int], 0, len(items))
 	for q.Len() > 0 {
 		value, priority, ok := q.Pop()
@@ -53,8 +54,9 @@ func TestUniqueQueue_Push_Pop__should_push_and_pop_items_in_order(t *testing.T) 
 
 	items1 := slices.Clone(items)
 	slices.Shuffle(items1)
+	compare := func(a, b int) int { return a - b }
 
-	q := NewUniqueOrdered[string, int]()
+	q := NewUnique[string, int](compare)
 	for _, item := range items1 {
 		q.Push(item.Value, item.Priority)
 	}
@@ -74,7 +76,9 @@ func TestUniqueQueue_Push_Pop__should_push_and_pop_items_in_order(t *testing.T) 
 }
 
 func TestUniqueQueue_Push__should_support_duplicate_priority_items(t *testing.T) {
-	q := NewUniqueOrdered[string, int]()
+	compare := func(a, b int) int { return a - b }
+
+	q := NewUnique[string, int](compare)
 	q.Push("a", 1)
 	q.Push("b", 1)
 	q.Push("c", 1)
@@ -89,7 +93,9 @@ func TestUniqueQueue_Push__should_support_duplicate_priority_items(t *testing.T)
 }
 
 func TestUniqueQueue_Push__should_update_existing_priority(t *testing.T) {
-	q := NewUniqueOrdered[string, int]()
+	compare := func(a, b int) int { return a - b }
+
+	q := NewUnique[string, int](compare)
 	q.Push("a", 1)
 	q.Push("a", 2)
 	q.Push("a", 3)

@@ -4,7 +4,6 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/basecomplextech/baselibrary/compare"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -137,7 +136,7 @@ func (n *leafNode[K, V]) mutable() bool {
 // methods
 
 // indexOf returns an index of an item with key >= key.
-func (n *leafNode[K, V]) indexOf(key K, compare compare.Func[K]) int {
+func (n *leafNode[K, V]) indexOf(key K, compare CompareFunc[K]) int {
 	return sort.Search(len(n.items), func(i int) bool {
 		key0 := n.items[i].key
 		cmp := compare(key0, key)
@@ -145,7 +144,7 @@ func (n *leafNode[K, V]) indexOf(key K, compare compare.Func[K]) int {
 	})
 }
 
-func (n *leafNode[K, V]) get(key K, compare compare.Func[K]) (v V, ok bool) {
+func (n *leafNode[K, V]) get(key K, compare CompareFunc[K]) (v V, ok bool) {
 	index := n.indexOf(key, compare)
 
 	// Return if not found
@@ -160,7 +159,7 @@ func (n *leafNode[K, V]) get(key K, compare compare.Func[K]) (v V, ok bool) {
 	return item.value, true
 }
 
-func (n *leafNode[K, V]) put(key K, value V, compare compare.Func[K]) bool {
+func (n *leafNode[K, V]) put(key K, value V, compare CompareFunc[K]) bool {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -206,7 +205,7 @@ func (n *leafNode[K, V]) put(key K, value V, compare compare.Func[K]) bool {
 	return true
 }
 
-func (n *leafNode[K, V]) delete(key K, compare compare.Func[K]) bool {
+func (n *leafNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -235,7 +234,7 @@ func (n *leafNode[K, V]) delete(key K, compare compare.Func[K]) bool {
 	return true
 }
 
-func (n *leafNode[K, V]) contains(key K, compare compare.Func[K]) bool {
+func (n *leafNode[K, V]) contains(key K, compare CompareFunc[K]) bool {
 	index := n.indexOf(key, compare)
 	if index >= len(n.items) {
 		return false
