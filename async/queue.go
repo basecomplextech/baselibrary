@@ -103,5 +103,17 @@ func (q *queue[T]) Pop() (v T, ok bool) {
 
 // Wait returns a channel which is notified on new elements.
 func (q *queue[T]) Wait() <-chan struct{} {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
+	if len(q.list) > 0 {
+		return closedChan
+	}
 	return q.wait
+}
+
+var closedChan = make(chan struct{})
+
+func init() {
+	close(closedChan)
 }
