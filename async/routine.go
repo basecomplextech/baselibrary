@@ -4,7 +4,8 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-// Routine is a generic async routine which returns the result as a future, and can be cancelled.
+// Routine is an async routine which returns the result as a future, recovers on panics,
+// and can be cancelled.
 type Routine[T any] interface {
 	Future[T]
 
@@ -14,8 +15,8 @@ type Routine[T any] interface {
 
 // Methods
 
-// Run runs a function in a new routine, recovers on panics.
-func Run(fn func(cancel <-chan struct{}) status.Status) Routine[struct{}] {
+// Go runs a function in a new routine, recovers on panics.
+func Go(fn func(cancel <-chan struct{}) status.Status) Routine[struct{}] {
 	r := newRoutine[struct{}]()
 
 	go func() {
@@ -36,8 +37,8 @@ func Run(fn func(cancel <-chan struct{}) status.Status) Routine[struct{}] {
 	return r
 }
 
-// Execute executes a function in a new routine, recovers on panics.
-func Execute[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Routine[T] {
+// Call calls a function in a new routine, and returns its result, recovers on panics.
+func Call[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
 
 	go func() {
@@ -62,7 +63,7 @@ func Execute[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Routine[
 // Join joins all routines into a single routine.
 // The routine returns all the results and the first non-OK status.
 func Join[T any](routines ...Routine[T]) Routine[[]T] {
-	return Execute(func(cancel <-chan struct{}) ([]T, status.Status) {
+	return Call(func(cancel <-chan struct{}) ([]T, status.Status) {
 		// Await all or cancel
 		st := status.OK
 	loop:
