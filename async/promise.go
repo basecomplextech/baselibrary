@@ -12,22 +12,14 @@ type Promise[T any] interface {
 
 	// Complete completes the promise with a status and a result.
 	Complete(result T, st status.Status) bool
+
+	// Reject rejects the promise with a status.
+	Reject(st status.Status) bool
 }
 
 // NewPromise returns a pending promise.
 func NewPromise[T any]() Promise[T] {
 	return newPromise[T]()
-}
-
-// Reject rejects the promise with a status.
-func Reject[T any](p Promise[T], st status.Status) bool {
-	var zero T
-	return p.Complete(zero, st)
-}
-
-// Resolve resolves the promise with a result.
-func Resolve[T any](p Promise[T], result T) bool {
-	return p.Complete(result, status.OK)
 }
 
 // internal
@@ -84,4 +76,10 @@ func (p *promise[T]) Complete(result T, st status.Status) bool {
 
 	close(p.wait)
 	return true
+}
+
+// Reject rejects the promise with a status.
+func (p *promise[T]) Reject(st status.Status) bool {
+	var zero T
+	return p.Complete(zero, st)
 }

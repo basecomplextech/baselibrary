@@ -18,9 +18,14 @@ type Waiter interface {
 	Wait() <-chan struct{}
 }
 
-// Methods
+// Utility
 
 // CancelWait cancels and awaits an operation.
+//
+// Usually used with defer:
+//
+//	worker := runWorker()
+//	defer CancelWait(worker)
 func CancelWait(w Canceller) {
 	<-w.Cancel()
 }

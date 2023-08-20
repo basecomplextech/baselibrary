@@ -14,6 +14,9 @@ type Queue[T any] interface {
 	// Close clears and closes the queue.
 	Close()
 
+	// Len returns the number of elements in the queue.
+	Len() int
+
 	// Push adds an element to the queue, panics if the queue is closed.
 	Push(v T)
 
@@ -65,6 +68,14 @@ func (q *queue[T]) Close() {
 	q.list = nil
 	q.closed = true
 	close(q.wait)
+}
+
+// Len returns the number of elements in the queue.
+func (q *queue[T]) Len() int {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
+	return len(q.list)
 }
 
 // Push adds an element to the queue, panics if the queue is closed.

@@ -18,6 +18,8 @@ type Future[T any] interface {
 	Status() status.Status
 }
 
+// Utility
+
 // Resolved returns a successful future.
 func Resolved[T any](result T) Future[T] {
 	p := newPromise[T]()
