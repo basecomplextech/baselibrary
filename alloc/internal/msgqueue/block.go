@@ -81,6 +81,7 @@ func (b *block) write(msg []byte) {
 // reset resets the block read and write indexes.
 func (b *block) reset() {
 	b.Reset()
+
 	b.read = 0
 	b.started = false
 }

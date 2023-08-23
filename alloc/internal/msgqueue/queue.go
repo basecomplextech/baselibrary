@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -35,13 +36,13 @@ type MessageQueue interface {
 
 	// Wait
 
-	// Wait returns a channel which is notified when the queue is not empty.
+	// Wait returns a channel which is notified when more messages are available.
 	// The method returns a closed channel if the queue is closed.
 	Wait() <-chan struct{}
 
-	// WaitNotFull returns a channel which is notified when the queue is not full.
+	// WaitCanWrite returns a channel which is notified when a message can be written.
 	// The method returns a closed channel if the queue is closed.
-	WaitNotFull(size int) <-chan struct{}
+	WaitCanWrite(size int) <-chan struct{}
 
 	// Internal
 
@@ -76,13 +77,13 @@ type queue struct {
 	st     status.Status
 	blocks []*block
 
-	wait     chan struct{}
-	waitFlag bool
+	wait    chan struct{}
+	waiting bool
 
-	waitNotFull     chan struct{}
-	waitNotFullFlag bool
+	waitCanWrite    chan struct{}
+	waitingCanWrite bool
 
-	maxCap int
+	maxCap int // max capacity reached, used in benchmarks
 }
 
 func newQueue(heap *heap.Heap, cap int) *queue {
@@ -95,8 +96,8 @@ func newQueue(heap *heap.Heap, cap int) *queue {
 		cap:  cap,
 		st:   status.OK,
 
-		wait:        make(chan struct{}, 1),
-		waitNotFull: make(chan struct{}, 1),
+		wait:         make(chan struct{}, 1),
+		waitCanWrite: make(chan struct{}, 1),
 	}
 }
 
@@ -129,8 +130,8 @@ func (q *queue) Close() {
 	}
 
 	q.st = status.End
-	q.notifyNotEmpty()
-	q.notifyNotFull()
+	q.notifyCanRead()
+	q.notifyCanWrite()
 }
 
 // CloseWithError closes the queue for writing, it is still possible to read the existing messages.
@@ -143,8 +144,8 @@ func (q *queue) CloseWithError(st status.Status) {
 	}
 
 	q.st = st
-	q.notifyNotEmpty()
-	q.notifyNotFull()
+	q.notifyCanRead()
+	q.notifyCanWrite()
 }
 
 // Read/write
@@ -154,7 +155,9 @@ func (q *queue) CloseWithError(st status.Status) {
 func (q *queue) Read() ([]byte, bool, status.Status) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	q.waitFlag = false
+
+	q.waiting = false
+	defer q.notifyCanWrite()
 
 	for {
 		// Get first block
@@ -163,25 +166,23 @@ func (q *queue) Read() ([]byte, bool, status.Status) {
 			return nil, false, q.st
 		}
 
-		// Move to the next message
+		// Read the next message
 		msg, ok := block.next()
-		switch {
-		case ok:
-			// Return the next message
-			q.notifyNotFull()
+		if ok {
 			return msg, true, status.OK
-
-		case len(q.blocks) == 1:
-			// Reset if the only block and no more messages
-			block.reset()
-			q.notifyNotFull()
-			return nil, false, status.OK
-
-		default:
-			// Release the block if read and no more messages
-			q.releaseBlock()
-			q.notifyNotFull()
 		}
+
+		// No more unread messages
+		// Release block if more blocks
+		if len(q.blocks) > 1 {
+			q.releaseBlock()
+			continue
+		}
+
+		// Reset the only block and return
+		block.reset()
+		return nil, false, q.st
+
 	}
 }
 
@@ -190,6 +191,9 @@ func (q *queue) Read() ([]byte, bool, status.Status) {
 func (q *queue) Write(msg []byte) (bool, status.Status) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
+
+	q.waitingCanWrite = false
+	defer q.notifyCanRead()
 
 	if !q.st.OK() {
 		return false, q.st
@@ -214,13 +218,12 @@ func (q *queue) Write(msg []byte) (bool, status.Status) {
 
 	// Write message
 	block.write(msg)
-	q.notifyNotEmpty()
 	return true, status.OK
 }
 
 // Wait
 
-// Wait returns a channel which is notified when the queue is not empty.
+// Wait returns a channel which is notified when more messages are available.
 // The method returns a closed channel if the queue is closed.
 func (q *queue) Wait() <-chan struct{} {
 	q.mu.Lock()
@@ -241,13 +244,13 @@ func (q *queue) Wait() <-chan struct{} {
 	default:
 	}
 
-	q.waitFlag = true
+	q.waiting = true
 	return q.wait
 }
 
-// WaitNotFull returns a channel which is notified when the queue is not full.
+// WaitCanWrite returns a channel which is notified when a message can be written.
 // The method returns a closed channel if the queue is closed.
-func (q *queue) WaitNotFull(size int) <-chan struct{} {
+func (q *queue) WaitCanWrite(size int) <-chan struct{} {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -260,27 +263,37 @@ func (q *queue) WaitNotFull(size int) <-chan struct{} {
 	// Return if can write n
 	last, ok := q.last()
 	switch {
-	case ok && last.rem() >= n:
-		return closedChan
+	case ok:
+		if last.rem() >= n {
+			return closedChan
+		}
 	case q.canAllocBlock(n):
 		return closedChan
 	}
 
 	// Wait for more space
 	select {
-	case <-q.waitNotFull:
+	case <-q.waitCanWrite:
 	default:
 	}
 
-	q.waitNotFullFlag = true
-	return q.waitNotFull
+	q.waitingCanWrite = true
+	return q.waitCanWrite
 }
 
 // Internal
 
 // Free releases the queue and its iternal resources.
 func (q *queue) Free() {
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
+	for _, b := range q.blocks {
+		q.heap.Free(b.Block)
+	}
+
+	slices.Clear(q.blocks)
+	q.blocks = q.blocks[:0]
 }
 
 // private
@@ -289,7 +302,6 @@ func (q *queue) first() (*block, bool) {
 	if len(q.blocks) == 0 {
 		return nil, false
 	}
-
 	return q.blocks[0], true
 }
 
@@ -297,7 +309,6 @@ func (q *queue) last() (*block, bool) {
 	if len(q.blocks) == 0 {
 		return nil, false
 	}
-
 	return q.blocks[len(q.blocks)-1], true
 }
 
@@ -305,7 +316,6 @@ func (q *queue) empty() bool {
 	if len(q.blocks) == 0 {
 		return true
 	}
-
 	unread := q.blocks[0].unread()
 	return unread == 0
 }
@@ -336,13 +346,14 @@ func (q *queue) allocBlock(n int) *block {
 		size = n
 	}
 
+	// Alloc new block
 	b := q.heap.Alloc(size)
 	block := &block{Block: b}
 	q.blocks = append(q.blocks, block)
 
-	cap := q.blocksCapacity()
-	if cap > q.maxCap {
-		q.maxCap = cap
+	max := q.blocksCapacity()
+	if max > q.maxCap {
+		q.maxCap = max
 	}
 	return block
 }
@@ -387,10 +398,10 @@ func (q *queue) blocksCapacity() int {
 	return cap
 }
 
-// notify
+// notifyCanRead
 
-func (q *queue) notifyNotEmpty() {
-	if !q.waitFlag {
+func (q *queue) notifyCanRead() {
+	if !q.waiting {
 		return
 	}
 
@@ -400,13 +411,13 @@ func (q *queue) notifyNotEmpty() {
 	}
 }
 
-func (q *queue) notifyNotFull() {
-	if !q.waitNotFullFlag {
+func (q *queue) notifyCanWrite() {
+	if !q.waitingCanWrite {
 		return
 	}
 
 	select {
-	case q.waitNotFull <- struct{}{}:
+	case q.waitCanWrite <- struct{}{}:
 	default:
 	}
 }
