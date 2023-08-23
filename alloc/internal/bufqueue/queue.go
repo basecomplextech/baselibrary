@@ -1,4 +1,4 @@
-package msgqueue
+package bufqueue
 
 import (
 	"sync"
@@ -8,8 +8,8 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-// MessageQueue is byte message queue, which internaly allocates memory in blocks.
-type MessageQueue interface {
+// BufferQueue is a queue which transfers binary messages, internaly allocates memory in blocks.
+type BufferQueue interface {
 	// Cap returns the maximum capacity of the queue in bytes, 0 means unlimited.
 	Cap() int
 
@@ -51,7 +51,7 @@ type MessageQueue interface {
 }
 
 // New returns an unbounded queue.
-func New(heap *heap.Heap) MessageQueue {
+func New(heap *heap.Heap) BufferQueue {
 	return newQueue(heap, 0)
 }
 
@@ -59,7 +59,7 @@ func New(heap *heap.Heap) MessageQueue {
 // The capacity specifies a soft limit on the maximum number of bytes in the queue.
 // The queue is still able to allocate more memory if needed, for example,
 // to send bigger messages.
-func NewCap(heap *heap.Heap, cap int) MessageQueue {
+func NewCap(heap *heap.Heap, cap int) BufferQueue {
 	return newQueue(heap, cap)
 }
 
@@ -67,7 +67,7 @@ func NewCap(heap *heap.Heap, cap int) MessageQueue {
 
 const maxBlockSize = 1 << 17 // 128K
 
-var _ MessageQueue = (*queue)(nil)
+var _ BufferQueue = (*queue)(nil)
 
 type queue struct {
 	heap *heap.Heap
@@ -398,7 +398,7 @@ func (q *queue) blocksCapacity() int {
 	return cap
 }
 
-// notifyCanRead
+// notify
 
 func (q *queue) notifyCanRead() {
 	if !q.waiting {

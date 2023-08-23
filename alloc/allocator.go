@@ -3,6 +3,7 @@ package alloc
 import (
 	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 	"github.com/basecomplextech/baselibrary/alloc/internal/buf"
+	"github.com/basecomplextech/baselibrary/alloc/internal/bufqueue"
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 )
 
@@ -34,4 +35,14 @@ func (a *allocator) Buffer() *Buffer {
 // BufferSize allocates a new buffer with a preallocated capacity.
 func (a *allocator) BufferSize(size int) *Buffer {
 	return buf.NewSize(a.heap, size)
+}
+
+// BufferQueue allocates an unbounded buffer queue.
+func (a *allocator) BufferQueue() BufferQueue {
+	return bufqueue.New(a.heap)
+}
+
+// BufferQueueCap allocates a new buffer queue with a max capacity.
+func (a *allocator) BufferQueueCap(cap int) BufferQueue {
+	return bufqueue.NewCap(a.heap, cap)
 }

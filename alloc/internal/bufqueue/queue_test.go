@@ -1,10 +1,11 @@
-package msgqueue
+package bufqueue
 
 import (
 	"bytes"
 	"testing"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -181,6 +182,23 @@ func TestQueue_Read__should_notify_waiting_writer(t *testing.T) {
 	}
 }
 
+func TestQueue_Read__should_read_existing_messages_when_queue_closed(t *testing.T) {
+	h := heap.New()
+	q := newQueue(h, 0)
+	msg := []byte("hello, world")
+
+	testWrite(t, q, msg)
+	testWrite(t, q, msg)
+	q.Close()
+
+	testRead(t, q)
+	testRead(t, q)
+
+	_, ok, st := q.Read()
+	assert.Equal(t, status.End, st)
+	assert.False(t, ok)
+}
+
 // Write
 
 func TestQueue_Write__should_write_message(t *testing.T) {
@@ -256,6 +274,13 @@ func TestQueue_Write__should_notify_waiting_reader(t *testing.T) {
 	}
 }
 
-// Wait
+func TestQueue_Write__should_return_error_when_queue_closed(t *testing.T) {
+	h := heap.New()
+	q := newQueue(h, 0)
+	q.Close()
 
-// WaitCanWrite
+	msg := []byte("hello, world")
+	ok, st := q.Write(msg)
+	assert.Equal(t, status.End, st)
+	assert.False(t, ok)
+}
