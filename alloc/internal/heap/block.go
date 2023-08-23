@@ -27,8 +27,8 @@ func (b *Block) Len() int {
 	return len(b.buf)
 }
 
-// Free returns the free space in bytes.
-func (b *Block) Free() int {
+// Rem returns the remaining free space in bytes.
+func (b *Block) Rem() int {
 	return cap(b.buf) - len(b.buf)
 }
 

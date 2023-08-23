@@ -63,7 +63,7 @@ func (b *Buffer) Bytes() []byte {
 // Grow grows the buffer and returns an n-byte slice.
 func (b *Buffer) Grow(n int) []byte {
 	last := b.last()
-	if last == nil || last.Free() < n {
+	if last == nil || last.Rem() < n {
 		last = b.allocBlock(n)
 	}
 

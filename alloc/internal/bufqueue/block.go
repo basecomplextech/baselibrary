@@ -15,7 +15,7 @@ type block struct {
 
 // rem returns the remaining free space in bytes.
 func (b *block) rem() int {
-	return b.Free()
+	return b.Rem()
 }
 
 // unread returns the number of unread bytes.
@@ -65,7 +65,7 @@ func (b *block) next() ([]byte, bool) {
 
 // write writes a message to the block or returns panics if not enough space.
 func (b *block) write(msg []byte) {
-	rem := b.Free()
+	rem := b.Rem()
 	size := len(msg)
 
 	n := 4 + size
