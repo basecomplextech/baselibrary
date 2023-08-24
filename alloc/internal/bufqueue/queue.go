@@ -16,13 +16,16 @@ type BufferQueue interface {
 	// Len returns the number of unread bytes in the queue.
 	Len() int
 
+	// Status returns OK if the queue is open, End if the queue is closed.
+	Status() status.Status
+
 	// Close
 
 	// Close closes the queue for writing, it is still possible to read the existing messages.
 	Close()
 
-	// CloseWithError closes the queue for writing, it is still possible to read the existing messages.
-	CloseWithError(st status.Status)
+	// Closed returns true if the queue is closed.
+	Closed() bool
 
 	// Read/write
 
@@ -32,7 +35,7 @@ type BufferQueue interface {
 
 	// Write writes an message to the queue, returns (false, status.Wait) if the queue is full.
 	// The method returns a close status if the queue is closed.
-	Write(msg []byte) (bool, status.Status)
+	Write(msg []byte) (ok bool, wasEmpty bool, st status.Status)
 
 	// Wait
 
@@ -48,6 +51,9 @@ type BufferQueue interface {
 
 	// Free releases the queue and its iternal resources.
 	Free()
+
+	// Reset resets the queue, releases all unread messages, the queue can be used again.
+	Reset()
 }
 
 // New returns an unbounded queue.
@@ -77,11 +83,8 @@ type queue struct {
 	st     status.Status
 	blocks []*block
 
-	wait    chan struct{}
-	waiting bool
-
-	waitCanWrite    chan struct{}
-	waitingCanWrite bool
+	readWait  chan struct{}
+	writeWait chan struct{}
 
 	maxCap int // max capacity reached, used in benchmarks
 }
@@ -96,8 +99,8 @@ func newQueue(heap *heap.Heap, cap int) *queue {
 		cap:  cap,
 		st:   status.OK,
 
-		wait:         make(chan struct{}, 1),
-		waitCanWrite: make(chan struct{}, 1),
+		readWait:  make(chan struct{}, 1),
+		writeWait: make(chan struct{}, 1),
 	}
 }
 
@@ -118,6 +121,14 @@ func (q *queue) Len() int {
 	return n
 }
 
+// Status returns OK if the queue is open, End if the queue is closed.
+func (q *queue) Status() status.Status {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	return q.st
+}
+
 // Close
 
 // Close closes the queue for writing, it is still possible to read the existing messages.
@@ -130,22 +141,16 @@ func (q *queue) Close() {
 	}
 
 	q.st = status.End
-	q.notifyCanRead()
-	q.notifyCanWrite()
+	q.notifyReadWait()
+	q.notifyWriteWait()
 }
 
-// CloseWithError closes the queue for writing, it is still possible to read the existing messages.
-func (q *queue) CloseWithError(st status.Status) {
+// Closed returns true if the queue is closed.
+func (q *queue) Closed() bool {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	if !q.st.OK() {
-		return
-	}
-
-	q.st = st
-	q.notifyCanRead()
-	q.notifyCanWrite()
+	return !q.st.OK()
 }
 
 // Read/write
@@ -155,9 +160,7 @@ func (q *queue) CloseWithError(st status.Status) {
 func (q *queue) Read() ([]byte, bool, status.Status) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-
-	q.waiting = false
-	defer q.notifyCanWrite()
+	defer q.notifyWriteWait()
 
 	for {
 		// Get first block
@@ -188,18 +191,17 @@ func (q *queue) Read() ([]byte, bool, status.Status) {
 
 // Write writes an message to the queue, returns (false, status.Wait) if the queue is full.
 // The method returns a close status if the queue is closed.
-func (q *queue) Write(msg []byte) (bool, status.Status) {
+func (q *queue) Write(msg []byte) (ok bool, wasEmpty bool, st status.Status) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-
-	q.waitingCanWrite = false
-	defer q.notifyCanRead()
+	defer q.notifyReadWait()
 
 	if !q.st.OK() {
-		return false, q.st
+		return false, false, q.st
 	}
 
 	n := len(msg) + 4
+	empty := q.empty()
 
 	// Try to get the last block
 	block, ok := q.last()
@@ -211,14 +213,14 @@ func (q *queue) Write(msg []byte) (bool, status.Status) {
 	case block.rem() < n:
 		// Try to alloc a new block, return false when full
 		if !q.canAllocBlock(n) {
-			return false, status.OK
+			return false, empty, status.OK
 		}
 		block = q.allocBlock(n)
 	}
 
 	// Write message
 	block.write(msg)
-	return true, status.OK
+	return true, empty, status.OK
 }
 
 // Wait
@@ -240,12 +242,10 @@ func (q *queue) Wait() <-chan struct{} {
 
 	// Wait for more messages
 	select {
-	case <-q.wait:
+	case <-q.readWait:
 	default:
 	}
-
-	q.waiting = true
-	return q.wait
+	return q.readWait
 }
 
 // WaitCanWrite returns a channel which is notified when a message can be written.
@@ -273,12 +273,10 @@ func (q *queue) WaitCanWrite(size int) <-chan struct{} {
 
 	// Wait for more space
 	select {
-	case <-q.waitCanWrite:
+	case <-q.writeWait:
 	default:
 	}
-
-	q.waitingCanWrite = true
-	return q.waitCanWrite
+	return q.writeWait
 }
 
 // Internal
@@ -288,12 +286,19 @@ func (q *queue) Free() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	for _, b := range q.blocks {
-		q.heap.Free(b.Block)
-	}
+	q.freeBlocks()
+}
 
-	slices.Clear(q.blocks)
-	q.blocks = q.blocks[:0]
+// Reset resets the queue, releases all unread messages, the queue can be used again.
+func (q *queue) Reset() {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	q.freeBlocks()
+	q.notifyReadWait()
+	q.notifyWriteWait()
+
+	q.st = status.OK
 }
 
 // private
@@ -398,26 +403,28 @@ func (q *queue) blocksCapacity() int {
 	return cap
 }
 
-// notify
-
-func (q *queue) notifyCanRead() {
-	if !q.waiting {
-		return
+// freeBlocks returns all blocks to the heap.
+func (q *queue) freeBlocks() {
+	for _, b := range q.blocks {
+		q.heap.Free(b.Block)
 	}
 
+	slices.Clear(q.blocks)
+	q.blocks = q.blocks[:0]
+}
+
+// notify
+
+func (q *queue) notifyReadWait() {
 	select {
-	case q.wait <- struct{}{}:
+	case q.readWait <- struct{}{}:
 	default:
 	}
 }
 
-func (q *queue) notifyCanWrite() {
-	if !q.waitingCanWrite {
-		return
-	}
-
+func (q *queue) notifyWriteWait() {
 	select {
-	case q.waitCanWrite <- struct{}{}:
+	case q.writeWait <- struct{}{}:
 	default:
 	}
 }

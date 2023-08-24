@@ -23,7 +23,7 @@ func BenchmarkQueue_16b(b *testing.B) {
 
 	go func() {
 		for i := 0; i < b.N; {
-			ok, st := q.Write(msg0)
+			ok, _, st := q.Write(msg0)
 			if !st.OK() {
 				b.Fatal(st)
 			}
@@ -80,7 +80,7 @@ func BenchmarkQueue_128b(b *testing.B) {
 
 	go func() {
 		for i := 0; i < b.N; {
-			ok, st := q.Write(msg0)
+			ok, _, st := q.Write(msg0)
 			if !st.OK() {
 				b.Fatal(st)
 			}
@@ -137,7 +137,7 @@ func BenchmarkQueue_1024b(b *testing.B) {
 
 	go func() {
 		for i := 0; i < b.N; {
-			ok, st := q.Write(msg0)
+			ok, _, st := q.Write(msg0)
 			if !st.OK() {
 				b.Fatal(st)
 			}

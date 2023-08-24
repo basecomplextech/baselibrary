@@ -13,7 +13,7 @@ import (
 func testWrite(t *testing.T, q *queue, msg []byte) {
 	t.Helper()
 
-	ok, st := q.Write(msg)
+	ok, _, st := q.Write(msg)
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -42,7 +42,7 @@ func TestQueue__should_write_and_read_message(t *testing.T) {
 	q := newQueue(h, 0)
 
 	msg0 := []byte("hello, world")
-	ok, st := q.Write(msg0)
+	ok, _, st := q.Write(msg0)
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -206,14 +206,22 @@ func TestQueue_Write__should_write_message(t *testing.T) {
 	q := newQueue(h, 0)
 	msg := []byte("hello, world")
 
-	ok, st := q.Write(msg)
+	ok, wasEmpty, st := q.Write(msg)
 	if !st.OK() {
 		t.Fatal(st)
 	}
+	require.True(t, ok)
+	assert.True(t, wasEmpty)
 
 	b := q.blocks[0].Bytes()
-	assert.True(t, ok)
 	assert.Equal(t, msg, b[4:])
+
+	ok, wasEmpty, st = q.Write(msg)
+	if !st.OK() {
+		t.Fatal(st)
+	}
+	assert.True(t, ok)
+	assert.False(t, wasEmpty)
 }
 
 func TestQueue_Write__should_alloc_next_block(t *testing.T) {
@@ -234,7 +242,7 @@ func TestQueue_Write__should_return_false_when_queue_full(t *testing.T) {
 	msg := bytes.Repeat([]byte("a"), 1024-4)
 	testWrite(t, q, msg)
 
-	ok, st := q.Write(msg)
+	ok, _, st := q.Write(msg)
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -252,7 +260,7 @@ func TestQueue_Write__should_return_false_when_all_blocks_full(t *testing.T) {
 	testWrite(t, q, msg)
 	testWrite(t, q, msg)
 
-	ok, st := q.Write(msg)
+	ok, _, st := q.Write(msg)
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -280,7 +288,7 @@ func TestQueue_Write__should_return_error_when_queue_closed(t *testing.T) {
 	q.Close()
 
 	msg := []byte("hello, world")
-	ok, st := q.Write(msg)
+	ok, _, st := q.Write(msg)
 	assert.Equal(t, status.End, st)
 	assert.False(t, ok)
 }
