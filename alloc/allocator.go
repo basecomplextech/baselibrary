@@ -3,8 +3,8 @@ package alloc
 import (
 	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 	"github.com/basecomplextech/baselibrary/alloc/internal/buf"
-	"github.com/basecomplextech/baselibrary/alloc/internal/bufqueue"
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/alloc/internal/msgqueue"
 )
 
 var global = newAllocator(heap.Global())
@@ -37,12 +37,12 @@ func (a *allocator) BufferSize(size int) *Buffer {
 	return buf.NewSize(a.heap, size)
 }
 
-// BufferQueue allocates an unbounded buffer queue.
-func (a *allocator) BufferQueue() BufferQueue {
-	return bufqueue.New(a.heap)
+// MessageQueue allocates an unbounded buffer queue.
+func (a *allocator) MessageQueue() MessageQueue {
+	return msgqueue.New(a.heap)
 }
 
-// BufferQueueCap allocates a new buffer queue with a max capacity.
-func (a *allocator) BufferQueueCap(cap int) BufferQueue {
-	return bufqueue.NewCap(a.heap, cap)
+// MessageQueueCap allocates a new buffer queue with a max capacity.
+func (a *allocator) MessageQueueCap(cap int) MessageQueue {
+	return msgqueue.NewCap(a.heap, cap)
 }

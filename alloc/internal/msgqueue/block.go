@@ -1,4 +1,4 @@
-package bufqueue
+package msgqueue
 
 import (
 	"encoding/binary"
