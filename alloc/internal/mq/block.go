@@ -12,9 +12,6 @@ type block struct {
 
 	readIndex  int32 // next read start, mutated by reader
 	writeIndex int32 // last write end, mutated by writer, can be loaded atomically by reader
-
-	// guarded by queue.mu
-	acquired bool // acquired by writer, mutated by writer
 }
 
 func newBlock(b *heap.Block) *block {
@@ -89,10 +86,6 @@ func (b *block) free() int {
 
 // reset resets the block.
 func (b *block) reset() {
-	if b.acquired {
-		panic("block is acquired")
-	}
-
 	b.readIndex = 0
 	b.writeIndex = 0
 }

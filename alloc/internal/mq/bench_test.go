@@ -2,6 +2,7 @@ package mq
 
 import (
 	"bytes"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -18,8 +19,8 @@ func BenchmarkQueue_16b(b *testing.B) {
 	b.SetBytes(int64(len(msg0)))
 
 	t0 := time.Now()
-	waitWrite := 0
-	waitRead := 0
+	waitWrite := int64(0)
+	waitRead := int64(0)
 
 	go func() {
 		for i := 0; i < b.N; {
@@ -34,7 +35,7 @@ func BenchmarkQueue_16b(b *testing.B) {
 			}
 
 			<-q.WriteWait(len(msg0))
-			waitWrite++
+			atomic.AddInt64(&waitWrite, 1)
 		}
 	}()
 
@@ -182,7 +183,7 @@ func BenchmarkQueue_1024b(b *testing.B) {
 func BenchmarkQueue_Large_Parallel(b *testing.B) {
 	h := heap.New()
 	q := newQueue(h, 1024*1024)
-	msg0 := bytes.Repeat([]byte("a"), largeMessageSize)
+	msg0 := bytes.Repeat([]byte("a"), 128*1024)
 
 	b.ResetTimer()
 	b.ReportAllocs()

@@ -17,20 +17,16 @@ const (
 	// maxBlockSize tries to keep blocks from growing too large.
 	// larger blocks can still be allocated to fit large messages.
 	maxBlockSize = 1 << 17 // 128K
-
-	// largeMessageSize are written using two-phase write.
-	largeMessageSize = (1024 * 1024) - 4
 )
 
 type queue struct {
 	cap  int // maximum queue capacity, it is a soft limit, 0 means unlimited
 	heap *heap.Heap
 
-	// single reader/writer locks
+	// single reader lock
 	rmu sync.Mutex
-	wmu sync.Mutex
 
-	// channels to reader/writer to wait on
+	// channels for reader/writer to wait on
 	readChan  chan struct{}
 	writeChan chan struct{}
 
@@ -39,9 +35,6 @@ type queue struct {
 	closed bool
 	head   *block // can be accessed atomically by reader
 	more   []*block
-
-	// test
-	useLarge bool // use two-phase write for large messages
 }
 
 func newQueue(heap *heap.Heap, cap int) *queue {
@@ -51,8 +44,6 @@ func newQueue(heap *heap.Heap, cap int) *queue {
 
 		readChan:  make(chan struct{}, 1),
 		writeChan: make(chan struct{}, 1),
-
-		useLarge: true,
 	}
 }
 
@@ -72,9 +63,6 @@ func (q *queue) clear() {
 func (q *queue) close() {
 	q.rmu.Lock()
 	defer q.rmu.Unlock()
-
-	q.wmu.Lock()
-	defer q.wmu.Unlock()
 
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -107,7 +95,7 @@ func (q *queue) read() ([]byte, bool, status.Status) {
 
 // readBlock returns a block to read from, or nil if the queue is empty.
 func (q *queue) readBlock() (*block, bool, status.Status) {
-	// Fast path: atomically load head and return if it is not empty
+	// Fast path: atomically load head and return if it is not empty.
 	{
 		head := q.loadHead()
 		if head == nil {
@@ -127,27 +115,20 @@ func (q *queue) readBlock() (*block, bool, status.Status) {
 	defer q.notifyWrite()
 
 	for {
-		// Check head again
+		// Check head again.
 		head := q.head
 		if head == nil {
 			break
 		}
 
-		// Return if not empty
+		// Return if not empty.
 		ri := head.readIndex
 		wi := head.writeIndex
 		if ri < wi {
 			return head, true, status.OK
 		}
 
-		// Head is empty, it may also be acquired by the writer.
-		// We have to wait for the writer to release it.
-		if head.acquired {
-			return nil, false, status.OK
-		}
-
-		// Head is empty and not acquired by the writer,
-		// so it can be reset or released.
+		// Head is empty, it can be reset or released.
 		if len(q.more) == 0 {
 			head.reset()
 			break
@@ -163,14 +144,14 @@ func (q *queue) readBlock() (*block, bool, status.Status) {
 		q.more = q.more[:len(q.more)-1]
 	}
 
-	// Head is nil or (empty, not acquired and there are no more blocks).
+	// Head is nil or empty, and there are no more blocks.
 	if q.closed {
 		return nil, false, status.End
 	}
 	return nil, false, status.OK
 }
 
-// readWait returns a channel to wait for more messages or a close status.
+// readWait returns a channel to wait for more messages or an end.
 func (q *queue) readWait() <-chan struct{} {
 	q.rmu.Lock()
 	defer q.rmu.Unlock()
@@ -207,23 +188,9 @@ func (q *queue) write(msg []byte) (bool, status.Status) {
 		panic("message too large")
 	}
 
-	q.wmu.Lock()
-	defer q.wmu.Unlock()
-	defer q.notifyRead()
-
-	// Use two-phase write for large messages.
-	if q.useLarge && len(msg) >= largeMessageSize {
-		return q.writeLarge(msg)
-	}
-
-	// Use fast path for small messages.
-	return q.writeFast(msg)
-}
-
-// writeFast writes a small message directly to the queue inside the lock.
-func (q *queue) writeFast(msg []byte) (bool, status.Status) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
+	defer q.notifyRead()
 
 	if q.closed {
 		return false, status.End
@@ -232,7 +199,7 @@ func (q *queue) writeFast(msg []byte) (bool, status.Status) {
 	size := len(msg)
 
 	// Get a block to write to.
-	block, ok := q._writeBlock(size, false /* no acquire */)
+	block, ok := q._writeBlock(size)
 	if !ok {
 		return false, status.OK
 	}
@@ -243,63 +210,17 @@ func (q *queue) writeFast(msg []byte) (bool, status.Status) {
 	return true, status.OK
 }
 
-// writeLarge writes a large message using two-phase write.
-func (q *queue) writeLarge(msg []byte) (bool, status.Status) {
-	// Acquire a block to write to.
-	block, ok, st := q.writeBlock(len(msg), true /* acquire block */)
-	switch {
-	case !st.OK():
-		return false, st
-	case !ok:
-		return false, status.OK
-	}
-
-	// Copy message outside of the lock.
-	wi := block.copy(msg)
-
-	// Commit the write.
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	block.acquired = false
-	if q.closed {
-		return false, status.End
-	}
-
-	block.storeWriteIndex(wi)
-	return true, status.OK
-}
-
-// writeBlock acquires a block to write to.
-func (q *queue) writeBlock(size int, acquire bool) (*block, bool, status.Status) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	if q.closed {
-		return nil, false, status.End
-	}
-
-	block, ok := q._writeBlock(size, acquire)
-	if !ok {
-		return nil, false, status.OK
-	}
-	return block, true, status.OK
-}
-
-// _writeBlock acquires a block to write to.
-func (q *queue) _writeBlock(size int, acquire bool) (*block, bool) {
+// _writeBlock returns or allocates a block to write to.
+func (q *queue) _writeBlock(size int) (*block, bool) {
 	n := 4 + size
 
-	// Acquire tail if it has enough free space.
+	// Return tail if it has enough free space.
 	tail := q.tail()
 	if tail != nil && tail.free() >= n {
-		if acquire {
-			tail.acquired = true
-		}
 		return tail, true
 	}
 
-	// Check queue is not full. Also messages can be larger than the queue max capacity.
+	// Check queue is not full. Messages can be larger than the queue max capacity.
 	// In this case we write it to a new block, but only if there are no more blocks yet.
 	if q.cap > 0 {
 		large := n > q.cap
@@ -317,26 +238,20 @@ func (q *queue) _writeBlock(size int, acquire bool) (*block, bool) {
 
 	// Allocate a new block.
 	block := q.alloc(n)
-	if acquire {
-		block.acquired = true
-	}
 	return block, true
 }
 
 // writeWait returns a channel to wait for more space.
 func (q *queue) writeWait(size int) <-chan struct{} {
-	q.wmu.Lock()
-	defer q.wmu.Unlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
 	if q.closed {
 		return closedChan
 	}
 
-	_, ok, st := q.writeBlock(size, false /* do not acquire block */)
-	switch {
-	case !st.OK():
-		return closedChan
-	case ok:
+	_, ok := q._writeBlock(size)
+	if ok {
 		return closedChan
 	}
 
@@ -363,9 +278,6 @@ func (q *queue) reset() {
 	q.rmu.Lock()
 	defer q.rmu.Unlock()
 
-	q.wmu.Lock()
-	defer q.wmu.Unlock()
-
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -384,9 +296,6 @@ func (q *queue) reset() {
 func (q *queue) free() {
 	q.rmu.Lock()
 	defer q.rmu.Unlock()
-
-	q.wmu.Lock()
-	defer q.wmu.Unlock()
 
 	q.mu.Lock()
 	defer q.mu.Unlock()
