@@ -191,7 +191,7 @@ func BenchmarkQueue_Large_Parallel(b *testing.B) {
 	b.SetParallelism(10)
 
 	t0 := time.Now()
-	waitWrite := 0
+	waitWrite := int64(0)
 	waitRead := 0
 
 	done := make(chan struct{})
@@ -200,15 +200,15 @@ func BenchmarkQueue_Large_Parallel(b *testing.B) {
 		defer close(done)
 
 		for {
-			_, ok, st := q.Read()
+			msg1, ok, st := q.Read()
 			if !st.OK() {
 				break
 			}
 
 			if ok {
-				// if !bytes.Equal(msg0, msg1) {
-				// 	b.Fatal("invalid message")
-				// }
+				if !bytes.Equal(msg0, msg1) {
+					b.Fatal("invalid message")
+				}
 				continue
 			}
 
@@ -229,7 +229,7 @@ func BenchmarkQueue_Large_Parallel(b *testing.B) {
 			}
 
 			<-q.WriteWait(len(msg0))
-			waitWrite++
+			atomic.AddInt64(&waitWrite, 1)
 		}
 	})
 

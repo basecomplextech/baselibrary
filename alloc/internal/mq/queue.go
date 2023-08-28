@@ -153,15 +153,21 @@ func (q *queue) readBlock() (*block, bool, status.Status) {
 
 // readWait returns a channel to wait for more messages or an end.
 func (q *queue) readWait() <-chan struct{} {
-	q.rmu.Lock()
-	defer q.rmu.Unlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
-	_, ok, st := q.readBlock()
-	switch {
-	case !st.OK():
+	if q.closed {
 		return closedChan
-	case ok:
-		return closedChan
+	}
+
+	// Check head not empty.
+	head := q.head
+	if head != nil {
+		ri := head.readIndex
+		wi := head.loadWriteIndex()
+		if ri < wi {
+			return closedChan
+		}
 	}
 
 	return q.readChan
