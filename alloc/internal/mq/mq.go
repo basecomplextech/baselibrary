@@ -1,6 +1,9 @@
 package mq
 
-import "github.com/basecomplextech/baselibrary/status"
+import (
+	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/status"
+)
 
 // MessageQueue is a single reader multiple writers binary message queue.
 // Writes mostly do not block readers.
@@ -41,6 +44,16 @@ type MessageQueue interface {
 	Free()
 }
 
+// New allocates an unbounded buffer queue.
+func New(heap *heap.Heap) MessageQueue {
+	return newQueue(heap, 0)
+}
+
+// NewCap allocates a message queue with a soft max capacity.
+func NewCap(heap *heap.Heap, cap int) MessageQueue {
+	return newQueue(heap, cap)
+}
+
 // Closed returns true if the queue is closed.
 func (q *queue) Closed() bool {
 	q.mu.Lock()
@@ -49,10 +62,10 @@ func (q *queue) Closed() bool {
 	return q.closed
 }
 
-// Methods
-
 // Clear releases all unread messages.
-func (q *queue) Clear() {}
+func (q *queue) Clear() {
+	q.clear()
+}
 
 // Close closes the queue for writing, it is still possible to read the existing messages.
 func (q *queue) Close() {
@@ -84,7 +97,11 @@ func (q *queue) WriteWait(size int) <-chan struct{} {
 }
 
 // Reset resets the queue, releases all unread messages, the queue can be used again.
-func (q *queue) Reset() {}
+func (q *queue) Reset() {
+	q.reset()
+}
 
 // Free releases the queue and its iternal resources.
-func (q *queue) Free() {}
+func (q *queue) Free() {
+	q.free()
+}

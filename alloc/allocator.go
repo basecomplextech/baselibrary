@@ -4,6 +4,7 @@ import (
 	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 	"github.com/basecomplextech/baselibrary/alloc/internal/buf"
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/alloc/internal/mq"
 	"github.com/basecomplextech/baselibrary/alloc/internal/msgqueue"
 )
 
@@ -45,4 +46,14 @@ func (a *allocator) MessageQueue() MessageQueue {
 // MessageQueueCap allocates a new buffer queue with a max capacity.
 func (a *allocator) MessageQueueCap(cap int) MessageQueue {
 	return msgqueue.NewCap(a.heap, cap)
+}
+
+// NewMQueue allocates an unbounded message queue.
+func (a *allocator) MQueue() MQueue {
+	return mq.New(a.heap)
+}
+
+// NewMQueueCap allocates a message queue with a max capacity.
+func (a *allocator) MQueueCap(cap int) MQueue {
+	return mq.NewCap(a.heap, cap)
 }

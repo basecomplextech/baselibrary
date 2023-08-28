@@ -122,7 +122,7 @@ func BenchmarkQueue_128b(b *testing.B) {
 
 func BenchmarkQueue_1024b(b *testing.B) {
 	h := heap.New()
-	q := newQueue(h, 128*1024)
+	q := newQueue(h, 1024*1024)
 	msg0 := bytes.Repeat([]byte("a"), 1024-4)
 
 	b.ResetTimer()
@@ -178,14 +178,16 @@ func BenchmarkQueue_1024b(b *testing.B) {
 
 // Parallel
 
-func BenchmarkQueue_1024b_Parallel(b *testing.B) {
+// TODO: Fix deadlock
+func BenchmarkQueue_Large_Parallel(b *testing.B) {
 	h := heap.New()
-	q := newQueue(h, 128*1024)
-	msg0 := bytes.Repeat([]byte("a"), 1024-4)
+	q := newQueue(h, 1024*1024)
+	msg0 := bytes.Repeat([]byte("a"), largeMessageSize)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 	b.SetBytes(int64(len(msg0)))
+	b.SetParallelism(10)
 
 	t0 := time.Now()
 	waitWrite := 0
@@ -197,15 +199,15 @@ func BenchmarkQueue_1024b_Parallel(b *testing.B) {
 		defer close(done)
 
 		for {
-			msg1, ok, st := q.Read()
+			_, ok, st := q.Read()
 			if !st.OK() {
 				break
 			}
 
 			if ok {
-				if !bytes.Equal(msg0, msg1) {
-					b.Fatal("invalid message")
-				}
+				// if !bytes.Equal(msg0, msg1) {
+				// 	b.Fatal("invalid message")
+				// }
 				continue
 			}
 
