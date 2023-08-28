@@ -1,4 +1,4 @@
-package msgqueue
+package mq
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ func BenchmarkQueue_16b(b *testing.B) {
 
 	go func() {
 		for i := 0; i < b.N; {
-			ok, _, st := q.Write(msg0)
+			ok, st := q.Write(msg0)
 			if !st.OK() {
 				b.Fatal(st)
 			}
@@ -33,7 +33,7 @@ func BenchmarkQueue_16b(b *testing.B) {
 				continue
 			}
 
-			<-q.WaitCanWrite(len(msg0))
+			<-q.WriteWait(len(msg0))
 			waitWrite++
 		}
 	}()
@@ -52,7 +52,7 @@ func BenchmarkQueue_16b(b *testing.B) {
 			continue
 		}
 
-		<-q.Wait()
+		<-q.ReadWait()
 		waitRead++
 	}
 
@@ -60,7 +60,6 @@ func BenchmarkQueue_16b(b *testing.B) {
 	ops := float64(b.N) / float64(sec)
 
 	b.ReportMetric(ops/1000_000, "mops")
-	b.ReportMetric(float64(q.maxCap), "max-cap")
 	b.ReportMetric(float64(waitWrite), "wait-write")
 	b.ReportMetric(float64(waitRead), "wait-read")
 }
@@ -80,7 +79,7 @@ func BenchmarkQueue_128b(b *testing.B) {
 
 	go func() {
 		for i := 0; i < b.N; {
-			ok, _, st := q.Write(msg0)
+			ok, st := q.Write(msg0)
 			if !st.OK() {
 				b.Fatal(st)
 			}
@@ -90,7 +89,7 @@ func BenchmarkQueue_128b(b *testing.B) {
 				continue
 			}
 
-			<-q.WaitCanWrite(len(msg0))
+			<-q.WriteWait(len(msg0))
 			waitWrite++
 		}
 	}()
@@ -109,7 +108,7 @@ func BenchmarkQueue_128b(b *testing.B) {
 			continue
 		}
 
-		<-q.Wait()
+		<-q.ReadWait()
 		waitRead++
 	}
 
@@ -117,7 +116,6 @@ func BenchmarkQueue_128b(b *testing.B) {
 	ops := float64(b.N) / float64(sec)
 
 	b.ReportMetric(ops/1000_000, "mops")
-	b.ReportMetric(float64(q.maxCap), "max-cap")
 	b.ReportMetric(float64(waitWrite), "wait-write")
 	b.ReportMetric(float64(waitRead), "wait-read")
 }
@@ -137,7 +135,7 @@ func BenchmarkQueue_1024b(b *testing.B) {
 
 	go func() {
 		for i := 0; i < b.N; {
-			ok, _, st := q.Write(msg0)
+			ok, st := q.Write(msg0)
 			if !st.OK() {
 				b.Fatal(st)
 			}
@@ -147,7 +145,7 @@ func BenchmarkQueue_1024b(b *testing.B) {
 				continue
 			}
 
-			<-q.WaitCanWrite(len(msg0))
+			<-q.WriteWait(len(msg0))
 			waitWrite++
 		}
 	}()
@@ -166,7 +164,7 @@ func BenchmarkQueue_1024b(b *testing.B) {
 			continue
 		}
 
-		<-q.Wait()
+		<-q.ReadWait()
 		waitRead++
 	}
 
@@ -174,10 +172,11 @@ func BenchmarkQueue_1024b(b *testing.B) {
 	ops := float64(b.N) / float64(sec)
 
 	b.ReportMetric(ops/1000_000, "mops")
-	b.ReportMetric(float64(q.maxCap), "max-cap")
 	b.ReportMetric(float64(waitWrite), "wait-write")
 	b.ReportMetric(float64(waitRead), "wait-read")
 }
+
+// Parallel
 
 func BenchmarkQueue_1024b_Parallel(b *testing.B) {
 	h := heap.New()
@@ -210,14 +209,14 @@ func BenchmarkQueue_1024b_Parallel(b *testing.B) {
 				continue
 			}
 
-			<-q.Wait()
+			<-q.ReadWait()
 			waitRead++
 		}
 	}()
 
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {
-			ok, _, st := q.Write(msg0)
+			ok, st := q.Write(msg0)
 			if !st.OK() {
 				b.Fatal(st)
 			}
@@ -226,7 +225,7 @@ func BenchmarkQueue_1024b_Parallel(b *testing.B) {
 				continue
 			}
 
-			<-q.WaitCanWrite(len(msg0))
+			<-q.WriteWait(len(msg0))
 			waitWrite++
 		}
 	})

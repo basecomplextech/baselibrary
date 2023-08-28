@@ -93,7 +93,6 @@ func (b *block) reset() {
 		panic("block is acquired")
 	}
 
-	b.b.Reset()
 	b.readIndex = 0
 	b.writeIndex = 0
 }

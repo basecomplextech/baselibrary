@@ -10,6 +10,8 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
+var _ MessageQueue = (*queue)(nil)
+
 // maxBlockSize tries to keep blocks from growing too large.
 // larger blocks can still be allocated to fit large messages.
 const maxBlockSize = 1 << 17 // 128K
