@@ -156,10 +156,6 @@ func (q *queue) readWait() <-chan struct{} {
 		return closedChan
 	}
 
-	select {
-	case <-q.readNotify:
-	default:
-	}
 	return q.readNotify
 }
 
@@ -274,10 +270,6 @@ func (q *queue) writeWait(size int) <-chan struct{} {
 		return closedChan
 	}
 
-	select {
-	case <-q.writeNotify:
-	default:
-	}
 	return q.writeNotify
 }
 
