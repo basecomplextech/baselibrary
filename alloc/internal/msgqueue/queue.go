@@ -1,6 +1,8 @@
 package msgqueue
 
 import (
+	"bytes"
+	"fmt"
 	"sync"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
@@ -183,6 +185,9 @@ func (q *queue) Read() ([]byte, bool, status.Status) {
 		// Read the next message
 		msg, ok := block.next()
 		if ok {
+			if bytes.Contains(msg, []byte("close")) {
+				fmt.Println("- queue read close")
+			}
 			return msg, true, status.OK
 		}
 
@@ -209,6 +214,10 @@ func (q *queue) Write(msg []byte) (ok bool, wasEmpty bool, st status.Status) {
 	defer q.mu.Unlock()
 	defer q.notifyReadWait()
 
+	if bytes.Contains(msg, []byte("close")) {
+		fmt.Println("- queue write close")
+	}
+
 	if q.closed {
 		return false, false, status.End
 	}
@@ -229,6 +238,10 @@ func (q *queue) Write(msg []byte) (ok bool, wasEmpty bool, st status.Status) {
 			return false, empty, status.OK
 		}
 		block = q.allocBlock(n)
+	}
+
+	if bytes.Contains(msg, []byte("close")) {
+		fmt.Println("- queue close written")
 	}
 
 	// Write message
