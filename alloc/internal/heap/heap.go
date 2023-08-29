@@ -13,11 +13,6 @@ func New() *Heap {
 	}
 }
 
-// Global returns the global heap.
-func Global() *Heap {
-	return global
-}
-
 // Alloc allocates a new block.
 func (h *Heap) Alloc(size int) *Block {
 	i := blockPool(size)

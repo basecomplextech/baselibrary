@@ -8,12 +8,12 @@ import (
 // The buffer must be freed after usage.
 type Buffer = buf.Buffer
 
-// NewBuffer allocates a buffer in the global allocator.
+// NewBuffer allocates a buffer.
 func NewBuffer() *Buffer {
-	return global.Buffer()
+	return buf.New(globalHeap)
 }
 
-// NewBuffer allocates a buffer of a preallocated capacity in the global allocator.
+// NewBuffer allocates a buffer of a preallocated capacity.
 func NewBufferSize(size int) *Buffer {
-	return global.BufferSize(size)
+	return buf.NewSize(globalHeap, size)
 }

@@ -11,10 +11,10 @@ type MQueue = mq.MQueue
 
 // NewMQueue allocates an unbounded buffer queue.
 func NewMQueue() MQueue {
-	return global.MQueue()
+	return mq.New(globalHeap)
 }
 
 // NewMQueueCap allocates a buffer queue with a max capacity.
 func NewMQueueCap(cap int) MQueue {
-	return global.MQueueCap(cap)
+	return mq.NewCap(globalHeap, cap)
 }
