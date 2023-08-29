@@ -11,7 +11,7 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-var _ MessageQueue = (*queue)(nil)
+var _ MQueue = (*queue)(nil)
 
 const (
 	// maxBlockSize tries to keep blocks from growing too large.
@@ -22,9 +22,6 @@ const (
 type queue struct {
 	cap  int // maximum queue capacity, it is a soft limit, 0 means unlimited
 	heap *heap.Heap
-
-	// single reader lock
-	rmu sync.Mutex
 
 	// channels for reader/writer to wait on
 	readChan  chan struct{}
@@ -49,21 +46,16 @@ func newQueue(heap *heap.Heap, cap int) *queue {
 
 // clear releases all unread messages.
 func (q *queue) clear() {
-	q.rmu.Lock()
-	defer q.rmu.Unlock()
-
 	q.mu.Lock()
 	defer q.mu.Unlock()
+	defer q.notifyRead()
 	defer q.notifyWrite()
 
 	q.freeBlocks()
 }
 
-// close closes the queue, it is still possible to read the existing message from it.
+// close closes the queue, it is still possible to read pending messages from it.
 func (q *queue) close() {
-	q.rmu.Lock()
-	defer q.rmu.Unlock()
-
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -78,9 +70,6 @@ func (q *queue) close() {
 
 // read reads the next message, the message is valid until the next call to read.
 func (q *queue) read() ([]byte, bool, status.Status) {
-	q.rmu.Lock()
-	defer q.rmu.Unlock()
-
 	block, ok, st := q.readBlock()
 	switch {
 	case !st.OK():
@@ -291,9 +280,6 @@ func (q *queue) notifyWrite() {
 
 // reset resets the queue, releases all unread messages, the queue can be used again.
 func (q *queue) reset() {
-	q.rmu.Lock()
-	defer q.rmu.Unlock()
-
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -310,9 +296,6 @@ func (q *queue) reset() {
 
 // free releases the queue and its iternal resources.
 func (q *queue) free() {
-	q.rmu.Lock()
-	defer q.rmu.Unlock()
-
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -410,7 +393,6 @@ func (q *queue) storeHead(b *block) {
 // tail
 
 func (q *queue) tail() *block {
-	// Get tail block
 	if len(q.more) > 0 {
 		return q.more[len(q.more)-1]
 	}

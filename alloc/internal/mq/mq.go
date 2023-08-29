@@ -5,9 +5,10 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-// MessageQueue is a single reader multiple writers binary message queue.
+// MQueue is a single reader multiple writers binary message queue.
+// The queue can be unbounded, or can be configured with a soft max capacity.
 // Writes mostly do not block readers.
-type MessageQueue interface {
+type MQueue interface {
 	// Closed returns true if the queue is closed.
 	Closed() bool
 
@@ -44,13 +45,13 @@ type MessageQueue interface {
 	Free()
 }
 
-// New allocates an unbounded buffer queue.
-func New(heap *heap.Heap) MessageQueue {
+// New allocates an unbounded message queue.
+func New(heap *heap.Heap) MQueue {
 	return newQueue(heap, 0)
 }
 
 // NewCap allocates a message queue with a soft max capacity.
-func NewCap(heap *heap.Heap, cap int) MessageQueue {
+func NewCap(heap *heap.Heap, cap int) MQueue {
 	return newQueue(heap, cap)
 }
 
