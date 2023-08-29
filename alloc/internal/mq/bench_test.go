@@ -22,8 +22,9 @@ func BenchmarkQueue_16b(b *testing.B) {
 	waitWrite := int64(0)
 	waitRead := int64(0)
 
+	N := b.N
 	go func() {
-		for i := 0; i < b.N; {
+		for i := 0; i < N; {
 			ok, st := q.Write(msg0)
 			if !st.OK() {
 				b.Fatal(st)
@@ -75,7 +76,7 @@ func BenchmarkQueue_128b(b *testing.B) {
 	b.SetBytes(int64(len(msg0)))
 
 	t0 := time.Now()
-	waitWrite := 0
+	waitWrite := int64(0)
 	waitRead := 0
 
 	go func() {
@@ -91,7 +92,7 @@ func BenchmarkQueue_128b(b *testing.B) {
 			}
 
 			<-q.WriteWait(len(msg0))
-			waitWrite++
+			atomic.AddInt64(&waitWrite, 1)
 		}
 	}()
 
@@ -131,7 +132,7 @@ func BenchmarkQueue_1024b(b *testing.B) {
 	b.SetBytes(int64(len(msg0)))
 
 	t0 := time.Now()
-	waitWrite := 0
+	waitWrite := int64(0)
 	waitRead := 0
 
 	go func() {
@@ -147,7 +148,7 @@ func BenchmarkQueue_1024b(b *testing.B) {
 			}
 
 			<-q.WriteWait(len(msg0))
-			waitWrite++
+			atomic.AddInt64(&waitWrite, 1)
 		}
 	}()
 
@@ -179,7 +180,6 @@ func BenchmarkQueue_1024b(b *testing.B) {
 
 // Parallel
 
-// TODO: Fix deadlock
 func BenchmarkQueue_Large_Parallel(b *testing.B) {
 	h := heap.New()
 	q := newQueue(h, 1024*1024)
@@ -192,10 +192,9 @@ func BenchmarkQueue_Large_Parallel(b *testing.B) {
 
 	t0 := time.Now()
 	waitWrite := int64(0)
-	waitRead := 0
+	waitRead := int64(0)
 
 	done := make(chan struct{})
-
 	go func() {
 		defer close(done)
 
@@ -212,24 +211,31 @@ func BenchmarkQueue_Large_Parallel(b *testing.B) {
 				continue
 			}
 
-			<-q.ReadWait()
-			waitRead++
+			select {
+			case <-q.ReadWait():
+			case <-time.After(time.Second):
+				b.Fatal("deadlock")
+			}
+			atomic.AddInt64(&waitRead, 1)
 		}
 	}()
 
 	b.RunParallel(func(p *testing.PB) {
+	outer:
 		for p.Next() {
-			ok, st := q.Write(msg0)
-			if !st.OK() {
-				b.Fatal(st)
-			}
+			// Retry in loop, not in p.Next(), otherwise, we'll block forever.
+			for {
+				ok, st := q.Write(msg0)
+				if !st.OK() {
+					b.Fatal(st)
+				}
+				if ok {
+					continue outer
+				}
 
-			if ok {
-				continue
+				<-q.WriteWait(len(msg0))
+				atomic.AddInt64(&waitWrite, 1)
 			}
-
-			<-q.WriteWait(len(msg0))
-			atomic.AddInt64(&waitWrite, 1)
 		}
 	})
 
