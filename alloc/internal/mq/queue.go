@@ -27,6 +27,9 @@ type queue struct {
 	readChan  chan struct{}
 	writeChan chan struct{}
 
+	// force single reader
+	rmu sync.Mutex
+
 	// state
 	mu     sync.Mutex
 	closed bool
@@ -70,6 +73,9 @@ func (q *queue) close() {
 
 // read reads the next message, the message is valid until the next call to read.
 func (q *queue) read() ([]byte, bool, status.Status) {
+	q.rmu.Lock()
+	defer q.rmu.Unlock()
+
 	block, ok, st := q.readBlock()
 	switch {
 	case !st.OK():
