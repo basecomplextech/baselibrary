@@ -8,9 +8,7 @@ import (
 // and can be cancelled.
 type Routine[T any] interface {
 	Future[T]
-
-	// Cancel requests the routine to cancel and returns a wait channel.
-	Cancel() <-chan struct{}
+	Canceller
 }
 
 // Methods
@@ -95,6 +93,13 @@ func Join[T any](routines ...Routine[T]) Routine[[]T] {
 		}
 		return results, st
 	})
+}
+
+// Exited returns a routine which has exited with the given result and status.
+func Exited[T any](result T, st status.Status) Routine[T] {
+	r := newRoutine[T]()
+	r.Complete(result, st)
+	return r
 }
 
 // internal

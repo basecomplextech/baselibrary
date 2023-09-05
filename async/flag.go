@@ -67,6 +67,7 @@ func (f *Flag) Set() bool {
 	return true
 }
 
+// TODO: Maybe rename in Unset
 // Reset resets the flag and replaces its wait channel with an open one.
 func (f *Flag) Reset() {
 	f.mu.Lock()

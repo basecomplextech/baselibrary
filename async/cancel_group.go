@@ -10,9 +10,10 @@ type CancelGroup struct {
 	mu   sync.Mutex
 	done bool
 
-	timers  []*time.Timer
-	tickers []*time.Ticker
-	waiters []CancelWaiter
+	services []Service
+	timers   []*time.Timer
+	tickers  []*time.Ticker
+	waiters  []CancelWaiter
 }
 
 // NewCancelGroup creates a new cancel group.
@@ -31,6 +32,19 @@ func (g *CancelGroup) Add(c CancelWaiter) {
 	}
 
 	g.waiters = append(g.waiters, c)
+}
+
+// AddService adds a service to the group, or immediately stops it if the group is cancelled.
+func (g *CancelGroup) AddService(s Service) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	if g.done {
+		s.Stop()
+		return
+	}
+
+	g.services = append(g.services, s)
 }
 
 // AddTicker adds a ticker to the group, or immediately stops it if the group is cancelled.
@@ -69,6 +83,9 @@ func (g *CancelGroup) Cancel() {
 	}
 	g.done = true
 
+	for _, s := range g.services {
+		s.Stop()
+	}
 	for _, t := range g.tickers {
 		t.Stop()
 	}
@@ -90,6 +107,10 @@ func (g *CancelGroup) CancelWait() {
 func (g *CancelGroup) Wait() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+
+	for _, s := range g.services {
+		<-s.Routine().Wait()
+	}
 
 	for _, w := range g.waiters {
 		<-w.Wait()
