@@ -20,7 +20,7 @@ const (
 	CodeError Code = "error"
 
 	// CodeFatal indicates a fatal error, i.e. a panic.
-	CodeFatal Code = "fatal"
+	CodeFatal Code = "fatal" // TODO: Maybe remove
 
 	// CodeCorrupted indicates any data corruption or loss.
 	CodeCorrupted Code = "corrupted"
@@ -44,13 +44,13 @@ const (
 // Unavailable class
 const (
 	// CodeClosed indicates that an object is closed and cannot be used anymore.
-	CodeClosed Code = "closed"
+	CodeClosed Code = "closed" // TODO: Maybe remove
 
 	// CodeCancelled indicates that an operation was cancelled or stopped on a request.
 	CodeCancelled Code = "cancelled"
 
 	// CodeRollback indicates that an operation was rolled backed.
-	CodeRollback Code = "rollback"
+	CodeRollback Code = "rollback" // TODO: Maybe remove
 
 	// CodeTimeout indicates that an operation timed out.
 	CodeTimeout Code = "timeout"
