@@ -6,11 +6,11 @@ import "sync"
 //
 // Example:
 //
-//	serving := async.NewFlag()
+//	serving := async.UnsetFlag()
 //
 //	func serve() {
-//		s.serving.Signal()
-//		defer s.serving.Reset()
+//		s.serving.Set()
+//		defer s.serving.Unset()
 //
 //		// ... start server ...
 //	}
@@ -31,18 +31,18 @@ type Flag struct {
 	setChan chan struct{} // closed when set
 }
 
-// NewFlag returns a new unset flag.
-func NewFlag() *Flag {
+// SetFlag returns a new set flag.
+func SetFlag() *Flag {
+	f := UnsetFlag()
+	f.Set()
+	return f
+}
+
+// UnsetFlag returns a new unset flag.
+func UnsetFlag() *Flag {
 	return &Flag{
 		setChan: make(chan struct{}),
 	}
-}
-
-// SetFlag returns a new set flag.
-func SetFlag() *Flag {
-	f := NewFlag()
-	f.Set()
-	return f
 }
 
 // IsSet returns true if the flag is set.
@@ -67,9 +67,8 @@ func (f *Flag) Set() bool {
 	return true
 }
 
-// TODO: Maybe rename in Unset
-// Reset resets the flag and replaces its wait channel with an open one.
-func (f *Flag) Reset() {
+// Unset unsets the flag and replaces its wait channel with an open one.
+func (f *Flag) Unset() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 

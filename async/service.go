@@ -48,7 +48,7 @@ type service struct {
 func newService(fn func(cancel <-chan struct{}) status.Status) *service {
 	return &service{
 		fn:      fn,
-		running: NewFlag(),
+		running: UnsetFlag(),
 		stopped: SetFlag(),
 	}
 }
@@ -87,7 +87,7 @@ func (s *service) Start() (Routine[struct{}], status.Status) {
 
 	s.routine = Go(s.run)
 	s.running.Set()
-	s.stopped.Reset()
+	s.stopped.Unset()
 	return s.routine, status.OK
 }
 
@@ -115,7 +115,7 @@ func (s *service) stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.running.Reset()
+	s.running.Unset()
 	s.stopped.Set()
 	s.routine = nil
 }

@@ -3,7 +3,7 @@ package async
 import "testing"
 
 func TestFlag__should_set_and_reset_flag(t *testing.T) {
-	f := NewFlag()
+	f := UnsetFlag()
 	select {
 	case <-f.Wait():
 		t.Fatal("flag should not be set")
@@ -17,7 +17,7 @@ func TestFlag__should_set_and_reset_flag(t *testing.T) {
 		t.Fatal("flag should be set")
 	}
 
-	f.Reset()
+	f.Unset()
 	select {
 	case <-f.Wait():
 		t.Fatal("flag should not be set")
