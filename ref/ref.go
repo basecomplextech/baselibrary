@@ -27,25 +27,10 @@ func RetainAll[R Ref](refs ...R) []R {
 	return refs
 }
 
-// RetainTree retains all references in a tree.
-func RetainTree[R Ref](tree ...[]R) [][]R {
-	for _, refs := range tree {
-		RetainAll(refs...)
-	}
-	return tree
-}
-
 // ReleaseAll releases all references.
 func ReleaseAll[R Ref](refs ...R) {
 	for _, r := range refs {
 		r.Release()
-	}
-}
-
-// ReleaseTree releases all references in a tree.
-func ReleaseTree[R Ref](tree ...[]R) {
-	for _, refs := range tree {
-		ReleaseAll(refs...)
 	}
 }
 

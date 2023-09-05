@@ -7,10 +7,9 @@ import (
 
 // R is a generic atomic countable reference.
 // It wraps an object and frees it when refcount reaches 0.
-type R[T Freer] struct {
-	// only one is set, src is used only in Map[S, D]
-	obj T
-	src refMap[T]
+type R[T any] struct {
+	obj   T
+	freer Freer
 
 	refs int64
 }
@@ -18,30 +17,36 @@ type R[T Freer] struct {
 // New returns a new reference with refcount 1.
 func New[T Freer](obj T) *R[T] {
 	return &R[T]{
-		obj:  obj,
-		refs: 1,
+		obj:   obj,
+		freer: obj,
+		refs:  1,
 	}
 }
 
-// Map returns a new reference which retains another reference and maps its object.
-// The method exists mostly to support casting in references.
-//
-// Example:
-//
-//	// *ref.R[*revision]
-//	src := machine.Head()
-//	defer src.Release()
-//
-//	// *ref.R[blockchain.Revision]
-//	dst := ref.Map(src, func(r Revision) blockchain.Revision {
-//		return r.(blockchain.Revision)
-//	})
-func Map[S Freer, D Freer](src *R[S], cast func(S) D) *R[D] {
-	m := newRefMap[S, D](src, cast)
+// NewFreer returns a new reference with a custom freer.
+func NewFreer[T any](obj T, freer Freer) *R[T] {
+	return &R[T]{
+		obj:   obj,
+		freer: freer,
+		refs:  1,
+	}
+}
 
-	return &R[D]{
-		src:  m,
-		refs: 1,
+// NewFreeFunc returns a new reference with a free function.
+func NewFreeFunc[T any](obj T, free func()) *R[T] {
+	return &R[T]{
+		obj:   obj,
+		freer: freeFunc(free),
+		refs:  1,
+	}
+}
+
+// NewFreeRef returns a new reference with another reference as a freer.
+func NewFreeRef[T any, T1 any](obj T, ref *R[T1]) *R[T] {
+	return &R[T]{
+		obj:   obj,
+		freer: (*freeRef[T1])(ref),
+		refs:  1,
 	}
 }
 
@@ -69,12 +74,10 @@ func (r *R[T]) Release() {
 		panic(fmt.Sprintf("release: %T already released", r.obj))
 	}
 
-	if r.src != nil {
-		r.src.free()
-		return
-	}
-
-	r.obj.Free()
+	var zero T
+	r.freer.Free()
+	r.freer = nil
+	r.obj = zero
 }
 
 // Unwrap returns the object or panics if the refcount is 0.
@@ -84,36 +87,5 @@ func (r *R[T]) Unwrap() T {
 		panic(fmt.Sprintf("unwrap: %T already released", r.obj))
 	}
 
-	if r.src != nil {
-		return r.src.unwrap()
-	}
 	return r.obj
-}
-
-// private
-
-type refMap[T Freer] interface {
-	free()
-	unwrap() T
-}
-
-type refMapImpl[S Freer, D Freer] struct {
-	src  *R[S]
-	cast func(S) D
-}
-
-func newRefMap[S Freer, D Freer](src *R[S], cast func(S) D) refMap[D] {
-	return &refMapImpl[S, D]{
-		src:  Retain(src),
-		cast: cast,
-	}
-}
-
-func (m *refMapImpl[S, D]) free() {
-	m.src.Release()
-	m.src = nil
-}
-
-func (m *refMapImpl[S, D]) unwrap() D {
-	return m.cast(m.src.Unwrap())
 }
