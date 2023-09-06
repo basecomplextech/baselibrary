@@ -23,17 +23,8 @@ func New[T Freer](obj T) *R[T] {
 	}
 }
 
-// NewFreer returns a new reference with a custom freer.
-func NewFreer[T any](obj T, freer Freer) *R[T] {
-	return &R[T]{
-		obj:   obj,
-		freer: freer,
-		refs:  1,
-	}
-}
-
-// NewFreeFunc returns a new reference with a free function.
-func NewFreeFunc[T any](obj T, free func()) *R[T] {
+// NewFree returns a new reference with a free function.
+func NewFree[T any](obj T, free func()) *R[T] {
 	return &R[T]{
 		obj:   obj,
 		freer: freeFunc(free),
@@ -41,11 +32,11 @@ func NewFreeFunc[T any](obj T, free func()) *R[T] {
 	}
 }
 
-// NewFreeRef returns a new reference with another reference as a freer.
-func NewFreeRef[T any, T1 any](obj T, ref *R[T1]) *R[T] {
+// NewFreer returns a new reference with a custom freer.
+func NewFreer[T any](obj T, freer Freer) *R[T] {
 	return &R[T]{
 		obj:   obj,
-		freer: (*freeRef[T1])(ref),
+		freer: freer,
 		refs:  1,
 	}
 }

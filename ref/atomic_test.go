@@ -9,7 +9,7 @@ import (
 func TestRef(t *testing.T) {
 	freed := false
 
-	ref := NewFreeFunc[int](10, func() {
+	ref := NewFree[int](10, func() {
 		freed = true
 	})
 	ref.Retain()

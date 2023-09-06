@@ -21,11 +21,3 @@ type freeFunc func()
 func (f freeFunc) Free() {
 	f()
 }
-
-// freeRef is an adapter which allows to use a reference as a Freer.
-type freeRef[T any] R[T]
-
-func (f *freeRef[T]) Free() {
-	r := (*R[T])(f)
-	r.Release()
-}
