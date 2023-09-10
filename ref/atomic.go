@@ -41,6 +41,17 @@ func NewFreer[T any](obj T, freer Freer) *R[T] {
 	}
 }
 
+// NewParent returns a new reference with a parent reference as a freer.
+// The parent is not retained.
+func NewParent[T any, T1 any](obj T, parent *R[T1]) *R[T] {
+	r := (*refFreer[T1])(parent)
+	return &R[T]{
+		obj:   obj,
+		freer: r,
+		refs:  1,
+	}
+}
+
 // Refcount returns the number of current references.
 func (r *R[T]) Refcount() int64 {
 	return atomic.LoadInt64(&r.refs)
