@@ -44,7 +44,7 @@ const (
 // Unavailable class
 const (
 	// CodeClosed indicates that an object is closed and cannot be used anymore.
-	CodeClosed Code = "closed" // TODO: Maybe remove
+	CodeClosed Code = "closed"
 
 	// CodeCancelled indicates that an operation was cancelled or stopped on a request.
 	CodeCancelled Code = "cancelled"
