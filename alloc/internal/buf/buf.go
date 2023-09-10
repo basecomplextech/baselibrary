@@ -17,11 +17,10 @@ var (
 
 // Buffer is a byte buffer, which internally allocates memory in blocks.
 type Buffer struct {
-	heap    *heap.Heap
-	initCap int // initial capacity
-
-	blocks []*heap.Block
+	heap   *heap.Heap
+	init   int // initial capacity
 	len    int // total length in bytes
+	blocks []*heap.Block
 }
 
 // New returns a new buffer.
@@ -33,7 +32,7 @@ func New(h *heap.Heap) *Buffer {
 func NewSize(heap *heap.Heap, size int) *Buffer {
 	b := &Buffer{heap: heap}
 	if size > 0 {
-		b.initCap = b.allocBlock(size).Cap()
+		b.init = b.allocBlock(size).Cap()
 	}
 	return b
 }
@@ -112,7 +111,7 @@ func (b *Buffer) Reset() {
 
 	// Maybe just reset the first block
 	n := 0
-	if f := b.blocks[0]; f.Cap() == b.initCap {
+	if f := b.blocks[0]; f.Cap() == b.init {
 		n = 1
 		f.Reset()
 
@@ -159,7 +158,7 @@ func (b *Buffer) allocBlock(n int) *heap.Block {
 	// Use initial size or double last block capacity
 	size := 0
 	if len(b.blocks) == 0 {
-		size = b.initCap
+		size = b.init
 	} else {
 		last := b.blocks[len(b.blocks)-1]
 		size = last.Cap() * 2

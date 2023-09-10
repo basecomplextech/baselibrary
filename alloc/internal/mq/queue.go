@@ -91,12 +91,8 @@ func (q *queue) read() ([]byte, bool, status.Status) {
 // readBlock returns a block to read from, or nil if the queue is empty.
 func (q *queue) readBlock() (*block, bool, status.Status) {
 	// Fast path: atomically load head and return if it is not empty.
-	{
-		head := q.loadHead()
-		if head == nil {
-			return nil, false, status.OK
-		}
-
+	// If the head is nil we need to check if the queue is closed.
+	if head := q.loadHead(); head != nil {
 		ri := head.readIndex
 		wi := head.loadWriteIndex()
 		if ri < wi {
