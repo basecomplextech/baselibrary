@@ -41,10 +41,32 @@ func NewFreer[T any](obj T, freer Freer) *R[T] {
 	}
 }
 
+// NewNoFreer returns a new reference with no freer.
+func NewNoFreer[T any](obj T) *R[T] {
+	return &R[T]{
+		obj:   obj,
+		freer: NoopFreer,
+		refs:  1,
+	}
+}
+
 // NewParent returns a new reference with a parent reference as a freer.
 // The parent is not retained.
 func NewParent[T any, T1 any](obj T, parent *R[T1]) *R[T] {
 	r := (*refFreer[T1])(parent)
+
+	return &R[T]{
+		obj:   obj,
+		freer: r,
+		refs:  1,
+	}
+}
+
+// NewParentRetain returns a new reference with a parent reference as a freer, retains the parent.
+func NewParentRetain[T any, T1 any](obj T, parent *R[T1]) *R[T] {
+	parent.Retain()
+	r := (*refFreer[T1])(parent)
+
 	return &R[T]{
 		obj:   obj,
 		freer: r,
