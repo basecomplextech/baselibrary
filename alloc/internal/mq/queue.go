@@ -67,8 +67,8 @@ func (q *queue) close() {
 	}
 
 	q.closed = true
-	close(q.readChan)
-	close(q.writeChan)
+	q.notifyReadAll()
+	q.notifyWriteAll()
 }
 
 // read reads the next message, the message is valid until the next call to read.
@@ -182,6 +182,18 @@ func (q *queue) notifyRead() {
 	}
 }
 
+// notifyReadAll notifies all waiting readers.
+func (q *queue) notifyReadAll() {
+	// Write mutex must be locked.
+	for {
+		select {
+		case q.readChan <- struct{}{}:
+		default:
+			return
+		}
+	}
+}
+
 // write
 
 // write writes a message or returns an end status if the queue is closed.
@@ -278,6 +290,18 @@ func (q *queue) notifyWrite() {
 	}
 }
 
+// notifyWriteAll notifies all waiting writers.
+func (q *queue) notifyWriteAll() {
+	// Read mutex must be locked.
+	for {
+		select {
+		case q.writeChan <- struct{}{}:
+		default:
+			return
+		}
+	}
+}
+
 // more
 
 // reset resets the queue, releases all unread messages, the queue can be used again.
@@ -286,14 +310,9 @@ func (q *queue) reset() {
 	defer q.mu.Unlock()
 
 	q.freeBlocks()
-	q.notifyRead()
-	q.notifyWrite()
-
-	if q.closed {
-		q.closed = false
-		q.readChan = make(chan struct{}, 1)
-		q.writeChan = make(chan struct{}, 1)
-	}
+	q.notifyReadAll()
+	q.notifyWriteAll()
+	q.closed = false
 }
 
 // free releases the queue and its iternal resources.
