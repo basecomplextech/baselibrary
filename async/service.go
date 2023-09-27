@@ -14,16 +14,16 @@ type Service interface {
 	// Stopped indicates that the service is stopped.
 	Stopped() <-chan struct{}
 
-	// Routine returns the service routine or a stopped routine if the service is not running.
-	Routine() Routine[struct{}]
-
 	// Methods
 
 	// Start starts the service if not running and returns its routine.
 	Start() (Routine[struct{}], status.Status)
 
-	// Stop requests the service to stop.
-	Stop()
+	// Stop requests the service to stop and returns its routine or a stopped routine.
+	Stop() Routine[struct{}]
+
+	// Routine returns the service routine or a stopped routine if the service is not running.
+	Routine() Routine[struct{}]
 }
 
 // NewService returns a new stopped service.
@@ -92,15 +92,17 @@ func (s *service) Start() (Routine[struct{}], status.Status) {
 }
 
 // Stop requests the service to stop.
-func (s *service) Stop() {
+func (s *service) Stop() Routine[struct{}] {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.routine == nil {
-		return
+		return stoppedRoutine
 	}
 
-	s.routine.Cancel()
+	r := s.routine
+	r.Cancel()
+	return r
 }
 
 // private
