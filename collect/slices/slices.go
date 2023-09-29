@@ -18,6 +18,11 @@ func CastAny[T any](s []any) []T {
 }
 
 // Clear zeros the slice, truncates it to zero length and returns.
+//
+// Usage:
+//
+//	s := []int{1, 2, 3}
+//	s = slices.Clear(s)
 func Clear[T any](s []T) []T {
 	var zero T
 	for i := range s {
