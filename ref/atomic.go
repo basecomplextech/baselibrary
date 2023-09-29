@@ -8,45 +8,44 @@ import (
 // R is a generic atomic countable reference.
 // It wraps an object and frees it when refcount reaches 0.
 type R[T any] struct {
-	obj   T
+	refs  int64
 	freer Freer
-
-	refs int64
+	obj   T
 }
 
 // New returns a new reference with refcount 1.
 func New[T Freer](obj T) *R[T] {
 	return &R[T]{
-		obj:   obj,
-		freer: obj,
 		refs:  1,
+		freer: obj,
+		obj:   obj,
 	}
 }
 
 // NewFree returns a new reference with a free function.
 func NewFree[T any](obj T, free func()) *R[T] {
 	return &R[T]{
-		obj:   obj,
-		freer: freeFunc(free),
 		refs:  1,
+		freer: freeFunc(free),
+		obj:   obj,
 	}
 }
 
 // NewFreer returns a new reference with a custom freer.
 func NewFreer[T any](obj T, freer Freer) *R[T] {
 	return &R[T]{
-		obj:   obj,
-		freer: freer,
 		refs:  1,
+		freer: freer,
+		obj:   obj,
 	}
 }
 
 // NewNoFreer returns a new reference with no freer.
 func NewNoFreer[T any](obj T) *R[T] {
 	return &R[T]{
-		obj:   obj,
-		freer: NoopFreer,
 		refs:  1,
+		freer: NoopFreer,
+		obj:   obj,
 	}
 }
 
@@ -56,9 +55,9 @@ func NewParent[T any, T1 any](obj T, parent *R[T1]) *R[T] {
 	r := (*refFreer[T1])(parent)
 
 	return &R[T]{
-		obj:   obj,
-		freer: r,
 		refs:  1,
+		freer: r,
+		obj:   obj,
 	}
 }
 
@@ -68,9 +67,9 @@ func NewParentRetain[T any, T1 any](obj T, parent *R[T1]) *R[T] {
 	r := (*refFreer[T1])(parent)
 
 	return &R[T]{
-		obj:   obj,
-		freer: r,
 		refs:  1,
+		freer: r,
+		obj:   obj,
 	}
 }
 
