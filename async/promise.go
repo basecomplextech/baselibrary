@@ -27,11 +27,12 @@ func NewPromise[T any]() Promise[T] {
 var _ Promise[any] = (*promise[any])(nil)
 
 type promise[T any] struct {
-	mu     sync.Mutex
+	mu   sync.Mutex
+	wait chan struct{}
+
+	st     status.Status
 	done   bool
 	result T
-	status status.Status
-	wait   chan struct{}
 }
 
 func newPromise[T any]() *promise[T] {
@@ -45,7 +46,7 @@ func (p *promise[T]) Result() (T, status.Status) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	return p.result, p.status
+	return p.result, p.st
 }
 
 // Status returns a status.
@@ -53,7 +54,7 @@ func (p *promise[T]) Status() status.Status {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	return p.status
+	return p.st
 }
 
 // Wait returns a channel which is closed when the result is available.
@@ -71,7 +72,7 @@ func (p *promise[T]) Complete(result T, st status.Status) bool {
 	}
 
 	p.result = result
-	p.status = st
+	p.st = st
 	p.done = true
 
 	close(p.wait)
