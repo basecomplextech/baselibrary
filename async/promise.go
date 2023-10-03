@@ -10,6 +10,9 @@ import (
 type Promise[T any] interface {
 	Future[T]
 
+	// Cancelled returns a channel which is closed when the promise is cancelled.
+	Cancelled() <-chan struct{}
+
 	// Complete completes the promise with a status and a result.
 	Complete(result T, st status.Status) bool
 
@@ -27,8 +30,11 @@ func NewPromise[T any]() Promise[T] {
 var _ Promise[any] = (*promise[any])(nil)
 
 type promise[T any] struct {
-	mu   sync.Mutex
-	wait chan struct{}
+	mu sync.Mutex
+
+	wait      chan struct{}
+	cancel    chan struct{}
+	cancelled bool
 
 	st     status.Status
 	done   bool
@@ -37,24 +43,28 @@ type promise[T any] struct {
 
 func newPromise[T any]() *promise[T] {
 	return &promise[T]{
-		wait: make(chan struct{}),
+		wait:   make(chan struct{}),
+		cancel: make(chan struct{}),
 	}
 }
 
-// Result returns a value and a status.
-func (p *promise[T]) Result() (T, status.Status) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	return p.result, p.st
+// Cancelled returns a channel which is closed when the promise is cancelled.
+func (p *promise[T]) Cancelled() <-chan struct{} {
+	return p.cancel
 }
 
-// Status returns a status.
-func (p *promise[T]) Status() status.Status {
+// Cancel requests the future to cancel and returns a wait channel.
+func (p *promise[T]) Cancel() <-chan struct{} {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	return p.st
+	if p.done || p.cancelled {
+		return p.wait
+	}
+
+	p.cancelled = true
+	close(p.cancel)
+	return p.wait
 }
 
 // Wait returns a channel which is closed when the result is available.
@@ -83,4 +93,20 @@ func (p *promise[T]) Complete(result T, st status.Status) bool {
 func (p *promise[T]) Reject(st status.Status) bool {
 	var zero T
 	return p.Complete(zero, st)
+}
+
+// Result returns a value and a status.
+func (p *promise[T]) Result() (T, status.Status) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return p.result, p.st
+}
+
+// Status returns a status.
+func (p *promise[T]) Status() status.Status {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return p.st
 }

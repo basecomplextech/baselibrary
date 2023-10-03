@@ -8,7 +8,6 @@ import (
 // and can be cancelled.
 type Routine[T any] interface {
 	Future[T]
-	Canceller
 }
 
 // Methods
@@ -104,37 +103,17 @@ func Exited[T any](result T, st status.Status) Routine[T] {
 
 // internal
 
-var (
-	_ Routine[any] = (*routine[any])(nil)
-	_ CancelWaiter = (*routine[any])(nil)
-)
+var _ Routine[any] = (*routine[any])(nil)
 
 type routine[T any] struct {
 	promise[T]
-
-	cancel    chan struct{}
-	cancelled bool
 }
 
 func newRoutine[T any]() *routine[T] {
 	return &routine[T]{
 		promise: promise[T]{
-			wait: make(chan struct{}),
+			wait:   make(chan struct{}),
+			cancel: make(chan struct{}),
 		},
-		cancel: make(chan struct{}),
 	}
-}
-
-// Cancel requests the routine to cancel and returns a wait channel.
-func (r *routine[T]) Cancel() <-chan struct{} {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.done || r.cancelled {
-		return r.wait
-	}
-
-	close(r.cancel)
-	r.cancelled = true
-	return r.wait
 }
