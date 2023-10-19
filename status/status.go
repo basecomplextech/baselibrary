@@ -57,14 +57,22 @@ func (s Status) WithError(err error) Status {
 // WrapText returns a status clone with a new msg and an appended previous msg.
 func (s Status) WrapText(msg string) Status {
 	s1 := s
-	s1.Message = msg + ": " + s.Message
+	if len(s.Message) == 0 {
+		s1.Message = msg
+	} else {
+		s1.Message = msg + ": " + s.Message
+	}
 	return s1
 }
 
 // WrapTextf returns a status clone with a new msg and an appended previous msg.
 func (s Status) WrapTextf(format string, a ...any) Status {
-	msg := fmt.Sprintf(format, a...)
 	s1 := s
-	s1.Message = msg + ": " + s.Message
+	msg := fmt.Sprintf(format, a...)
+	if len(s.Message) == 0 {
+		s1.Message = msg
+	} else {
+		s1.Message = msg + ": " + s.Message
+	}
 	return s1
 }
