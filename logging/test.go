@@ -23,13 +23,19 @@ func Test(t tests.T) Logging {
 func TestLogger(t tests.T) Logger {
 	level := TestLevelEnv()
 	writer := newConsoleWriter(level, true, os.Stdout)
-	return newLogger("main", true /* root */, writer)
+	return newLogger("test", true /* root */, writer)
+}
+
+// TestDebugLogger returns a new test logger with the debug level.
+func TestDebugLogger(t tests.T) Logger {
+	writer := newConsoleWriter(LevelDebug, true, os.Stdout)
+	return newLogger("test", true /* root */, writer)
 }
 
 // TestLoggerLevel returns a new test logger with the specified level.
 func TestLoggerLevel(t tests.T, level Level) Logger {
 	writer := newConsoleWriter(level, true, os.Stdout)
-	return newLogger("main", true /* root */, writer)
+	return newLogger("test", true /* root */, writer)
 }
 
 // TestLevelEnv returns a log level from the env variable TEST_LOG or the default test level.
