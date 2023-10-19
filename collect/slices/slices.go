@@ -23,7 +23,7 @@ func CastAny[T any](s []any) []T {
 //
 //	s := []int{1, 2, 3}
 //	s = slices.Clear(s)
-func Clear[T any](s []T) []T {
+func Clear[S ~[]T, T any](s S) S {
 	var zero T
 	for i := range s {
 		s[i] = zero
@@ -32,8 +32,8 @@ func Clear[T any](s []T) []T {
 }
 
 // Clone returns a copy of the slice.
-func Clone[T any](s []T) []T {
-	s1 := make([]T, len(s))
+func Clone[S ~[]T, T any](s S) S {
+	s1 := make(S, len(s))
 	copy(s1, s)
 	return s1
 }
@@ -48,14 +48,14 @@ func CloneTree[T any](tree [][]T) [][]T {
 }
 
 // Contains returns true if the slice contains an item.
-func Contains[T comparable](s []T, item T) bool {
+func Contains[S ~[]T, T comparable](s S, item T) bool {
 	i := IndexOf(s, item)
 	return i >= 0
 }
 
 // IndexOf returns the index of the first occurrence of the item in the slice.
 // If the item is not found, -1 is returned.
-func IndexOf[T comparable](s []T, item T) int {
+func IndexOf[S ~[]T, T comparable](s S, item T) int {
 	for i, v := range s {
 		if v == item {
 			return i
@@ -65,7 +65,7 @@ func IndexOf[T comparable](s []T, item T) int {
 }
 
 // Insert inserts an item at an index.
-func Insert[T any](s []T, index int, item T) []T {
+func Insert[S ~[]T, T any](s S, index int, item T) []T {
 	var zero T
 	s = append(s, zero)
 
@@ -75,7 +75,7 @@ func Insert[T any](s []T, index int, item T) []T {
 }
 
 // InsertAt inserts items at an index.
-func InsertAt[T any](s []T, index int, items ...T) []T {
+func InsertAt[S ~[]T, T any](s S, index int, items ...T) []T {
 	total := len(s) + len(items)
 
 	if cap(s) < total {
@@ -91,7 +91,7 @@ func InsertAt[T any](s []T, index int, items ...T) []T {
 }
 
 // Remove removes the first occurrence of the item from the slice.
-func Remove[T comparable](s []T, item T) []T {
+func Remove[S ~[]T, T comparable](s S, item T) S {
 	index := IndexOf(s, item)
 	if index == -1 {
 		return s
@@ -100,7 +100,7 @@ func Remove[T comparable](s []T, item T) []T {
 }
 
 // RemoveAt removes n items at an index, and truncates the slice.
-func RemoveAt[T any](s []T, index int, n int) []T {
+func RemoveAt[S ~[]T, T any](s S, index int, n int) S {
 	// Shift left
 	copy(s[index:], s[index+n:])
 
@@ -115,14 +115,14 @@ func RemoveAt[T any](s []T, index int, n int) []T {
 }
 
 // Reverse reverse the slice in place.
-func Reverse[T any](s []T) {
+func Reverse[S ~[]T, T any](s S) {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
 }
 
 // Sort sorts a slice of ordered items.
-func Sort[T constraints.Ordered](s []T) {
+func Sort[S ~[]T, T constraints.Ordered](s S) {
 	sort.Slice(s, func(i, j int) bool {
 		a, b := s[i], s[j]
 		return a < b
@@ -130,7 +130,7 @@ func Sort[T constraints.Ordered](s []T) {
 }
 
 // SortCompare sorts a slice.
-func SortCompare[T any](s []T, compare func(a, b T) bool) {
+func SortCompare[S ~[]T, T any](s S, compare func(a, b T) bool) {
 	sort.Slice(s, func(i, j int) bool {
 		a, b := s[i], s[j]
 		return compare(a, b)
@@ -138,14 +138,14 @@ func SortCompare[T any](s []T, compare func(a, b T) bool) {
 }
 
 // Shuffle pseudo-randomizes the order of elements using rand.Shuffle.
-func Shuffle[T any](s []T) {
+func Shuffle[S ~[]T, T any](s S) {
 	rand.Shuffle(len(s), func(i, j int) {
 		s[i], s[j] = s[j], s[i]
 	})
 }
 
 // ToAny converts a slice of any type to a slice of any.
-func ToAny[T any](s []T) []any {
+func ToAny[S ~[]T, T any](s S) []any {
 	s1 := make([]any, len(s))
 	for i, v := range s {
 		s1[i] = v
@@ -154,7 +154,7 @@ func ToAny[T any](s []T) []any {
 }
 
 // Zero zeros the slice and returns it.
-func Zero[T any](s []T) []T {
+func Zero[S ~[]T, T any](s S) S {
 	var zero T
 	for i := range s {
 		s[i] = zero
