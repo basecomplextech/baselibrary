@@ -168,60 +168,6 @@ func WrapCorruptedf(err error, format string, a ...any) Status {
 	}
 }
 
-// Fatal
-
-// Fatal returns a fatal error status.
-func Fatal(msg string) Status {
-	return Status{
-		Code:    CodeFatal,
-		Message: msg,
-	}
-}
-
-// Fatalf formats and returns a fatal error status.
-func Fatalf(format string, a ...any) Status {
-	msg := format
-	if len(a) > 0 {
-		msg = fmt.Sprintf(format, a...)
-	}
-
-	return Status{
-		Code:    CodeFatal,
-		Message: msg,
-	}
-}
-
-// WrapFatal returns a fatal error status.
-func WrapFatal(err error) Status {
-	msg := "Fatal error"
-	if err != nil {
-		msg = err.Error()
-	}
-
-	return Status{
-		Code:    CodeFatal,
-		Message: msg,
-		Error:   err,
-	}
-}
-
-// WrapFatalf formats and returns a fatal error status.
-func WrapFatalf(err error, format string, a ...any) Status {
-	msg := format
-	if len(a) > 0 {
-		msg = fmt.Sprintf(format, a...)
-	}
-	if err != nil {
-		msg += ": " + err.Error()
-	}
-
-	return Status{
-		Code:    CodeFatal,
-		Message: msg,
-		Error:   err,
-	}
-}
-
 // Recover
 
 // Recover recovers from a panic and returns an internal error status.

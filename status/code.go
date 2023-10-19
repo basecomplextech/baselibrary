@@ -19,9 +19,6 @@ const (
 	// CodeError indicates an internal general purpose error.
 	CodeError Code = "error"
 
-	// CodeFatal indicates a fatal error, i.e. a panic.
-	CodeFatal Code = "fatal" // TODO: Maybe remove
-
 	// CodeCorrupted indicates any data corruption or loss.
 	CodeCorrupted Code = "corrupted"
 
