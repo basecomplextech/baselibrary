@@ -6,12 +6,6 @@ type Canceller interface {
 	Cancel() <-chan struct{}
 }
 
-// Waiter awaits an operation completion.
-type Waiter interface {
-	// Wait returns a channel which is closed when the operation is complete.
-	Wait() <-chan struct{}
-}
-
 // CancelWaiter requests an operation to cancel and awaits its completion.
 type CancelWaiter interface {
 	Canceller
@@ -19,6 +13,13 @@ type CancelWaiter interface {
 }
 
 // Utility
+
+// CancelAll cancels all operations.
+func CancelAll[W Canceller](w ...W) {
+	for _, w := range w {
+		w.Cancel()
+	}
+}
 
 // CancelWait cancels and awaits an operation.
 //

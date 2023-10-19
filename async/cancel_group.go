@@ -21,7 +21,7 @@ func NewCancelGroup() *CancelGroup {
 	return &CancelGroup{}
 }
 
-// Add adds a routine to the group, or immediately cancels it if the group is cancelled.
+// Add adds a canceller to the group, or immediately cancels it if the group is cancelled.
 func (g *CancelGroup) Add(c CancelWaiter) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -32,6 +32,13 @@ func (g *CancelGroup) Add(c CancelWaiter) {
 	}
 
 	g.waiters = append(g.waiters, c)
+}
+
+// AddMany adds multiple cancellers to the group, or immediatelly cancels them if the group is cancelled.
+func (g *CancelGroup) AddMany(c ...CancelWaiter) {
+	for _, c := range c {
+		g.Add(c)
+	}
 }
 
 // AddService adds a service to the group, or immediately stops it if the group is cancelled.
