@@ -2,6 +2,7 @@ package logging
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/basecomplextech/baselibrary/alloc"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -22,7 +23,11 @@ func initFileWriter(config *FileConfig) (*fileWriter, error) {
 	}
 
 	path := config.Path
-	if err := checkCanCreateFile(path); err != nil {
+	dir, _ := filepath.Split(path)
+	if err := createCreateDir(dir); err != nil {
+		return nil, err
+	}
+	if err := checkCreateFile(path); err != nil {
 		return nil, err
 	}
 
@@ -75,16 +80,26 @@ func (w *fileWriter) Write(rec *Record) error {
 
 // private
 
-func checkCanCreateFile(path string) error {
-	// Open or create file
-	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
+func createCreateDir(path string) error {
+	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		file, err = os.Create(path)
+		return os.MkdirAll(path, 0700)
 	}
-	if err != nil {
-		return err
+	return err
+}
+
+func checkCreateFile(path string) error {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
+	if err == nil {
+		return file.Close()
 	}
 
-	file.Close()
-	return nil
+	if os.IsNotExist(err) {
+		file, err = os.Create(path)
+		if err != nil {
+			return err
+		}
+		return file.Close()
+	}
+	return err
 }
