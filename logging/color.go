@@ -4,8 +4,8 @@ import "github.com/basecomplextech/baselibrary/terminal"
 
 // ColorTheme specifies the terminal colors.
 type ColorTheme struct {
-	Time           terminal.Color
-	Logger         terminal.Color
+	Time terminal.Color
+	// Logger         terminal.Color
 	FieldKey       terminal.Color
 	FieldEqualSign terminal.Color
 	FieldValue     terminal.Color
@@ -15,8 +15,8 @@ type ColorTheme struct {
 // DefaultColorTheme returns the default terminal colors.
 func DefaultColorTheme() ColorTheme {
 	return ColorTheme{
-		Time:           terminal.Gray,
-		Logger:         terminal.Default,
+		Time: terminal.Gray,
+		// Logger:         terminal.Default,
 		FieldKey:       terminal.LightBlue,
 		FieldEqualSign: terminal.Gray,
 		FieldValue:     terminal.Default,

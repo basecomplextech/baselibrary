@@ -39,8 +39,8 @@ func newTextFormatter(color bool) *textFormatter {
 func (f *textFormatter) Format(w io.Writer, rec *Record) error {
 	tw := terminal.NewWriterColor(w, f.color)
 	f.writeTime(tw, rec.Time)
-	f.writeLogger(tw, rec.Logger)
 	f.writeLevel(tw, rec.Level)
+	f.writeLogger(tw, rec)
 	f.writeMessage(tw, rec)
 	f.writeFields(tw, rec.Fields)
 	f.writeStack(tw, rec.Stack)
@@ -62,8 +62,11 @@ func (f *textFormatter) writeTime(w *terminal.Writer, t time.Time) {
 
 // logger
 
-func (f *textFormatter) writeLogger(w *terminal.Writer, logger string) {
-	w.Color(f.theme.Logger)
+func (f *textFormatter) writeLogger(w *terminal.Writer, rec *Record) {
+	color := f.theme.Level(rec.Level)
+	logger := rec.Logger
+
+	w.Color(color)
 	w.WriteString(logger)
 	w.ResetColor()
 
@@ -77,6 +80,7 @@ func (f *textFormatter) writeLogger(w *terminal.Writer, logger string) {
 func (f *textFormatter) writeLevel(w *terminal.Writer, level Level) {
 	s := level.String()
 	color := f.theme.Level(level)
+
 	w.Color(color)
 	w.WriteString(s)
 	w.ResetColor()
