@@ -124,6 +124,7 @@ func checkColorEnv() bool {
 	}
 
 	// Term256
+	term, _ = os.LookupEnv("TERM")
 	var term256Regex = regexp.MustCompile("(?i)-256(color)?$")
 	if term256Regex.MatchString(term) {
 		return true
