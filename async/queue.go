@@ -28,8 +28,13 @@ type Queue[T any] interface {
 }
 
 // NewQueue returns an empty queue.
-func NewQueue[T any]() Queue[T] {
-	return newQueue[T]()
+func NewQueue[T any](items ...T) Queue[T] {
+	q := newQueue[T]()
+
+	if len(items) > 0 {
+		q.list = append(q.list, items...)
+	}
+	return q
 }
 
 // internal
