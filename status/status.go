@@ -25,6 +25,11 @@ func (s Status) OK() bool {
 	return s.Code == CodeOK
 }
 
+// Cancelled returns true if the status code is Cancelled.
+func (s Status) Cancelled() bool {
+	return s.Code == CodeCancelled
+}
+
 // String returns "code: msg".
 func (s Status) String() string {
 	if len(s.Message) == 0 {
