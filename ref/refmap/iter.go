@@ -1,6 +1,9 @@
 package refmap
 
 import (
+	"sync"
+
+	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/basecomplextech/baselibrary/status"
 )
@@ -69,27 +72,40 @@ var _ Iterator[int, ref.Ref] = (*iterator[int, ref.Ref])(nil)
 
 // iterator iterates over a btree, does not retain the values.
 type iterator[K any, V ref.Ref] struct {
-	tree *btree[K, V]
-
-	st    status.Status           // current iterator status
-	mod   int                     // track concurrent modifications
-	pos   position                // current iterator position
-	stack []iteratorElement[K, V] // the last element is always a leaf node
+	*iterState[K, V]
 }
 
-// iteratorElement combines a node and an iteration index of the node elements.
-type iteratorElement[K any, V ref.Ref] struct {
+type iterState[K any, V ref.Ref] struct {
+	tree *btree[K, V]
+
+	st    status.Status    // current iterator status
+	mod   int              // track concurrent modifications
+	pos   position         // current iterator position
+	stack []iterElem[K, V] // the last element is always a leaf node
+}
+
+// iterElem combines a node and an iteration index of the node elements.
+type iterElem[K any, V ref.Ref] struct {
 	node[K, V]
 	index int // index maybe == len(node.items) as in sort.Search
 }
 
 func newIterator[K any, V ref.Ref](tree *btree[K, V]) *iterator[K, V] {
-	return &iterator[K, V]{
-		tree: tree,
+	it := &iterator[K, V]{acquireIterState[K, V]()}
+	it.tree = tree
 
-		st:  status.None,
-		mod: tree.mod,
-	}
+	it.st = status.None
+	it.mod = tree.mod
+	return it
+}
+
+// reset
+
+func (s *iterState[K, V]) reset() {
+	stack := slices.Clear(s.stack)
+
+	*s = iterState[K, V]{}
+	s.stack = stack
 }
 
 // State
@@ -355,7 +371,7 @@ func (it *iterator[K, V]) SeekToKey(key K) bool {
 	node := it.tree.root
 	for node != nil {
 		index := node.indexOf(key, it.tree.compare)
-		elem := iteratorElement[K, V]{
+		elem := iterElem[K, V]{
 			node:  node,
 			index: index,
 		}
@@ -399,11 +415,9 @@ func (it *iterator[K, V]) SeekToKey(key K) bool {
 
 // Free frees the iterator.
 func (it *iterator[K, V]) Free() {
-	it.tree = nil
-
-	it.st = status.Closed
-	it.pos = positionUndefined
-	it.stack = nil
+	state := it.iterState
+	it.iterState = nil
+	releaseIterState(state)
 }
 
 // private
@@ -417,7 +431,7 @@ func (it *iterator[K, V]) pushStart(node node[K, V]) {
 		}
 
 		index := 0
-		elem := iteratorElement[K, V]{
+		elem := iterElem[K, V]{
 			node:  node,
 			index: index,
 		}
@@ -441,7 +455,7 @@ func (it *iterator[K, V]) pushEnd(node node[K, V]) {
 		}
 
 		index := node.length() - 1
-		elem := iteratorElement[K, V]{
+		elem := iterElem[K, V]{
 			node:  node,
 			index: index,
 		}
@@ -454,4 +468,37 @@ func (it *iterator[K, V]) pushEnd(node node[K, V]) {
 
 		node = n.child(index)
 	}
+}
+
+// iterator state pool
+
+var iterStatePools = &sync.Map{}
+
+func acquireIterState[K any, V ref.Ref]() *iterState[K, V] {
+	pool := getIterStatePool[K, V]()
+
+	v := pool.Get()
+	if v != nil {
+		return v.(*iterState[K, V])
+	}
+	return &iterState[K, V]{}
+}
+
+func releaseIterState[K any, V ref.Ref](s *iterState[K, V]) {
+	s.reset()
+
+	pool := getIterStatePool[K, V]()
+	pool.Put(s)
+}
+
+func getIterStatePool[K any, V ref.Ref]() *sync.Pool {
+	var key poolKey[K, V]
+
+	p, ok := iterStatePools.Load(key)
+	if ok {
+		return p.(*sync.Pool)
+	}
+
+	p, _ = iterStatePools.LoadOrStore(key, &sync.Pool{})
+	return p.(*sync.Pool)
 }

@@ -2,18 +2,17 @@ package refmap
 
 import (
 	"sort"
+	"sync"
 	"sync/atomic"
 
+	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
 var _ node[any, ref.Ref] = (*branchNode[any, ref.Ref])(nil)
 
 type branchNode[K any, V ref.Ref] struct {
-	items []branchItem[K, V]
-
-	mut  bool
-	refs int64
+	*branchState[K, V]
 }
 
 type branchItem[K any, V ref.Ref] struct {
@@ -21,15 +20,20 @@ type branchItem[K any, V ref.Ref] struct {
 	node   node[K, V]
 }
 
+type branchState[K any, V ref.Ref] struct {
+	items []branchItem[K, V]
+
+	mut  bool
+	refs int64
+}
+
 // newBranchNode returns a new mutable node, moves the children to it.
 func newBranchNode[K any, V ref.Ref](children ...node[K, V]) *branchNode[K, V] {
 	// Make node
-	n := &branchNode[K, V]{
-		items: make([]branchItem[K, V], 0, len(children)),
-
-		mut:  true,
-		refs: 1,
-	}
+	n := &branchNode[K, V]{acquireBranchState[K, V]()}
+	n.init(len(children))
+	n.mut = true
+	n.refs = 1
 
 	// Move children, do not retain them
 	for _, child := range children {
@@ -45,12 +49,12 @@ func newBranchNode[K any, V ref.Ref](children ...node[K, V]) *branchNode[K, V] {
 // cloneBranchNode returns a mutable node clone, retains its children.
 func cloneBranchNode[K any, V ref.Ref](n *branchNode[K, V]) *branchNode[K, V] {
 	// Copy node
-	n1 := &branchNode[K, V]{
-		items: make([]branchItem[K, V], len(n.items), cap(n.items)),
+	n1 := &branchNode[K, V]{acquireBranchState[K, V]()}
+	n1.init(cap(n.items))
+	n1.mut = true
+	n1.refs = 1
 
-		mut:  true,
-		refs: 1,
-	}
+	n1.items = n1.items[:len(n.items)]
 	copy(n1.items, n.items)
 
 	// Retain children
@@ -63,17 +67,32 @@ func cloneBranchNode[K any, V ref.Ref](n *branchNode[K, V]) *branchNode[K, V] {
 // nextBranchNode returns a new mutable node on a split, moves items to it.
 func nextBranchNode[K any, V ref.Ref](items []branchItem[K, V]) *branchNode[K, V] {
 	// Make node
-	n := &branchNode[K, V]{
-		items: make([]branchItem[K, V], len(items), cap(items)),
+	n := &branchNode[K, V]{acquireBranchState[K, V]()}
+	n.init(cap(items))
+	n.mut = true
+	n.refs = 1
 
-		mut:  true,
-		refs: 1,
-	}
+	n.items = n.items[:len(items)]
 	copy(n.items, items)
 
 	// No need to retain children
 	// We have moved them to the new node
 	return n
+}
+
+// reset
+
+func (s *branchState[K, V]) init(n int) {
+	if cap(s.items) < n {
+		s.items = make([]branchItem[K, V], 0, n)
+	}
+}
+
+func (s *branchState[K, V]) reset() {
+	items := slices.Clear(s.items)
+
+	*s = branchState[K, V]{}
+	s.items = items
 }
 
 // retain/release
@@ -94,17 +113,19 @@ func (n *branchNode[K, V]) release() {
 		return
 	}
 
-	n._releaseChildren()
+	// Release children
+	for _, child := range n.items {
+		child.node.release()
+	}
+
+	// Release state
+	s := n.branchState
+	n.branchState = nil
+	releaseBranchState[K, V](s)
 }
 
 func (n *branchNode[K, V]) refcount() int64 {
 	return n.refs
-}
-
-func (n *branchNode[K, V]) _releaseChildren() {
-	for _, child := range n.items {
-		child.node.release()
-	}
 }
 
 // attrs
@@ -334,4 +355,37 @@ func (n *branchNode[K, V]) splitChild(index int) bool {
 		minKey: next.minKey(),
 	}
 	return true
+}
+
+// branch state pool
+
+var branchStatePools = &sync.Map{}
+
+func acquireBranchState[K any, V ref.Ref]() *branchState[K, V] {
+	pool := getBranchStatePool[K, V]()
+
+	v := pool.Get()
+	if v != nil {
+		return v.(*branchState[K, V])
+	}
+	return &branchState[K, V]{}
+}
+
+func releaseBranchState[K any, V ref.Ref](s *branchState[K, V]) {
+	s.reset()
+
+	pool := getBranchStatePool[K, V]()
+	pool.Put(s)
+}
+
+func getBranchStatePool[K any, V ref.Ref]() *sync.Pool {
+	var key poolKey[K, V]
+
+	p, ok := branchStatePools.Load(key)
+	if ok {
+		return p.(*sync.Pool)
+	}
+
+	p, _ = branchStatePools.LoadOrStore(key, &sync.Pool{})
+	return p.(*sync.Pool)
 }

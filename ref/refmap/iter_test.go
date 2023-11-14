@@ -32,6 +32,8 @@ func TestIterator_Next__should_iterate_items_in_direct_order(t *testing.T) {
 	btree := testBtree(t, items...)
 
 	it := btree.Iterator()
+	defer it.Free()
+
 	items1 := testIterate(t, it)
 	assert.Equal(t, items, items1)
 }

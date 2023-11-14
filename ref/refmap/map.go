@@ -1,6 +1,8 @@
 package refmap
 
 import (
+	"sync"
+
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -82,6 +84,10 @@ const maxItems = 16
 var _ Map[any, ref.Ref] = (*btree[any, ref.Ref])(nil)
 
 type btree[K any, V ref.Ref] struct {
+	*state[K, V]
+}
+
+type state[K any, V ref.Ref] struct {
 	compare CompareFunc[K]
 
 	root    node[K, V]
@@ -92,13 +98,17 @@ type btree[K any, V ref.Ref] struct {
 }
 
 func newBtree[K any, V ref.Ref](compare CompareFunc[K]) *btree[K, V] {
-	return &btree[K, V]{
-		compare: compare,
-		mutable: true,
+	b := &btree[K, V]{acquireState[K, V]()}
+	b.compare = compare
+	b.root = newLeafNode[K, V]()
+	b.height = 1
 
-		root:   newLeafNode[K, V](),
-		height: 1,
-	}
+	b.mutable = true
+	return b
+}
+
+func (s *state[K, V]) reset() {
+	*s = state[K, V]{}
 }
 
 // Empty returns true if the map is empty.
@@ -125,14 +135,13 @@ func (t *btree[K, V]) Clone() Map[K, V] {
 	}
 
 	root1 := t.root.clone()
-	t1 := &btree[K, V]{
-		compare: t.compare,
+	t1 := &btree[K, V]{acquireState[K, V]()}
+	t1.compare = t.compare
 
-		root:    root1,
-		height:  t.height,
-		length:  t.length,
-		mutable: true,
-	}
+	t1.root = root1
+	t1.height = t.height
+	t1.length = t.length
+	t1.mutable = true
 	return Map[K, V](t1)
 }
 
@@ -219,6 +228,11 @@ func (t *btree[K, V]) Free() {
 	t.root = nil
 	t.height = 0
 	t.length = 0
+
+	// Release state
+	s := t.state
+	t.state = nil
+	releaseState[K, V](s)
 }
 
 // root
@@ -350,4 +364,39 @@ func (t *btree[K, V]) values() []V {
 		}
 	}
 	return result
+}
+
+// state pool
+
+var statePools = &sync.Map{}
+
+type poolKey[K any, V ref.Ref] struct{}
+
+func acquireState[K any, V ref.Ref]() *state[K, V] {
+	pool := getStatePool[K, V]()
+
+	v := pool.Get()
+	if v != nil {
+		return v.(*state[K, V])
+	}
+	return &state[K, V]{}
+}
+
+func releaseState[K any, V ref.Ref](s *state[K, V]) {
+	s.reset()
+
+	pool := getStatePool[K, V]()
+	pool.Put(s)
+}
+
+func getStatePool[K any, V ref.Ref]() *sync.Pool {
+	var key poolKey[K, V]
+
+	p, ok := statePools.Load(key)
+	if ok {
+		return p.(*sync.Pool)
+	}
+
+	p, _ = statePools.LoadOrStore(key, &sync.Pool{})
+	return p.(*sync.Pool)
 }

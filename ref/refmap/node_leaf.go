@@ -2,18 +2,17 @@ package refmap
 
 import (
 	"sort"
+	"sync"
 	"sync/atomic"
 
+	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
 var _ node[any, ref.Ref] = (*leafNode[any, ref.Ref])(nil)
 
 type leafNode[K any, V ref.Ref] struct {
-	items []leafItem[K, V]
-
-	mut  bool
-	refs int64
+	*leafState[K, V]
 }
 
 type leafItem[K any, V ref.Ref] struct {
@@ -21,15 +20,20 @@ type leafItem[K any, V ref.Ref] struct {
 	value V
 }
 
+type leafState[K any, V ref.Ref] struct {
+	items []leafItem[K, V]
+
+	mut  bool
+	refs int64
+}
+
 // newLeafNode returns a new mutable node.
 func newLeafNode[K any, V ref.Ref](items ...Item[K, V]) *leafNode[K, V] {
 	// Make node
-	n := &leafNode[K, V]{
-		items: make([]leafItem[K, V], 0, len(items)),
-
-		mut:  true,
-		refs: 1,
-	}
+	n := &leafNode[K, V]{acquireLeafState[K, V]()}
+	n.init(len(n.items))
+	n.mut = true
+	n.refs = 1
 
 	// Copy items
 	for _, item := range items {
@@ -49,12 +53,12 @@ func newLeafNode[K any, V ref.Ref](items ...Item[K, V]) *leafNode[K, V] {
 // cloneLeafNode returns a mutable node clone.
 func cloneLeafNode[K any, V ref.Ref](n *leafNode[K, V]) *leafNode[K, V] {
 	// Copy node
-	n1 := &leafNode[K, V]{
-		items: make([]leafItem[K, V], len(n.items)),
+	n1 := &leafNode[K, V]{acquireLeafState[K, V]()}
+	n1.init(len(n.items))
+	n1.mut = true
+	n1.refs = 1
 
-		mut:  true,
-		refs: 1,
-	}
+	n1.items = n1.items[:len(n.items)]
 	copy(n1.items, n.items)
 
 	// Retain items
@@ -66,13 +70,29 @@ func cloneLeafNode[K any, V ref.Ref](n *leafNode[K, V]) *leafNode[K, V] {
 
 // nextLeafNode returns a new mutable node on a split, moves items to it.
 func nextLeafNode[K any, V ref.Ref](items []leafItem[K, V]) *leafNode[K, V] {
-	n := &leafNode[K, V]{
-		refs:  1,
-		mut:   true,
-		items: make([]leafItem[K, V], len(items), cap(items)),
-	}
+	n := &leafNode[K, V]{acquireLeafState[K, V]()}
+	n.init(cap(items))
+	n.refs = 1
+	n.mut = true
+
+	n.items = n.items[:len(items)]
 	copy(n.items, items)
 	return n
+}
+
+// state
+
+func (s *leafState[K, V]) init(n int) {
+	if cap(s.items) < n {
+		s.items = make([]leafItem[K, V], 0, n)
+	}
+}
+
+func (s *leafState[K, V]) reset() {
+	items := slices.Clear(s.items)
+
+	*s = leafState[K, V]{}
+	s.items = items
 }
 
 // retain/release
@@ -98,7 +118,12 @@ func (n *leafNode[K, V]) release() {
 		item.value.Release()
 		n.items[i] = leafItem[K, V]{}
 	}
-	n.items = n.items[:0]
+	n.items = slices.Clear(n.items)
+
+	// Release state
+	s := n.leafState
+	n.leafState = nil
+	releaseLeafState[K, V](s)
 }
 
 func (n *leafNode[K, V]) refcount() int64 {
@@ -265,4 +290,37 @@ func (n *leafNode[K, V]) split() (node[K, V], bool) {
 	}
 	n.items = n.items[:middle]
 	return next, true
+}
+
+// leaf state pool
+
+var leafStatePools = &sync.Map{}
+
+func acquireLeafState[K any, V ref.Ref]() *leafState[K, V] {
+	pool := getLeafStatePool[K, V]()
+
+	v := pool.Get()
+	if v != nil {
+		return v.(*leafState[K, V])
+	}
+	return &leafState[K, V]{}
+}
+
+func releaseLeafState[K any, V ref.Ref](s *leafState[K, V]) {
+	s.reset()
+
+	pool := getLeafStatePool[K, V]()
+	pool.Put(s)
+}
+
+func getLeafStatePool[K any, V ref.Ref]() *sync.Pool {
+	var key poolKey[K, V]
+
+	p, ok := leafStatePools.Load(key)
+	if ok {
+		return p.(*sync.Pool)
+	}
+
+	p, _ = leafStatePools.LoadOrStore(key, &sync.Pool{})
+	return p.(*sync.Pool)
 }
