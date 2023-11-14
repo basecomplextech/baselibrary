@@ -32,10 +32,14 @@ func (s Status) Cancelled() bool {
 
 // String returns "code: msg".
 func (s Status) String() string {
-	if len(s.Message) == 0 {
-		return string(s.Code)
+	code := string(s.Code)
+	if s.Code == CodeNone {
+		code = "none"
 	}
-	return fmt.Sprintf("%s: %s", s.Code, s.Message)
+	if len(s.Message) == 0 {
+		return code
+	}
+	return fmt.Sprintf("%s: %s", code, s.Message)
 }
 
 // With
