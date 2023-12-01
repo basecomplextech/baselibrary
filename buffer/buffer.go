@@ -30,6 +30,9 @@ type Buffer interface {
 	//
 	Write(p []byte) (n int, err error)
 
+	// WriteByte writes a byte to the buffer.
+	WriteByte(b byte) error
+
 	// Reset resets the buffer to be empty, but can retain its internal buffer.
 	Reset()
 }
@@ -110,6 +113,13 @@ func (b *buffer) Write(p []byte) (n int, err error) {
 
 	n = copy(buf, p)
 	return
+}
+
+// WriteByte writes a byte to the buffer.
+func (b *buffer) WriteByte(v byte) error {
+	buf := b.Grow(1)
+	buf[0] = v
+	return nil
 }
 
 // Reset resets the buffer to be empty, but can retain its internal buffer.
