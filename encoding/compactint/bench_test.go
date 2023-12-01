@@ -46,6 +46,44 @@ func BenchmarkUint64(b *testing.B) {
 
 // Decode reverse
 
+func BenchmarkReverseInt32(b *testing.B) {
+	buf := make([]byte, MaxLen)
+	v := int32(math.MaxInt32)
+	n := PutReverseInt32(buf, v)
+	buf = buf[len(buf)-n:]
+
+	b.SetBytes(int64(n))
+
+	for i := 0; i < b.N; i++ {
+		v1, n1 := ReverseInt32(buf)
+		if v1 != v {
+			b.Fatal()
+		}
+		if n1 != n {
+			b.Fatal()
+		}
+	}
+}
+
+func BenchmarkReverseInt64(b *testing.B) {
+	buf := make([]byte, MaxLen)
+	v := int64(math.MaxInt64)
+	n := PutReverseInt64(buf, v)
+	buf = buf[len(buf)-n:]
+
+	b.SetBytes(int64(n))
+
+	for i := 0; i < b.N; i++ {
+		v1, n1 := ReverseInt64(buf)
+		if v1 != v {
+			b.Fatal()
+		}
+		if n1 != n {
+			b.Fatal()
+		}
+	}
+}
+
 func BenchmarkReverseUint32(b *testing.B) {
 	buf := make([]byte, MaxLen)
 	v := uint32(math.MaxUint32)

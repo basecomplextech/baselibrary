@@ -41,22 +41,96 @@ func ReverseSize(b []byte) int {
 
 // ReverseInt32 decodes an int32 value from the b end and the number of bytes read.
 func ReverseInt32(b []byte) (int32, int) {
-	ux, off := ReverseUint32(b) // ok to continue in presence of error
+	if len(b) == 0 {
+		return 0, 0
+	}
+
+	var ux uint32
+	var size int
+
+	f := b[len(b)-1]
+	switch f {
+	default:
+		ux, size = uint32(f), 1
+
+	case 0xfd:
+		if len(b) < 3 {
+			return 0, 0
+		}
+
+		off := len(b) - 3
+		v := binary.BigEndian.Uint16(b[off : off+2])
+		ux, size = uint32(v), 3
+
+	case 0xfe:
+		if len(b) < 5 {
+			return 0, 0
+		}
+
+		off := len(b) - 5
+		v := binary.BigEndian.Uint32(b[off : off+4])
+		ux, size = uint32(v), 5
+
+	case 0xff:
+		return 0, -1
+	}
+
+	// ok to continue in presence of error
 	x := int32(ux >> 1)
 	if ux&1 != 0 {
 		x = ^x
 	}
-	return x, off
+	return x, size
 }
 
 // ReverseInt64 decodes an int64 value from the b end and the number of bytes read.
 func ReverseInt64(b []byte) (int64, int) {
-	ux, off := ReverseUint64(b) // ok to continue in presence of error
+	if len(b) == 0 {
+		return 0, 0
+	}
+
+	var ux uint64
+	var size int
+
+	f := b[len(b)-1]
+	switch f {
+	default:
+		ux, size = uint64(f), 1
+
+	case 0xfd:
+		if len(b) < 3 {
+			return 0, 0
+		}
+
+		off := len(b) - 3
+		v := binary.BigEndian.Uint16(b[off : off+2])
+		ux, size = uint64(v), 3
+
+	case 0xfe:
+		if len(b) < 5 {
+			return 0, 0
+		}
+
+		off := len(b) - 5
+		v := binary.BigEndian.Uint32(b[off : off+4])
+		ux, size = uint64(v), 5
+
+	case 0xff:
+		if len(b) < 9 {
+			return 0, 0
+		}
+
+		off := len(b) - 9
+		v := binary.BigEndian.Uint64(b[off : off+8])
+		ux, size = v, 9
+	}
+
+	// ok to continue in presence of error
 	x := int64(ux >> 1)
 	if ux&1 != 0 {
 		x = ^x
 	}
-	return x, off
+	return x, size
 }
 
 // PutReverseInt32 encodes an int32 into the b end and returns the number of bytes written.

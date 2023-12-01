@@ -58,22 +58,91 @@ func Size(b []byte) int {
 
 // Int32 decodes an int32 value and the number of bytes read.
 func Int32(b []byte) (int32, int) {
-	ux, off := Uint32(b) // ok to continue in presence of error
+	if len(b) == 0 {
+		return 0, 0
+	}
+
+	var ux uint32
+	var size int
+
+	f := b[0]
+	switch f {
+	default:
+		ux, size = uint32(f), 1
+
+	case 0xfd:
+		if len(b) < 3 {
+			return 0, 0
+		}
+
+		v := binary.BigEndian.Uint16(b[1:3])
+		ux, size = uint32(v), 3
+
+	case 0xfe:
+		if len(b) < 5 {
+			return 0, 0
+		}
+
+		v := binary.BigEndian.Uint32(b[1:5])
+		ux, size = uint32(v), 5
+
+	case 0xff:
+		return 0, -1
+	}
+
+	// ok to continue in presence of error
 	x := int32(ux >> 1)
 	if ux&1 != 0 {
 		x = ^x
 	}
-	return x, off
+	return x, size
 }
 
 // Int64 decodes an int64 value and the number of bytes read.
 func Int64(b []byte) (int64, int) {
-	ux, off := Uint64(b) // ok to continue in presence of error
+	if len(b) == 0 {
+		return 0, 0
+	}
+
+	var ux uint64
+	var size int
+
+	f := b[0]
+	switch f {
+	default:
+		ux, size = uint64(f), 1
+
+	case 0xfd:
+		if len(b) < 3 {
+			return 0, 0
+		}
+
+		v := binary.BigEndian.Uint16(b[1:3])
+		ux, size = uint64(v), 3
+
+	case 0xfe:
+		if len(b) < 5 {
+			return 0, 0
+		}
+
+		v := binary.BigEndian.Uint32(b[1:5])
+		ux, size = uint64(v), 5
+
+	case 0xff:
+		if len(b) < 9 {
+			return 0, 0
+		}
+
+		v := binary.BigEndian.Uint64(b[1:9])
+		ux, size = v, 9
+	}
+
+	// ok to continue in presence of error
 	x := int64(ux >> 1)
 	if ux&1 != 0 {
 		x = ^x
 	}
-	return x, off
+	return x, size
 }
 
 // PutInt32 encodes an int32 into b and returns the number of bytes written.
