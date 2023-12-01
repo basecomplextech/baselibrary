@@ -18,6 +18,15 @@ func testBufferSize(size int) *Buffer {
 	return NewSize(h, size)
 }
 
+// Free
+
+func TestBuffer_Free__should_free_buffer(t *testing.T) {
+	b := testBuffer()
+	b.Free()
+
+	assert.Nil(t, b.state)
+}
+
 // Bytes
 
 func TestBuffer_Bytes__should_return_bytes(t *testing.T) {

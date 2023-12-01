@@ -1,6 +1,7 @@
 package buf
 
 import (
+	"sync"
 	"unicode/utf8"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
@@ -17,6 +18,10 @@ var (
 
 // Buffer is a byte buffer, which internally allocates memory in blocks.
 type Buffer struct {
+	*state
+}
+
+type state struct {
 	heap   *heap.Heap
 	init   int // initial capacity
 	len    int // total length in bytes
@@ -30,7 +35,8 @@ func New(h *heap.Heap) *Buffer {
 
 // NewSize returns a new buffer with a preallocated memory storage.
 func NewSize(heap *heap.Heap, size int) *Buffer {
-	b := &Buffer{heap: heap}
+	b := &Buffer{acquireState()}
+	b.heap = heap
 	if size > 0 {
 		b.init = b.allocBlock(size).Cap()
 	}
@@ -41,6 +47,10 @@ func NewSize(heap *heap.Heap, size int) *Buffer {
 func (b *Buffer) Free() {
 	b.len = 0
 	b.freeBlocks()
+
+	s := b.state
+	b.state = nil
+	releaseState(s)
 }
 
 // Len returns the number of bytes in the buffer; b.Len() == len(b.Bytes()).
@@ -178,4 +188,28 @@ func (b *Buffer) freeBlocks() {
 
 	slices.Zero(b.blocks) // for gc
 	b.blocks = b.blocks[:0]
+}
+
+// state pool
+
+var statePool = &sync.Pool{}
+
+func acquireState() *state {
+	v := statePool.Get()
+	if v != nil {
+		return v.(*state)
+	}
+	return &state{}
+}
+
+func releaseState(s *state) {
+	s.reset()
+	statePool.Put(s)
+}
+
+func (s *state) reset() {
+	blocks := slices.Clear(s.blocks)
+
+	*s = state{}
+	s.blocks = blocks
 }
