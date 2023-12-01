@@ -21,14 +21,22 @@ func testArenaSize(size int) *arena {
 
 // Free
 
-func TestArena_Free__should_release_blocks(t *testing.T) {
+func TestArena_Free__should_free_arena(t *testing.T) {
+	a := testArena()
+	a.alloc(1)
+
+	a.Free()
+	assert.Nil(t, a.state)
+}
+
+func TestArena_free__should_release_blocks(t *testing.T) {
 	a := testArena()
 	a.alloc(1)
 
 	b := a.blocks[0]
 	require.Equal(t, 1, b.Len())
 
-	a.Free()
+	a.free()
 	assert.Len(t, a.blocks, 0)
 	assert.Equal(t, 0, b.Len())
 }

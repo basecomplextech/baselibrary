@@ -2,6 +2,7 @@ package arena
 
 import (
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"unsafe"
 
@@ -27,6 +28,7 @@ type Arena interface {
 	// Internal
 
 	// Free frees the arena and releases its memory.
+	// The method is not thread-safe and must be called only once.
 	Free()
 }
 
@@ -43,18 +45,23 @@ func NewSize(heap *heap.Heap, size int) Arena {
 // internal
 
 type arena struct {
+	*state
+}
+
+type state struct {
 	heap    *heap.Heap
 	initCap int // initial capacity
 
 	spinlock int32
-	free     bool
 	cap      int64 // total allocated capacity
 
 	blocks []*heap.Block
 }
 
 func newArena(heap *heap.Heap, size int) *arena {
-	a := &arena{heap: heap}
+	a := &arena{acquireState()}
+	a.heap = heap
+
 	if size > 0 {
 		a.initCap = a.allocBlock(size).Cap()
 	}
@@ -119,20 +126,20 @@ func (a *arena) Reset() {
 // Internal
 
 // Free frees the arena and releases its memory.
+// The method is not thread-safe and must be called only once.
 func (a *arena) Free() {
-	a.lock()
-	defer a.unlock()
+	a.free()
 
-	if a.free {
-		return
-	}
+	s := a.state
+	a.state = nil
+	releaseState(s)
+}
 
-	a.free = true
+func (a *arena) free() {
+	a.heap.FreeMany(a.blocks...)
+
 	a.cap = 0
-
-	blocks := a.blocks
-	a.blocks = nil
-	a.heap.FreeMany(blocks...)
+	a.blocks = slices.Clear(a.blocks)
 }
 
 // alloc
@@ -141,10 +148,6 @@ func (a *arena) Free() {
 func (a *arena) alloc(size int) unsafe.Pointer {
 	a.lock()
 	defer a.unlock()
-
-	if a.free {
-		panic("operation on a free arena")
-	}
 
 	if len(a.blocks) > 0 {
 		b := a.blocks[len(a.blocks)-1]
@@ -189,4 +192,28 @@ func (a *arena) lock() {
 
 func (a *arena) unlock() {
 	atomic.StoreInt32(&a.spinlock, 0)
+}
+
+// state pool
+
+var statePool = &sync.Pool{}
+
+func acquireState() *state {
+	v := statePool.Get()
+	if v != nil {
+		return v.(*state)
+	}
+	return &state{}
+}
+
+func releaseState(s *state) {
+	s.reset()
+	statePool.Put(s)
+}
+
+func (s *state) reset() {
+	blocks := slices.Clear(s.blocks)
+
+	*s = state{}
+	s.blocks = blocks
 }
