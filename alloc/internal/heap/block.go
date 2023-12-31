@@ -51,7 +51,14 @@ func (b *Block) Alloc(size int) unsafe.Pointer {
 	// Align start
 	start := len(b.buf)
 	start += (alignment - (start % alignment)) % alignment
+
+	// Calc end, add 1 byte for zero size
 	end := start + size
+	if size == 0 {
+		end += 1
+	}
+
+	// Return if no space
 	if end > cap(b.buf) {
 		return nil
 	}
