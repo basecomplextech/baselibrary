@@ -41,7 +41,7 @@ func TestAlloc__should_allocate_struct(t *testing.T) {
 func TestSlice__should_allocate_slice(t *testing.T) {
 	a := arena.Test()
 
-	s := Slice[int](a, 16)
+	s := Slice[[]int](a, 16, 16)
 	s[0] = 1
 	s[1] = 2
 	s[2] = 3

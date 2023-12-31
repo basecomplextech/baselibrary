@@ -113,7 +113,7 @@ func Benchmark_AllocSlice(b *testing.B) {
 
 	var v []int32
 	for i := 0; i < b.N; i++ {
-		v = Slice[int32](a, n)
+		v = Slice[[]int32](a, n, n)
 		if len(v) != 4 {
 			b.Fatal()
 		}
