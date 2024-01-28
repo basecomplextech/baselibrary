@@ -61,10 +61,17 @@ func AppendN[S ~[]T, T any](a Arena, s []T, items ...T) S {
 
 // Copy allocates a new slice and copies items from src into it.
 // The slice capacity is len(src).
+//
+// TODO: Fix me, use S ~[]T
 func Copy[T any](a Arena, src []T) []T {
 	dst := allocSlice[[]T, T](a, len(src), len(src))
 	copy(dst, src)
 	return dst
+}
+
+// Grow grows the slice to at least the given capacity.
+func Grow[S ~[]T, T any](a Arena, s []T, capacity int) S {
+	return growSlice[S, T](a, s, capacity)
 }
 
 // Slice allocates a new slice of a generic type.
