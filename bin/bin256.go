@@ -14,7 +14,15 @@ const (
 	CharLen256 = (ByteLen256 * 2)
 )
 
-var Pattern256 = regexp.MustCompile(`^[0-9A-Za-z]{64}$`)
+var (
+	Max256 = Bin256{
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	}
+	Pattern256 = regexp.MustCompile(`^[0-9A-Za-z]{64}$`)
+)
 
 // Bin256 is a 32 byte value.
 type Bin256 [ByteLen256]byte
@@ -48,6 +56,35 @@ func (b0 Bin256) Equal(b1 Bin256) bool {
 // Less returns whether the current value is less than another.
 func (b0 Bin256) Less(b1 Bin256) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
+}
+
+// Hash32 returns a 32-bit hash.
+// The method decodes the value as four big-endian uint64s and then xors their halves.
+func (b Bin256) Hash32() uint32 {
+	v0 := binary.BigEndian.Uint64(b[:])
+	v1 := binary.BigEndian.Uint64(b[8:])
+	v2 := binary.BigEndian.Uint64(b[16:])
+	v3 := binary.BigEndian.Uint64(b[24:])
+
+	v0 = v0 ^ (v0 >> 32)
+	v1 = v1 ^ (v1 >> 32)
+	v2 = v2 ^ (v2 >> 32)
+	v3 = v3 ^ (v3 >> 32)
+
+	v := v0 ^ v1 ^ v2 ^ v3
+	return uint32(v)
+}
+
+// Hash64 returns a 64-bit hash.
+// The method decodes the value as four big-endian uint64s and then xors them.
+func (b Bin256) Hash64() uint64 {
+	v0 := binary.BigEndian.Uint64(b[:])
+	v1 := binary.BigEndian.Uint64(b[8:])
+	v2 := binary.BigEndian.Uint64(b[16:])
+	v3 := binary.BigEndian.Uint64(b[24:])
+
+	v := v0 ^ v1 ^ v2 ^ v3
+	return v
 }
 
 // Size returns 32 bytes.

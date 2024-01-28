@@ -13,7 +13,10 @@ const (
 	CharLen64 = (ByteLen64 * 2) // 341a7d60bc5893a6
 )
 
-var Pattern64 = regexp.MustCompile(`^[0-9A-Za-z]{16}$`)
+var (
+	Max64     = Bin64{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	Pattern64 = regexp.MustCompile(`^[0-9A-Za-z]{16}$`)
+)
 
 // Bin64 is a binary 64-bit value.
 type Bin64 [ByteLen64]byte
@@ -33,6 +36,20 @@ func (b0 Bin64) Compare(b1 Bin64) int {
 // Less returns whether the current value is less than another.
 func (b0 Bin64) Less(b1 Bin64) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
+}
+
+// Hash32 returns a 32-bit hash of the value.
+// The method decodes the value as a big-endian uint64 and then xors the two halves.
+func (b Bin64) Hash32() uint32 {
+	v := binary.BigEndian.Uint64(b[:])
+	v = v ^ (v >> 32) // xor of two halves
+	return uint32(v)
+}
+
+// Hash64 returns a 64-bit hash of the value.
+// The method decodes the value as a big-endian uint64.
+func (b Bin64) Hash64() uint64 {
+	return binary.BigEndian.Uint64(b[:])
 }
 
 // Size returns 8 bytes.
