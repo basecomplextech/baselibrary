@@ -1,9 +1,7 @@
 package arena
 
 import (
-	"runtime"
 	"sync"
-	"sync/atomic"
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
@@ -11,7 +9,9 @@ import (
 )
 
 // Arena is an arena allocator, which internally allocates memory in blocks.
-// It is goroutine-safe, but operations on a freed arena panic.
+//
+// Arena is not thread-safe. If you need to use it in multiple goroutines,
+// you must synchronize access or you may consider adding an AtomicArena wrapper.
 type Arena interface {
 	// Cap returns the arena capacity.
 	Cap() int64
@@ -50,10 +50,8 @@ type arena struct {
 
 type state struct {
 	heap    *heap.Heap
-	initCap int // initial capacity
-
-	spinlock int32
-	cap      int64 // total allocated capacity
+	initCap int   // initial capacity
+	cap     int64 // total allocated capacity
 
 	blocks []*heap.Block
 }
@@ -70,17 +68,11 @@ func newArena(heap *heap.Heap, size int) *arena {
 
 // Cap returns the arena capacity.
 func (a *arena) Cap() int64 {
-	a.lock()
-	defer a.unlock()
-
 	return a.cap
 }
 
 // Len calculates and returns the arena used size.
 func (a *arena) Len() int64 {
-	a.lock()
-	defer a.unlock()
-
 	n := int64(0)
 	for _, block := range a.blocks {
 		n += int64(block.Len())
@@ -95,9 +87,6 @@ func (a *arena) Alloc(size int) unsafe.Pointer {
 
 // Reset resets the arena.
 func (a *arena) Reset() {
-	a.lock()
-	defer a.unlock()
-
 	if len(a.blocks) == 0 {
 		return
 	}
@@ -146,9 +135,6 @@ func (a *arena) free() {
 
 // alloc allocates data and returns a pointer to it.
 func (a *arena) alloc(size int) unsafe.Pointer {
-	a.lock()
-	defer a.unlock()
-
 	if len(a.blocks) > 0 {
 		b := a.blocks[len(a.blocks)-1]
 		ptr := b.Alloc(size)
@@ -177,21 +163,6 @@ func (a *arena) allocBlock(n int) *heap.Block {
 	a.blocks = append(a.blocks, b)
 	a.cap += int64(b.Cap())
 	return b
-}
-
-// lock
-
-func (a *arena) lock() {
-	for {
-		if atomic.CompareAndSwapInt32(&a.spinlock, 0, 1) {
-			return
-		}
-		runtime.Gosched()
-	}
-}
-
-func (a *arena) unlock() {
-	atomic.StoreInt32(&a.spinlock, 0)
 }
 
 // state pool
