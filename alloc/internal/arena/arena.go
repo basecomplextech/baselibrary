@@ -5,6 +5,7 @@ import (
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/collect/sets"
 	"github.com/basecomplextech/baselibrary/collect/slices"
 )
 
@@ -19,8 +20,14 @@ type Arena interface {
 	// Len calculates and returns the arena used size.
 	Len() int64
 
+	// Methods
+
 	// Alloc allocates a memory block and returns a pointer to it.
 	Alloc(size int) unsafe.Pointer
+
+	// Pin pins an external object to the arena.
+	// The method is used to prevent the object from being collected by the garbage collector.
+	Pin(obj any)
 
 	// Reset resets the arena.
 	Reset()
@@ -54,6 +61,7 @@ type state struct {
 	cap     int64 // total allocated capacity
 
 	blocks []*heap.Block
+	pinned sets.Set[any]
 }
 
 func newArena(heap *heap.Heap, size int) *arena {
@@ -82,11 +90,36 @@ func (a *arena) Len() int64 {
 
 // Alloc allocates a memory block and returns a pointer to it.
 func (a *arena) Alloc(size int) unsafe.Pointer {
-	return a.alloc(size)
+	if len(a.blocks) > 0 {
+		b := a.blocks[len(a.blocks)-1]
+		ptr := b.Alloc(size)
+		if ptr != nil {
+			return ptr
+		}
+	}
+
+	b := a.allocBlock(size)
+	return b.Alloc(size)
+}
+
+// Pin pins an external object to the arena.
+// The method is used to prevent the object from being collected by the garbage collector.
+func (a *arena) Pin(obj any) {
+	if a.pinned == nil {
+		a.pinned = sets.New[any]()
+	}
+
+	a.pinned.Add(obj)
 }
 
 // Reset resets the arena.
 func (a *arena) Reset() {
+	// Clear pinned objects
+	if a.pinned != nil {
+		clear(a.pinned)
+	}
+
+	// Reset blocks
 	if len(a.blocks) == 0 {
 		return
 	}
@@ -129,23 +162,13 @@ func (a *arena) free() {
 
 	a.cap = 0
 	a.blocks = slices.Clear(a.blocks)
+
+	if a.pinned != nil {
+		clear(a.pinned)
+	}
 }
 
 // alloc
-
-// alloc allocates data and returns a pointer to it.
-func (a *arena) alloc(size int) unsafe.Pointer {
-	if len(a.blocks) > 0 {
-		b := a.blocks[len(a.blocks)-1]
-		ptr := b.Alloc(size)
-		if ptr != nil {
-			return ptr
-		}
-	}
-
-	b := a.allocBlock(size)
-	return b.Alloc(size)
-}
 
 func (a *arena) allocBlock(n int) *heap.Block {
 	// Double last block capacity

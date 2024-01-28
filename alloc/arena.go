@@ -23,3 +23,32 @@ func NewArenaSize(size int) Arena {
 func NewArenaRef() *ref.R[Arena] {
 	return ref.New(NewArena())
 }
+
+// Pin
+
+// Pinned is a wrapper for an object pinned to an arena.
+type Pinned[T any] struct {
+	Obj T
+	Set bool
+}
+
+// Pin pins an object to an arena.
+func Pin[T any](arena Arena, obj T) Pinned[T] {
+	arena.Pin(obj)
+	return Pinned[T]{Obj: obj}
+}
+
+// Reset clears the pinned object.
+func (p *Pinned[T]) Reset() {
+	var zero T
+	p.Obj = zero
+	p.Set = false
+}
+
+// Unwrap returns the pinned object and panics if the object is not pinned.
+func (p Pinned[T]) Unwrap() T {
+	if !p.Set {
+		panic("object not pinned")
+	}
+	return p.Obj
+}

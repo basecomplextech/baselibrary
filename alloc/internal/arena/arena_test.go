@@ -23,7 +23,7 @@ func testArenaSize(size int) *arena {
 
 func TestArena_Free__should_free_arena(t *testing.T) {
 	a := testArena()
-	a.alloc(1)
+	a.Alloc(1)
 
 	a.Free()
 	assert.Nil(t, a.state)
@@ -31,7 +31,7 @@ func TestArena_Free__should_free_arena(t *testing.T) {
 
 func TestArena_free__should_release_blocks(t *testing.T) {
 	a := testArena()
-	a.alloc(1)
+	a.Alloc(1)
 
 	b := a.blocks[0]
 	require.Equal(t, 1, b.Len())
@@ -45,8 +45,8 @@ func TestArena_free__should_release_blocks(t *testing.T) {
 
 func TestArena_Len__should_return_allocated_memory(t *testing.T) {
 	a := testArena()
-	a.alloc(8)
-	a.alloc(32)
+	a.Alloc(8)
+	a.Alloc(32)
 
 	ln := a.Len()
 	assert.Equal(t, int64(40), ln)
@@ -82,7 +82,7 @@ func TestArena_Reset__should_free_blocks_except_for_first_when_capacity_matches(
 
 func TestArena_alloc__should_allocate_data(t *testing.T) {
 	a := testArena()
-	b := a.alloc(8)
+	b := a.Alloc(8)
 
 	v := (*int64)(b)
 	*v = math.MaxInt64
@@ -92,18 +92,18 @@ func TestArena_alloc__should_allocate_data(t *testing.T) {
 
 func TestArena_alloc__should_align_allocations(t *testing.T) {
 	a := testArena()
-	a.alloc(3)
+	a.Alloc(3)
 
 	b := a.blocks[0]
 	assert.Equal(t, 3, b.Len())
 
-	a.alloc(9)
+	a.Alloc(9)
 	assert.Equal(t, 8+9, b.Len())
 }
 
 func TestArena_alloc__should_not_add_padding_when_already_aligned(t *testing.T) {
 	a := testArena()
-	a.alloc(8)
+	a.Alloc(8)
 
 	b := a.blocks[0]
 	assert.Equal(t, 8, b.Len())
@@ -111,10 +111,10 @@ func TestArena_alloc__should_not_add_padding_when_already_aligned(t *testing.T) 
 
 func TestArena_alloc__should_allocate_next_block_when_not_enough_space(t *testing.T) {
 	a := testArena()
-	a.alloc(1)
+	a.Alloc(1)
 
 	n := a.blocks[0].Cap()
-	a.alloc(n)
+	a.Alloc(n)
 
 	b1 := a.blocks[1]
 	assert.Len(t, a.blocks, 2)
@@ -125,7 +125,7 @@ func TestArena_alloc__should_allocate_next_block_when_not_enough_space(t *testin
 
 func TestArena_allocBlock__should_increment_capacity(t *testing.T) {
 	a := testArena()
-	a.alloc(1)
+	a.Alloc(1)
 	cp := a.blocks[0].Cap()
 	assert.Equal(t, int64(cp), a.cap)
 
