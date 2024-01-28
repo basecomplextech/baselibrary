@@ -20,6 +20,11 @@ type Float interface {
 	~float32 | ~float64
 }
 
+// Number specifies an integer or a float.
+type Number interface {
+	Integer | Float
+}
+
 // Complex specifies all complex types.
 type Complex interface {
 	~complex64 | ~complex128
