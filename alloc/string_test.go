@@ -3,8 +3,18 @@ package alloc
 import (
 	"testing"
 
+	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestString__should_return_string_copy(t *testing.T) {
+	a := arena.Test()
+	s0 := "hello, world"
+	s1 := String(a, s0)
+
+	assert.Equal(t, s0, s1)
+	assert.NotSame(t, s0, s1)
+}
 
 func TestString__should_alloc_string_copy(t *testing.T) {
 	a := NewArena()
