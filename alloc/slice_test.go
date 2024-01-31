@@ -45,7 +45,7 @@ func TestCopy__should_copy_existing_slice_into_arena(t *testing.T) {
 	}
 
 	a := arena.Test()
-	v1 := Copy(a, v0)
+	v1 := Copy[[]Value](a, v0)
 
 	assert.Equal(t, v0, v1)
 }
