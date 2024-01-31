@@ -1,7 +1,6 @@
 package alloc
 
 import (
-	"unicode/utf8"
 	"unsafe"
 )
 
@@ -95,71 +94,6 @@ func Slice1[S ~[]T, T any](a Arena, item T) S {
 	return s
 }
 
-// String
-
-// String allocates a new string and copies data from src into it.
-func String(a Arena, src string) string {
-	if len(src) == 0 {
-		return ""
-	}
-
-	dst := Bytes(a, len(src))
-	copy(dst, src)
-	return unsafeString(dst)
-}
-
-// StringBytes allocates a new string and copies data from src into it.
-func StringBytes(a Arena, src []byte) string {
-	if len(src) == 0 {
-		return ""
-	}
-
-	dst := Bytes(a, len(src))
-	copy(dst, src)
-	return unsafeString(dst)
-}
-
-// StringRunes allocates a new string and copies data from src into it.
-func StringRunes(a Arena, src []rune) string {
-	size := 0
-	for _, r := range src {
-		size += utf8.RuneLen(r)
-	}
-
-	dst := allocSlice[[]byte](a, size, size)
-	n := 0
-
-	for _, r := range src {
-		n += utf8.EncodeRune(dst[n:], r)
-	}
-
-	return unsafeString(dst)
-}
-
-// StringJoin allocates a new string and joins items from src into it.
-func StringJoin(a Arena, src []string, sep string) string {
-	size := 0
-	for i, s := range src {
-		if i > 0 {
-			size++
-		}
-		size += len(s)
-	}
-	if size == 0 {
-		return ""
-	}
-
-	b := allocSlice[[]byte](a, 0, size)
-	for i, s := range src {
-		if i > 0 {
-			b = append(b, '.')
-		}
-		b = append(b, s...)
-	}
-
-	return unsafeString(b)
-}
-
 // private
 
 func allocSlice[S ~[]T, T any](a Arena, len int, cap int) S {
@@ -213,13 +147,4 @@ func growCapacity(oldCap int, capacity int) int {
 		newCap = capacity
 	}
 	return newCap
-}
-
-// unsafe
-
-func unsafeString(b []byte) string {
-	if b == nil {
-		return ""
-	}
-	return *(*string)(unsafe.Pointer(&b))
 }

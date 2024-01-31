@@ -1,6 +1,8 @@
 package alloc
 
 import (
+	"fmt"
+
 	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 	"github.com/basecomplextech/baselibrary/ref"
 )
@@ -28,27 +30,30 @@ func NewArenaRef() *ref.R[Arena] {
 
 // Pinned is a wrapper for an object pinned to an arena.
 type Pinned[T any] struct {
-	Obj T
 	Set bool
+	Obj T
 }
 
 // Pin pins an object to an arena.
 func Pin[T any](arena Arena, obj T) Pinned[T] {
 	arena.Pin(obj)
-	return Pinned[T]{Obj: obj}
+	return Pinned[T]{
+		Set: true,
+		Obj: obj,
+	}
 }
 
-// Reset clears the pinned object.
+// Reset clears the pinned object and the set flag.
 func (p *Pinned[T]) Reset() {
 	var zero T
-	p.Obj = zero
 	p.Set = false
+	p.Obj = zero
 }
 
 // Unwrap returns the pinned object and panics if the object is not pinned.
 func (p Pinned[T]) Unwrap() T {
 	if !p.Set {
-		panic("object not pinned")
+		panic(fmt.Sprintf("no pinned object %T", p.Obj))
 	}
 	return p.Obj
 }
