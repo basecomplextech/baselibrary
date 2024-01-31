@@ -64,6 +64,16 @@ func (b Bin64) String() string {
 	return string(buf)
 }
 
+// AppendHexTo appends a 16-char lower-case hex-encoded string to a buffer.
+func (b Bin64) AppendHexTo(buf []byte) []byte {
+	n := len(buf)
+	n1 := n + CharLen64
+
+	buf = buf[:n1]
+	hex.Encode(buf[n:], b[:])
+	return buf
+}
+
 // Marshal marshals the value to a 16-byte array.
 func (b Bin64) Marshal() ([]byte, error) {
 	return b[:], nil
