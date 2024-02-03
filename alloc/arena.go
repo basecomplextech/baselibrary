@@ -2,6 +2,7 @@ package alloc
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 	"github.com/basecomplextech/baselibrary/ref"
@@ -24,6 +25,14 @@ func NewArenaSize(size int) Arena {
 // NewArenaRef allocates an arena and returns a reference to it.
 func NewArenaRef() *ref.R[Arena] {
 	return ref.New(NewArena())
+}
+
+// AcquireArena returns a pooled arena, which is released to the pool on Free.
+//
+// The arena must not be used or even referenced after Free.
+// Use these method only when arenas do not escape an isolated scope.
+func AcquireArena() Arena {
+	return acquireArena()
 }
 
 // Pin
@@ -56,4 +65,35 @@ func (p Pinned[T]) Unwrap() T {
 		panic(fmt.Sprintf("no pinned object %T", p.Obj))
 	}
 	return p.Obj
+}
+
+// Pool
+
+var _ Arena = (*pooledArena)(nil)
+
+type pooledArena struct{ Arena }
+
+func newPooledArena() *pooledArena {
+	a := arena.New(globalHeap)
+	return &pooledArena{a}
+}
+
+func (a *pooledArena) Free() {
+	releaseArena(a)
+}
+
+var arenaPool = &sync.Pool{}
+
+func acquireArena() *pooledArena {
+	v := arenaPool.Get()
+	if v == nil {
+		return newPooledArena()
+	}
+	return v.(*pooledArena)
+}
+
+func releaseArena(a *pooledArena) {
+	a.Reset()
+
+	arenaPool.Put(a)
 }
