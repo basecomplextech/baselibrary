@@ -47,16 +47,18 @@ func (b *Block) Reset() {
 const alignment = 8
 
 // Alloc returns an aligned byte slice or nil.
+//
+// inlineable
 func (b *Block) Alloc(size int) unsafe.Pointer {
-	// Align start
+	// Handle zero size
+	if size == 0 {
+		size = 1
+	}
+
+	// Align start, calc end
 	start := len(b.buf)
 	start += (alignment - (start % alignment)) % alignment
-
-	// Calc end, add 1 byte for zero size
 	end := start + size
-	if size == 0 {
-		end += 1
-	}
 
 	// Return if no space
 	if end > cap(b.buf) {
@@ -65,15 +67,6 @@ func (b *Block) Alloc(size int) unsafe.Pointer {
 
 	// Grow buffer
 	b.buf = b.buf[:end]
-
-	// Handle zero size
-	if size == 0 {
-		if len(b.buf) == 0 {
-			return b.Alloc(1)
-		}
-		ptr := unsafe.Pointer(&b.buf[start])
-		return ptr
-	}
 
 	// Slice buffer
 	p := b.buf[start:end:end] // start:end:max, cap=max-start

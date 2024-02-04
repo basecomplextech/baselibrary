@@ -92,6 +92,7 @@ func (a *arena) Len() int64 {
 func (a *arena) Alloc(size int) unsafe.Pointer {
 	if len(a.blocks) > 0 {
 		b := a.blocks[len(a.blocks)-1]
+
 		ptr := b.Alloc(size)
 		if ptr != nil {
 			return ptr
