@@ -21,7 +21,7 @@ type FreeList[T any] interface {
 	Put(obj *T)
 }
 
-// New returns a new free list which allocates objects in the given arena.
+// New returns a free list, which allocs objects in the given arena.
 func New[T any](arena arena.Arena) FreeList[T] {
 	return newList[T](arena)
 }
@@ -41,7 +41,7 @@ type item struct {
 	next uintptr // next free item
 }
 
-func newList[T any](arena arena.Arena) *list[T] {
+func newList[T any](a arena.Arena) *list[T] {
 	var zero T
 	size := unsafe.Sizeof(zero)
 
@@ -52,7 +52,7 @@ func newList[T any](arena arena.Arena) *list[T] {
 	}
 
 	return &list[T]{
-		arena: arena,
+		arena: a,
 		size:  size,
 	}
 }
@@ -82,6 +82,7 @@ func (l *list[T]) Get() *T {
 	}
 
 	// Allocate new object
+	// TODO: Arena is not thread-safe any more, do we need to do anything?
 	return arena.Alloc[T](l.arena)
 }
 
