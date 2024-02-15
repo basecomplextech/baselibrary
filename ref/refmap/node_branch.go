@@ -12,7 +12,10 @@ import (
 var _ node[any, ref.Ref] = (*branchNode[any, ref.Ref])(nil)
 
 type branchNode[K any, V ref.Ref] struct {
-	*branchState[K, V]
+	items []branchItem[K, V]
+
+	mut  bool
+	refs int64
 }
 
 type branchItem[K any, V ref.Ref] struct {
@@ -20,17 +23,10 @@ type branchItem[K any, V ref.Ref] struct {
 	node   node[K, V]
 }
 
-type branchState[K any, V ref.Ref] struct {
-	items []branchItem[K, V]
-
-	mut  bool
-	refs int64
-}
-
 // newBranchNode returns a new mutable node, moves the children to it.
 func newBranchNode[K any, V ref.Ref](children ...node[K, V]) *branchNode[K, V] {
 	// Make node
-	n := &branchNode[K, V]{acquireBranchState[K, V]()}
+	n := acquireBranch[K, V]()
 	n.init(len(children))
 	n.mut = true
 	n.refs = 1
@@ -49,7 +45,7 @@ func newBranchNode[K any, V ref.Ref](children ...node[K, V]) *branchNode[K, V] {
 // cloneBranchNode returns a mutable node clone, retains its children.
 func cloneBranchNode[K any, V ref.Ref](n *branchNode[K, V]) *branchNode[K, V] {
 	// Copy node
-	n1 := &branchNode[K, V]{acquireBranchState[K, V]()}
+	n1 := acquireBranch[K, V]()
 	n1.init(cap(n.items))
 	n1.mut = true
 	n1.refs = 1
@@ -67,7 +63,7 @@ func cloneBranchNode[K any, V ref.Ref](n *branchNode[K, V]) *branchNode[K, V] {
 // nextBranchNode returns a new mutable node on a split, moves items to it.
 func nextBranchNode[K any, V ref.Ref](items []branchItem[K, V]) *branchNode[K, V] {
 	// Make node
-	n := &branchNode[K, V]{acquireBranchState[K, V]()}
+	n := acquireBranch[K, V]()
 	n.init(cap(items))
 	n.mut = true
 	n.refs = 1
@@ -82,16 +78,16 @@ func nextBranchNode[K any, V ref.Ref](items []branchItem[K, V]) *branchNode[K, V
 
 // reset
 
-func (s *branchState[K, V]) init(n int) {
+func (s *branchNode[K, V]) init(n int) {
 	if cap(s.items) < n {
 		s.items = make([]branchItem[K, V], 0, n)
 	}
 }
 
-func (s *branchState[K, V]) reset() {
+func (s *branchNode[K, V]) reset() {
 	items := slices.Clear(s.items)
 
-	*s = branchState[K, V]{}
+	*s = branchNode[K, V]{}
 	s.items = items
 }
 
@@ -114,14 +110,13 @@ func (n *branchNode[K, V]) release() {
 	}
 
 	// Release children
-	for _, child := range n.items {
-		child.node.release()
+	for _, item := range n.items {
+		item.node.release()
 	}
+	n.items = slices.Clear(n.items)
 
-	// Release state
-	s := n.branchState
-	n.branchState = nil
-	releaseBranchState[K, V](s)
+	// Release node
+	releaseBranch[K, V](n)
 }
 
 func (n *branchNode[K, V]) refcount() int64 {
@@ -264,7 +259,7 @@ func (n *branchNode[K, V]) split() (node[K, V], bool) {
 	next := nextBranchNode(n.items[middle:])
 
 	// Clear and truncate moved items,
-	// Do not release them
+	// Do not release them, we have moved them to the new node
 	for i := middle; i < len(n.items); i++ {
 		n.items[i] = branchItem[K, V]{}
 	}
@@ -310,9 +305,9 @@ func (n *branchNode[K, V]) mutateChild(index int) node[K, V] {
 	if node.mutable() {
 		return node
 	}
-	prev := node
 
 	// Clone and replace node
+	prev := node
 	mut := node.clone()
 	n.items[index].node = mut
 
@@ -359,33 +354,33 @@ func (n *branchNode[K, V]) splitChild(index int) bool {
 
 // branch state pool
 
-var branchStatePools = &sync.Map{}
+var branchPools = &sync.Map{}
 
-func acquireBranchState[K any, V ref.Ref]() *branchState[K, V] {
-	pool := getBranchStatePool[K, V]()
+func acquireBranch[K any, V ref.Ref]() *branchNode[K, V] {
+	pool := getBranchPool[K, V]()
 
 	v := pool.Get()
 	if v != nil {
-		return v.(*branchState[K, V])
+		return v.(*branchNode[K, V])
 	}
-	return &branchState[K, V]{}
+	return &branchNode[K, V]{}
 }
 
-func releaseBranchState[K any, V ref.Ref](s *branchState[K, V]) {
+func releaseBranch[K any, V ref.Ref](s *branchNode[K, V]) {
 	s.reset()
 
-	pool := getBranchStatePool[K, V]()
+	pool := getBranchPool[K, V]()
 	pool.Put(s)
 }
 
-func getBranchStatePool[K any, V ref.Ref]() *sync.Pool {
+func getBranchPool[K any, V ref.Ref]() *sync.Pool {
 	var key poolKey[K, V]
 
-	p, ok := branchStatePools.Load(key)
+	p, ok := branchPools.Load(key)
 	if ok {
 		return p.(*sync.Pool)
 	}
 
-	p, _ = branchStatePools.LoadOrStore(key, &sync.Pool{})
+	p, _ = branchPools.LoadOrStore(key, &sync.Pool{})
 	return p.(*sync.Pool)
 }

@@ -224,8 +224,8 @@ func (t *btree[K, V]) Delete(key K) {
 // Free frees the map, implements the ref.Freer interface.
 func (t *btree[K, V]) Free() {
 	t.root.release()
-
 	t.root = nil
+
 	t.height = 0
 	t.length = 0
 
@@ -245,9 +245,9 @@ func (t *btree[K, V]) mutateRoot() node[K, V] {
 	if t.root.mutable() {
 		return t.root
 	}
-	prev := t.root
 
 	// Clone and replace root
+	prev := t.root
 	next := t.root.clone()
 	t.root = next
 	t.mod++
