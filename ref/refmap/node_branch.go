@@ -12,7 +12,8 @@ import (
 var _ node[any, ref.Ref] = (*branchNode[any, ref.Ref])(nil)
 
 type branchNode[K any, V ref.Ref] struct {
-	items []branchItem[K, V]
+	items  []branchItem[K, V]
+	_items [maxItems]branchItem[K, V]
 
 	mut  bool
 	refs int64
@@ -27,7 +28,7 @@ type branchItem[K any, V ref.Ref] struct {
 func newBranchNode[K any, V ref.Ref](children ...node[K, V]) *branchNode[K, V] {
 	// Make node
 	n := acquireBranch[K, V]()
-	n.init(len(children))
+	n.items = n._items[:0]
 	n.mut = true
 	n.refs = 1
 
@@ -46,7 +47,7 @@ func newBranchNode[K any, V ref.Ref](children ...node[K, V]) *branchNode[K, V] {
 func cloneBranchNode[K any, V ref.Ref](n *branchNode[K, V]) *branchNode[K, V] {
 	// Copy node
 	n1 := acquireBranch[K, V]()
-	n1.init(cap(n.items))
+	n1.items = n1._items[:0]
 	n1.mut = true
 	n1.refs = 1
 
@@ -64,7 +65,7 @@ func cloneBranchNode[K any, V ref.Ref](n *branchNode[K, V]) *branchNode[K, V] {
 func nextBranchNode[K any, V ref.Ref](items []branchItem[K, V]) *branchNode[K, V] {
 	// Make node
 	n := acquireBranch[K, V]()
-	n.init(cap(items))
+	n.items = n._items[:0]
 	n.mut = true
 	n.refs = 1
 
@@ -78,17 +79,9 @@ func nextBranchNode[K any, V ref.Ref](items []branchItem[K, V]) *branchNode[K, V
 
 // reset
 
-func (s *branchNode[K, V]) init(n int) {
-	if cap(s.items) < n {
-		s.items = make([]branchItem[K, V], 0, n)
-	}
-}
-
-func (s *branchNode[K, V]) reset() {
-	items := slices.Clear(s.items)
-
-	*s = branchNode[K, V]{}
-	s.items = items
+func (n *branchNode[K, V]) reset() {
+	n.items = slices.Clear(n.items)
+	*n = branchNode[K, V]{}
 }
 
 // retain/release
@@ -366,11 +359,11 @@ func acquireBranch[K any, V ref.Ref]() *branchNode[K, V] {
 	return &branchNode[K, V]{}
 }
 
-func releaseBranch[K any, V ref.Ref](s *branchNode[K, V]) {
-	s.reset()
+func releaseBranch[K any, V ref.Ref](n *branchNode[K, V]) {
+	n.reset()
 
 	pool := getBranchPool[K, V]()
-	pool.Put(s)
+	pool.Put(n)
 }
 
 func getBranchPool[K any, V ref.Ref]() *sync.Pool {

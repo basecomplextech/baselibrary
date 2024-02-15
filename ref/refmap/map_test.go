@@ -134,6 +134,11 @@ func TestMap_Clone__should_retain_root_leaf_values(t *testing.T) {
 	items := testItemsN(maxItems)
 	btree := testBtree(t, items...)
 
+	for _, item := range items {
+		v := item.Value
+		require.Equal(t, int64(2), v.Refcount())
+	}
+
 	btree.Freeze()
 	btree.Clone()
 

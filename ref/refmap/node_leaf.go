@@ -12,7 +12,8 @@ import (
 var _ node[any, ref.Ref] = (*leafNode[any, ref.Ref])(nil)
 
 type leafNode[K any, V ref.Ref] struct {
-	items []leafItem[K, V]
+	items  []leafItem[K, V]
+	_items [maxItems]leafItem[K, V]
 
 	mut  bool
 	refs int64
@@ -27,7 +28,7 @@ type leafItem[K any, V ref.Ref] struct {
 func newLeafNode[K any, V ref.Ref](items ...Item[K, V]) *leafNode[K, V] {
 	// Make node
 	n := acquireLeaf[K, V]()
-	n.init(len(n.items))
+	n.items = n._items[:0]
 	n.mut = true
 	n.refs = 1
 
@@ -50,7 +51,7 @@ func newLeafNode[K any, V ref.Ref](items ...Item[K, V]) *leafNode[K, V] {
 func cloneLeafNode[K any, V ref.Ref](n *leafNode[K, V]) *leafNode[K, V] {
 	// Copy node
 	n1 := acquireLeaf[K, V]()
-	n1.init(len(n.items))
+	n1.items = n1._items[:0]
 	n1.mut = true
 	n1.refs = 1
 
@@ -67,7 +68,7 @@ func cloneLeafNode[K any, V ref.Ref](n *leafNode[K, V]) *leafNode[K, V] {
 // nextLeafNode returns a new mutable node on a split, moves items to it.
 func nextLeafNode[K any, V ref.Ref](items []leafItem[K, V]) *leafNode[K, V] {
 	n := acquireLeaf[K, V]()
-	n.init(cap(items))
+	n.items = n._items[:0]
 	n.refs = 1
 	n.mut = true
 
@@ -78,17 +79,10 @@ func nextLeafNode[K any, V ref.Ref](items []leafItem[K, V]) *leafNode[K, V] {
 
 // state
 
-func (s *leafNode[K, V]) init(n int) {
-	if cap(s.items) < n {
-		s.items = make([]leafItem[K, V], 0, n)
-	}
-}
+func (n *leafNode[K, V]) reset() {
+	n.items = slices.Clear(n.items)
 
-func (s *leafNode[K, V]) reset() {
-	items := slices.Clear(s.items)
-
-	*s = leafNode[K, V]{}
-	s.items = items
+	*n = leafNode[K, V]{}
 }
 
 // retain/release
@@ -299,11 +293,11 @@ func acquireLeaf[K any, V ref.Ref]() *leafNode[K, V] {
 	return &leafNode[K, V]{}
 }
 
-func releaseLeaf[K any, V ref.Ref](s *leafNode[K, V]) {
-	s.reset()
+func releaseLeaf[K any, V ref.Ref](n *leafNode[K, V]) {
+	n.reset()
 
 	pool := getLeafPool[K, V]()
-	pool.Put(s)
+	pool.Put(n)
 }
 
 func getLeafPool[K any, V ref.Ref]() *sync.Pool {
