@@ -27,12 +27,13 @@ var (
 // Bin256 is a 32 byte value.
 type Bin256 [ByteLen256]byte
 
-// Bin256FromInt converts an int into a big endian Bin256.
-func Bin256FromInt(v int) Bin256 {
+// Int256 returns a Bin256 from four int64s encoded as big-endian.
+func Int256(v0, v1, v2, v3 int64) Bin256 {
 	b := Bin256{}
-	buf := b[24:]
-
-	binary.BigEndian.PutUint64(buf, uint64(v))
+	binary.BigEndian.PutUint64(b[:], uint64(v0))
+	binary.BigEndian.PutUint64(b[8:], uint64(v1))
+	binary.BigEndian.PutUint64(b[16:], uint64(v2))
+	binary.BigEndian.PutUint64(b[24:], uint64(v3))
 	return b
 }
 

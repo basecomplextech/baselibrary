@@ -21,8 +21,8 @@ var (
 // Bin64 is a binary 64-bit value.
 type Bin64 [ByteLen64]byte
 
-// Bin64FromInt converts an int into a bin64.
-func Bin64FromInt(v int) Bin64 {
+// Int64 returns a bin64 from an int64, encoded as big-endian.
+func Int64(v int64) Bin64 {
 	b := Bin64{}
 	binary.BigEndian.PutUint64(b[:], uint64(v))
 	return b

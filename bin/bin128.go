@@ -24,12 +24,11 @@ var (
 // Bin128 is a 128-bit value.
 type Bin128 [ByteLen128]byte
 
-// Bin128FromInt converts an int into a bin128.
-func Bin128FromInt(v int) Bin128 {
+// Int128 returns a bin128 from two int64 encoded as big-endian.
+func Int128(v0, v1 int64) Bin128 {
 	b := Bin128{}
-	buf := b[8:]
-
-	binary.BigEndian.PutUint64(buf, uint64(v))
+	binary.BigEndian.PutUint64(b[:], uint64(v0))
+	binary.BigEndian.PutUint64(b[8:], uint64(v1))
 	return b
 }
 
