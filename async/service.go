@@ -8,6 +8,11 @@ import (
 
 // Service is a service which can be started and stopped.
 type Service interface {
+	// IsRunning returns true if the service is running.
+	IsRunning() bool
+
+	// Async
+
 	// Running indicates that the service is running.
 	Running() <-chan struct{}
 
@@ -52,6 +57,13 @@ func newService(fn func(cancel <-chan struct{}) status.Status) *service {
 		stopped: SetFlag(),
 	}
 }
+
+// IsRunning returns true if the service is running.
+func (s *service) IsRunning() bool {
+	return s.running.IsSet()
+}
+
+// Async
 
 // Running indicates that the service is running.
 func (s *service) Running() <-chan struct{} {
