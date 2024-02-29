@@ -128,8 +128,8 @@ func (q *queue[T]) Wait() <-chan struct{} {
 	return q.wait
 }
 
-var closedChan = make(chan struct{})
-
-func init() {
-	close(closedChan)
-}
+var closedChan = func() chan struct{} {
+	ch := make(chan struct{})
+	close(ch)
+	return ch
+}()
