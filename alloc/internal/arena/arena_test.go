@@ -11,12 +11,22 @@ import (
 
 func testArena() *arena {
 	h := heap.New()
-	return newArena(h, 0)
+	return newArenaSize(h, 0)
 }
 
 func testArenaSize(size int) *arena {
 	h := heap.New()
-	return newArena(h, size)
+	return newArenaSize(h, size)
+}
+
+// Acquire
+
+func TestAcquireArena__should_return_pooled_arena(t *testing.T) {
+	a := AcquireArena().(*arena)
+	assert.NotNil(t, a.state)
+
+	a.Free()
+
 }
 
 // Free

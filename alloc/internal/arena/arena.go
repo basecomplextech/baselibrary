@@ -40,13 +40,26 @@ type Arena interface {
 }
 
 // New returns an empty arena.
-func New(h *heap.Heap) Arena {
-	return newArena(h, heap.MinBlockSize)
+func New() Arena {
+	return newArena(heap.Global)
 }
 
 // NewSize returns an arena with an initial capacity.
-func NewSize(heap *heap.Heap, size int) Arena {
-	return newArena(heap, size)
+func NewSize(size int) Arena {
+	return newArenaSize(heap.Global, size)
+}
+
+// AcquireArena returns a pooled arena, which is released to the pool on Free.
+//
+// The arena must not be used or even referenced after Free.
+// Use these method only when arenas do not escape an isolated scope.
+//
+// Typical usage:
+//
+//	arena := alloc.AcquireArena()
+//	defer arena.Free() // free immediately
+func AcquireArena() Arena {
+	return acquireArena()
 }
 
 // internal
@@ -56,20 +69,26 @@ type arena struct {
 }
 
 type state struct {
-	heap    *heap.Heap
-	initCap int   // initial capacity
-	cap     int64 // total allocated capacity
+	heap   *heap.Heap
+	pooled bool
+
+	init int   // initial capacity
+	cap  int64 // total allocated capacity
 
 	blocks []*heap.Block
 	pinned sets.Set[any]
 }
 
-func newArena(heap *heap.Heap, size int) *arena {
+func newArena(h *heap.Heap) *arena {
+	return newArenaSize(h, heap.MinBlockSize)
+}
+
+func newArenaSize(heap *heap.Heap, size int) *arena {
 	a := &arena{acquireState()}
 	a.heap = heap
 
 	if size > 0 {
-		a.initCap = a.allocBlock(size).Cap()
+		a.init = a.allocBlock(size).Cap()
 	}
 	return a
 }
@@ -115,6 +134,39 @@ func (a *arena) Pin(obj any) {
 
 // Reset resets the arena.
 func (a *arena) Reset() {
+	a.reset()
+}
+
+// Internal
+
+// Free frees the arena and releases its memory.
+// The method is not thread-safe and must be called only once.
+func (a *arena) Free() {
+	if a.pooled {
+		releaseArena(a)
+		return
+	}
+
+	a.free()
+	s := a.state
+	a.state = nil
+	releaseState(s)
+}
+
+// private
+
+func (a *arena) free() {
+	a.heap.FreeMany(a.blocks...)
+
+	a.cap = 0
+	a.blocks = slices.Clear(a.blocks)
+
+	if a.pinned != nil {
+		clear(a.pinned)
+	}
+}
+
+func (a *arena) reset() {
 	// Clear pinned objects
 	if a.pinned != nil {
 		clear(a.pinned)
@@ -127,7 +179,7 @@ func (a *arena) Reset() {
 
 	// Maybe just reset the first block
 	n := 0
-	if b := a.blocks[0]; b.Cap() == a.initCap {
+	if b := a.blocks[0]; b.Cap() == a.init {
 		n = 1
 
 		b.Reset()
@@ -146,30 +198,7 @@ func (a *arena) Reset() {
 	a.blocks = a.blocks[:n]
 }
 
-// Internal
-
-// Free frees the arena and releases its memory.
-// The method is not thread-safe and must be called only once.
-func (a *arena) Free() {
-	a.free()
-
-	s := a.state
-	a.state = nil
-	releaseState(s)
-}
-
-func (a *arena) free() {
-	a.heap.FreeMany(a.blocks...)
-
-	a.cap = 0
-	a.blocks = slices.Clear(a.blocks)
-
-	if a.pinned != nil {
-		clear(a.pinned)
-	}
-}
-
-// alloc
+// blocks
 
 func (a *arena) allocBlock(n int) *heap.Block {
 	// Double last block capacity
@@ -187,6 +216,25 @@ func (a *arena) allocBlock(n int) *heap.Block {
 	a.blocks = append(a.blocks, b)
 	a.cap += int64(b.Cap())
 	return b
+}
+
+// arena pool
+
+var arenaPool = &sync.Pool{
+	New: func() any {
+		a := newArena(heap.Global)
+		a.pooled = true
+		return a
+	},
+}
+
+func acquireArena() *arena {
+	return arenaPool.Get().(*arena)
+}
+
+func releaseArena(a *arena) {
+	a.reset()
+	arenaPool.Put(a)
 }
 
 // state pool

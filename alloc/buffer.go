@@ -22,6 +22,11 @@ func NewBufferSize(size int) *Buffer {
 //
 // The buffer must not be used or even referenced after Free.
 // Use these method only when buffers do not escape an isolated scope.
+//
+// Typical usage:
+//
+//	buf := alloc.AcquireBuffer()
+//	defer buf.Free() // free immediately
 func AcquireBuffer() *Buffer {
 	return buf.Acquire()
 }

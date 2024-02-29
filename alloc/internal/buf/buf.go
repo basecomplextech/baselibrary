@@ -25,8 +25,9 @@ type state struct {
 	heap   *heap.Heap
 	pooled bool
 
-	init   int // initial capacity
-	len    int // total length in bytes
+	init int // initial capacity
+	len  int // total length in bytes
+
 	blocks []*heap.Block
 }
 
@@ -44,6 +45,11 @@ func NewSize(size int) *Buffer {
 //
 // The buffer must not be used or even referenced after Free.
 // Use these method only when buffers do not escape an isolated scope.
+//
+// Typical usage:
+//
+//	buf := alloc.AcquireBuffer()
+//	defer buf.Free() // free immediately
 func Acquire() *Buffer {
 	return acquireBuffer()
 }
