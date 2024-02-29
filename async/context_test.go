@@ -8,6 +8,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestContext_Cancel_Free__should_not_race(t *testing.T) {
+	n := 1000
+	cc := make([]Context, n)
+
+	for i := 0; i < n; i++ {
+		ctx := NewContextTimeout(time.Millisecond)
+		cc[i] = ctx
+	}
+
+	for _, c := range cc {
+		c.Free()
+	}
+}
+
 // Cancel
 
 func TestContext_Cancel__should_cancel_context_close_done_channel(t *testing.T) {

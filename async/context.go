@@ -11,7 +11,7 @@ import (
 //
 // Usage:
 //
-//	ctx := Ctx() // Or NewContext()
+//	ctx := NewContext()
 //	defer ctx.Free()
 type Context interface {
 	// Cancel cancels the context.
@@ -99,6 +99,7 @@ type contextState struct {
 	parent Context // maybe nil
 
 	done    bool
+	doneMu  sync.Mutex // enforce single canceller
 	cause   status.Status
 	channel chan struct{}
 
@@ -121,6 +122,16 @@ func newContext(parent Context) *context {
 }
 
 func newContextTimeout(parent Context, timeout time.Duration) *context {
+	c := newContextTimeout1(parent, timeout)
+
+	// Maybe add callback outside of lock
+	if parent != nil {
+		parent.AddCallback(c)
+	}
+	return c
+}
+
+func newContextTimeout1(parent Context, timeout time.Duration) *context {
 	s := acquireContextState()
 	s.parent = parent
 	s.cause = status.Timeout
@@ -134,12 +145,10 @@ func newContextTimeout(parent Context, timeout time.Duration) *context {
 	}
 
 	// Start timer
-	s.timer = time.AfterFunc(timeout, c.timeout)
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	// Maybe Add callback
-	if parent != nil {
-		parent.AddCallback(c)
-	}
+	s.timer = time.AfterFunc(timeout, c.timeout)
 	return c
 }
 
@@ -247,9 +256,20 @@ func (c *context) cancel(st status.Status) {
 		return
 	}
 
-	// Locked
-	if !s.done {
-		// Mark as done, close channel
+	// Enforce single canceller til the end, but do not hold the `s.mu` lock
+	// while calling callbacks. Mostly doneMu exists to prevent race conditions
+	// between cancel() and Free().
+	s.doneMu.Lock()
+	defer s.doneMu.Unlock()
+
+	// Maybe already done
+	if s.done {
+		c.mu.Unlock()
+		return
+	}
+
+	// Mark as done, close channel
+	{
 		s.done = true
 		close(s.channel)
 
@@ -270,6 +290,11 @@ func (c *context) cancel(st status.Status) {
 		for cb := range s.callbacks {
 			cb.OnCancelled(s.cause)
 		}
+	}
+
+	// Remove from parent
+	if s.parent != nil {
+		s.parent.RemoveCallback(c)
 	}
 }
 
