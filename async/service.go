@@ -32,7 +32,7 @@ type Service interface {
 }
 
 // NewService returns a new stopped service.
-func NewService(fn func(cancel <-chan struct{}) status.Status) Service {
+func NewService(fn func(ctx Context) status.Status) Service {
 	return newService(fn)
 }
 
@@ -41,7 +41,7 @@ func NewService(fn func(cancel <-chan struct{}) status.Status) Service {
 var _ Service = (*service)(nil)
 
 type service struct {
-	fn func(cancel <-chan struct{}) status.Status
+	fn func(ctx Context) status.Status
 
 	running *Flag
 	stopped *Flag
@@ -50,7 +50,7 @@ type service struct {
 	routine Routine[struct{}]
 }
 
-func newService(fn func(cancel <-chan struct{}) status.Status) *service {
+func newService(fn func(ctx Context) status.Status) *service {
 	return &service{
 		fn:      fn,
 		running: UnsetFlag(),
@@ -119,10 +119,10 @@ func (s *service) Stop() Routine[struct{}] {
 
 // private
 
-func (s *service) run(cancel <-chan struct{}) status.Status {
+func (s *service) run(ctx Context) status.Status {
 	defer s.stop()
 
-	return s.fn(cancel)
+	return s.fn(ctx)
 }
 
 func (s *service) stop() {

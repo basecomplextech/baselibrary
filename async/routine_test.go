@@ -13,7 +13,7 @@ import (
 // Go
 
 func TestGo__should_return_on_on_success(t *testing.T) {
-	p := Go(func(cancel <-chan struct{}) status.Status {
+	p := Go(func(Context) status.Status {
 		return status.OK
 	})
 	p.Cancel()
@@ -32,7 +32,7 @@ func TestGo__should_return_on_on_success(t *testing.T) {
 
 func TestGo__should_return_status_on_error(t *testing.T) {
 	st := status.Test("test")
-	p := Go(func(cancel <-chan struct{}) status.Status {
+	p := Go(func(Context) status.Status {
 		return st
 	})
 	p.Cancel()
@@ -48,7 +48,7 @@ func TestGo__should_return_status_on_error(t *testing.T) {
 }
 
 func TestGo__should_return_recover_on_panic(t *testing.T) {
-	p := Go(func(cancel <-chan struct{}) status.Status {
+	p := Go(func(Context) status.Status {
 		panic("test")
 	})
 	p.Cancel()
@@ -65,9 +65,9 @@ func TestGo__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestGo__should_stop_on_request(t *testing.T) {
-	p := Go(func(cancel <-chan struct{}) status.Status {
-		<-cancel
-		return status.Cancelled
+	p := Go(func(ctx Context) status.Status {
+		<-ctx.Wait()
+		return ctx.Status()
 	})
 
 	p.Cancel()
@@ -83,7 +83,7 @@ func TestGo__should_stop_on_request(t *testing.T) {
 // Call
 
 func TestCall__should_return_result_on_success(t *testing.T) {
-	p := Call(func(cancel <-chan struct{}) (string, status.Status) {
+	p := Call(func(Context) (string, status.Status) {
 		return "hello, world", status.OK
 	})
 	p.Cancel()
@@ -103,7 +103,7 @@ func TestCall__should_return_result_on_success(t *testing.T) {
 
 func TestCall__should_return_status_on_error(t *testing.T) {
 	st := status.Test("test")
-	p := Call(func(cancel <-chan struct{}) (string, status.Status) {
+	p := Call(func(Context) (string, status.Status) {
 		return "", st
 	})
 	p.Cancel()
@@ -119,7 +119,7 @@ func TestCall__should_return_status_on_error(t *testing.T) {
 }
 
 func TestCall__should_return_recover_on_panic(t *testing.T) {
-	p := Call(func(cancel <-chan struct{}) (string, status.Status) {
+	p := Call(func(Context) (string, status.Status) {
 		panic("test")
 	})
 	p.Cancel()
@@ -136,9 +136,9 @@ func TestCall__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestCall__should_stop_on_request(t *testing.T) {
-	p := Call(func(cancel <-chan struct{}) (string, status.Status) {
-		<-cancel
-		return "", status.Cancelled
+	p := Call(func(ctx Context) (string, status.Status) {
+		<-ctx.Wait()
+		return "", ctx.Status()
 	})
 
 	select {

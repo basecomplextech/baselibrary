@@ -19,7 +19,7 @@ func TestContext_Cancel__should_cancel_context_close_done_channel(t *testing.T) 
 	}()
 
 	select {
-	case <-ctx.Done():
+	case <-ctx.Wait():
 	case <-time.After(time.Second):
 		t.Fatal("context was not cancelled")
 	}
@@ -27,7 +27,7 @@ func TestContext_Cancel__should_cancel_context_close_done_channel(t *testing.T) 
 	assert.Equal(t, status.Cancelled, st)
 
 	select {
-	case <-ctx.Done():
+	case <-ctx.Wait():
 	case <-time.After(time.Millisecond * 5):
 		t.Fatal("done channel was not closed")
 	}
@@ -37,7 +37,7 @@ func TestContext_Cancel__should_cancel_context_close_done_channel(t *testing.T) 
 
 func TestContext_Cancel__should_cancel_child_context(t *testing.T) {
 	parent := NewContext()
-	child := NextContextTimeout(parent, time.Second)
+	child := ChildContextTimeout(parent, time.Second)
 
 	go func() {
 		time.Sleep(time.Millisecond * 5)
@@ -45,7 +45,7 @@ func TestContext_Cancel__should_cancel_child_context(t *testing.T) {
 	}()
 
 	select {
-	case <-child.Done():
+	case <-child.Wait():
 	case <-time.After(time.Second):
 		t.Fatal("context was not cancelled")
 	}
@@ -59,7 +59,7 @@ func TestContext_Timeout__should_timeout_context(t *testing.T) {
 	ctx := NewContextTimeout(time.Millisecond * 5)
 
 	select {
-	case <-ctx.Done():
+	case <-ctx.Wait():
 	case <-time.After(time.Second):
 		t.Fatal("context was not cancelled")
 	}
@@ -67,7 +67,7 @@ func TestContext_Timeout__should_timeout_context(t *testing.T) {
 	assert.Equal(t, status.Timeout, st)
 
 	select {
-	case <-ctx.Done():
+	case <-ctx.Wait():
 	case <-time.After(time.Millisecond * 5):
 		t.Fatal("done channel was not closed")
 	}
@@ -77,10 +77,10 @@ func TestContext_Timeout__should_timeout_context(t *testing.T) {
 
 func TestContext_Timeout__should_timeout_child_context(t *testing.T) {
 	parent := NewContextTimeout(time.Millisecond * 5)
-	child := NextContextTimeout(parent, time.Second)
+	child := ChildContextTimeout(parent, time.Second)
 
 	select {
-	case <-child.Done():
+	case <-child.Wait():
 	case <-time.After(time.Second):
 		t.Fatal("context was not cancelled")
 	}

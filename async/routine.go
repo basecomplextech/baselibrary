@@ -13,10 +13,11 @@ type Routine[T any] interface {
 // Methods
 
 // Go runs a function in a new routine, recovers on panics.
-func Go(fn func(cancel <-chan struct{}) status.Status) Routine[struct{}] {
+func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
 	r := newRoutine[struct{}]()
 
 	go func() {
+		defer r.ctx.Free()
 		defer func() {
 			e := recover()
 			if e == nil {
@@ -24,21 +25,22 @@ func Go(fn func(cancel <-chan struct{}) status.Status) Routine[struct{}] {
 			}
 
 			st := status.Recover(e)
-			r.Complete(struct{}{}, st)
+			r.result.Complete(struct{}{}, st)
 		}()
 
-		st := fn(r.cancel)
-		r.Complete(struct{}{}, st)
+		st := fn(r.ctx)
+		r.result.Complete(struct{}{}, st)
 	}()
 
 	return r
 }
 
 // Call calls a function in a new routine, and returns its result, recovers on panics.
-func Call[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Routine[T] {
+func Call[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
 
 	go func() {
+		defer r.ctx.Free()
 		defer func() {
 			e := recover()
 			if e == nil {
@@ -47,11 +49,11 @@ func Call[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Routine[T] 
 
 			var zero T
 			st := status.Recover(e)
-			r.Complete(zero, st)
+			r.result.Complete(zero, st)
 		}()
 
-		result, st := fn(r.cancel)
-		r.Complete(result, st)
+		result, st := fn(r.ctx)
+		r.result.Complete(result, st)
 	}()
 
 	return r
@@ -60,15 +62,15 @@ func Call[T any](fn func(cancel <-chan struct{}) (T, status.Status)) Routine[T] 
 // Join joins all routines into a single routine.
 // The routine returns all the results and the first non-OK status.
 func Join[T any](routines ...Routine[T]) Routine[[]T] {
-	return Call(func(cancel <-chan struct{}) ([]T, status.Status) {
+	return Call(func(ctx Context) ([]T, status.Status) {
 		// Await all or cancel
 		st := status.OK
 	loop:
 		for _, r := range routines {
 			select {
 			case <-r.Wait():
-			case <-cancel:
-				st = status.Cancelled
+			case <-ctx.Wait():
+				st = ctx.Status()
 				break loop
 			}
 		}
@@ -97,7 +99,7 @@ func Join[T any](routines ...Routine[T]) Routine[[]T] {
 // Exited returns a routine which has exited with the given result and status.
 func Exited[T any](result T, st status.Status) Routine[T] {
 	r := newRoutine[T]()
-	r.Complete(result, st)
+	r.result.Complete(result, st)
 	return r
 }
 
@@ -106,14 +108,34 @@ func Exited[T any](result T, st status.Status) Routine[T] {
 var _ Routine[any] = (*routine[any])(nil)
 
 type routine[T any] struct {
-	promise[T]
+	ctx    Context
+	result promise[T]
 }
 
 func newRoutine[T any]() *routine[T] {
 	return &routine[T]{
-		promise: promise[T]{
-			wait:   make(chan struct{}),
-			cancel: make(chan struct{}),
-		},
+		ctx:    newContext(nil /* no parent */),
+		result: promise[T]{},
 	}
+}
+
+// Cancel requests the future to cancel and returns a wait channel.
+func (r *routine[T]) Cancel() <-chan struct{} {
+	r.ctx.Cancel()
+	return r.result.Wait()
+}
+
+// Wait returns a channel which is closed when the future is complete.
+func (r *routine[T]) Wait() <-chan struct{} {
+	return r.result.Wait()
+}
+
+// Result returns a value and a status.
+func (r *routine[T]) Result() (T, status.Status) {
+	return r.result.Result()
+}
+
+// Status returns a status or none.
+func (r *routine[T]) Status() status.Status {
+	return r.result.Status()
 }

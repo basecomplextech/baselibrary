@@ -11,16 +11,16 @@ import (
 //
 // Usage:
 //
-//	ctx := NewContext()
+//	ctx := Ctx() // Or NewContext()
 //	defer ctx.Free()
 type Context interface {
-	// Cancel indicates that the operation should be cancelled.
-	Done() <-chan struct{}
-
 	// Cancel cancels the context.
 	Cancel()
 
-	// Status returns a cause or OK.
+	// Wait returns a channel which is closed when the context is cancelled.
+	Wait() <-chan struct{}
+
+	// Status returns a cancellation status or OK.
 	Status() status.Status
 
 	// Callbacks
@@ -37,18 +37,30 @@ type Context interface {
 	Free()
 }
 
-// ContextCallback allows to receive context done notifications.
+// ContextCallback receives context cancellation notifications.
 type ContextCallback interface {
-	// OnContextDone is called when the context is done.
-	OnContextDone(status.Status)
+	// OnCancelled is called when the context is cancelled.
+	OnCancelled(status.Status)
 }
 
 // New
 
-// NewContext returns a new pending context.
+// NewContext returns a new context.
 func NewContext() Context {
 	return newContext(nil /* no parent */)
 }
+
+// NoContext returns a non-cancellable background context.
+func NoContext() Context {
+	return noCtx
+}
+
+// DoneContext returns a cancelled context.
+func DoneContext() Context {
+	return doneCtx
+}
+
+// More
 
 // NewContextTimeout returns a new context with a timeout.
 func NewContextTimeout(timeout time.Duration) Context {
@@ -61,20 +73,20 @@ func NewContextDeadline(deadline time.Time) Context {
 	return newContextTimeout(nil /* no parent */, timeout)
 }
 
-// Next
+// Child
 
-// NextContextTimeout returns a child context with a timeout.
-func NextContextTimeout(parent Context, timeout time.Duration) Context {
+// ChildContextTimeout returns a child context with a timeout.
+func ChildContextTimeout(parent Context, timeout time.Duration) Context {
 	return newContextTimeout(parent, timeout)
 }
 
-// NextContextDeadline returns a child context with a deadline.
-func NextContextDeadline(parent Context, deadline time.Time) Context {
+// ChildContextDeadline returns a child context with a deadline.
+func ChildContextDeadline(parent Context, deadline time.Time) Context {
 	timeout := time.Until(deadline)
 	return newContextTimeout(parent, timeout)
 }
 
-// channel
+// internal
 
 var _ Context = (*context)(nil)
 
@@ -131,8 +143,13 @@ func newContextTimeout(parent Context, timeout time.Duration) *context {
 	return c
 }
 
-// Cancel indicates that the operation should be cancelled.
-func (c *context) Done() <-chan struct{} {
+// Cancel cancels the context.
+func (c *context) Cancel() {
+	c.cancel(status.None)
+}
+
+// Wait returns a channel which is closed when the context is cancelled.
+func (c *context) Wait() <-chan struct{} {
 	s, ok := c.lock()
 	defer c.mu.Unlock()
 
@@ -142,12 +159,7 @@ func (c *context) Done() <-chan struct{} {
 	return s.channel
 }
 
-// Cancel cancels the context.
-func (c *context) Cancel() {
-	c.cancel(status.None)
-}
-
-// Status returns a cause or OK.
+// Status returns a cancellation status or OK.
 func (c *context) Status() status.Status {
 	s, ok := c.lock()
 	if !ok {
@@ -164,14 +176,14 @@ func (c *context) Status() status.Status {
 func (c *context) AddCallback(cb ContextCallback) {
 	s, ok := c.lock()
 	if !ok {
-		cb.OnContextDone(status.Cancelled)
+		cb.OnCancelled(status.Cancelled)
 		return
 	}
 	defer c.mu.Unlock()
 
 	// Maybe done
 	if s.done {
-		cb.OnContextDone(s.cause)
+		cb.OnCancelled(s.cause)
 		return
 	}
 
@@ -195,8 +207,8 @@ func (c *context) RemoveCallback(cb ContextCallback) {
 	}
 }
 
-// OnContextDone is called when a parent context is done.
-func (c *context) OnContextDone(st status.Status) {
+// OnCancelled is called when a parent context is done.
+func (c *context) OnCancelled(st status.Status) {
 	c.cancel(st)
 }
 
@@ -236,7 +248,7 @@ func (c *context) cancel(st status.Status) {
 	}
 
 	// Locked
-	{
+	if !s.done {
 		// Mark as done, close channel
 		s.done = true
 		close(s.channel)
@@ -256,7 +268,7 @@ func (c *context) cancel(st status.Status) {
 	// Notify callbacks
 	if len(s.callbacks) > 0 {
 		for cb := range s.callbacks {
-			cb.OnContextDone(s.cause)
+			cb.OnCancelled(s.cause)
 		}
 	}
 }
@@ -264,6 +276,32 @@ func (c *context) cancel(st status.Status) {
 func (c *context) timeout() {
 	c.cancel(status.None)
 }
+
+// done context
+
+var doneCtx Context = &doneContext{}
+
+type doneContext struct{}
+
+func (*doneContext) Cancel()                           {}
+func (*doneContext) Wait() <-chan struct{}             { return closedChan }
+func (*doneContext) Status() status.Status             { return status.OK }
+func (*doneContext) AddCallback(cb ContextCallback)    { cb.OnCancelled(status.Cancelled) }
+func (*doneContext) RemoveCallback(cb ContextCallback) {}
+func (*doneContext) Free()                             {}
+
+// no context
+
+var noCtx Context = &noContext{}
+
+type noContext struct{}
+
+func (*noContext) Cancel()                        {}
+func (*noContext) Wait() <-chan struct{}          { return nil }
+func (*noContext) Status() status.Status          { return status.OK }
+func (*noContext) AddCallback(ContextCallback)    {}
+func (*noContext) RemoveCallback(ContextCallback) {}
+func (*noContext) Free()                          {}
 
 // state pool
 
