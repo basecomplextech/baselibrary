@@ -94,8 +94,8 @@ func StringFormat(a Arena, format string, args ...any) string {
 		size = len(format)
 	}
 
-	block := globalHeap.Alloc(size)
-	defer globalHeap.Free(block)
+	block := heap.Global.Alloc(size)
+	defer heap.Global.Free(block)
 
 	// Format string
 	b := block.Bytes()

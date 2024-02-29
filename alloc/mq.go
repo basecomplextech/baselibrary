@@ -1,6 +1,7 @@
 package alloc
 
 import (
+	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 	"github.com/basecomplextech/baselibrary/alloc/internal/mq"
 )
 
@@ -11,10 +12,10 @@ type MQueue = mq.MQueue
 
 // NewMQueue allocates an unbounded buffer queue.
 func NewMQueue() MQueue {
-	return mq.New(globalHeap)
+	return mq.New(heap.Global)
 }
 
 // NewMQueueCap allocates a buffer queue with a max capacity.
 func NewMQueueCap(cap int) MQueue {
-	return mq.NewCap(globalHeap, cap)
+	return mq.NewCap(heap.Global, cap)
 }

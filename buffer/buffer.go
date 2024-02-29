@@ -35,6 +35,10 @@ type Buffer interface {
 
 	// Reset resets the buffer to be empty, but can retain its internal buffer.
 	Reset()
+
+	// Free releases the buffer and its internal resources.
+	// The buffer cannot be used after it has been freed.
+	Free()
 }
 
 // Writer specifies additional methods for writing to a buffer.
@@ -125,4 +129,10 @@ func (b *buffer) WriteByte(v byte) error {
 // Reset resets the buffer to be empty, but can retain its internal buffer.
 func (b *buffer) Reset() {
 	b.buf = b.buf[:0]
+}
+
+// Free releases the buffer and its internal resources.
+// The buffer cannot be used after it has been freed.
+func (b *buffer) Free() {
+	b.buf = nil
 }

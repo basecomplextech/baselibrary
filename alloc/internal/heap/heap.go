@@ -1,6 +1,6 @@
 package heap
 
-var global = New()
+var Global = New()
 
 type Heap struct {
 	pools pools

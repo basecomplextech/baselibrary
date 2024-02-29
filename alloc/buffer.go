@@ -10,10 +10,18 @@ type Buffer = buf.Buffer
 
 // NewBuffer allocates a buffer.
 func NewBuffer() *Buffer {
-	return buf.New(globalHeap)
+	return buf.New()
 }
 
 // NewBuffer allocates a buffer of a preallocated capacity.
 func NewBufferSize(size int) *Buffer {
-	return buf.NewSize(globalHeap, size)
+	return buf.NewSize(size)
+}
+
+// AcquireBuffer returns a new buffer from the pool.
+//
+// The buffer must not be used or even referenced after Free.
+// Use these method only when buffers do not escape an isolated scope.
+func AcquireBuffer() *Buffer {
+	return buf.Acquire()
 }

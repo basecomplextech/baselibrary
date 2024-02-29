@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
+	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -14,12 +15,12 @@ type Arena = arena.Arena
 
 // NewArena allocates an arena.
 func NewArena() Arena {
-	return arena.New(globalHeap)
+	return arena.New(heap.Global)
 }
 
 // NewArenaSize allocates an arena of a preallocated capacity.
 func NewArenaSize(size int) Arena {
-	return arena.NewSize(globalHeap, size)
+	return arena.NewSize(heap.Global, size)
 }
 
 // NewArenaRef allocates an arena and returns a reference to it.
@@ -74,7 +75,7 @@ var _ Arena = (*pooledArena)(nil)
 type pooledArena struct{ Arena }
 
 func newPooledArena() *pooledArena {
-	a := arena.New(globalHeap)
+	a := arena.New(heap.Global)
 	return &pooledArena{a}
 }
 

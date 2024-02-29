@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
+	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 )
 
 func Benchmark_AllocInt64(b *testing.B) {
@@ -199,8 +200,8 @@ func BenchmarkHeap_Alloc_Free(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		block := globalHeap.Alloc(0)
-		globalHeap.Free(block)
+		block := heap.Global.Alloc(0)
+		heap.Global.Free(block)
 	}
 
 	sec := b.Elapsed().Seconds()

@@ -10,12 +10,21 @@ import (
 
 func testBuffer() *Buffer {
 	h := heap.New()
-	return New(h)
+	return newBuffer(h)
 }
 
 func testBufferSize(size int) *Buffer {
 	h := heap.New()
-	return NewSize(h, size)
+	return newBufferSize(h, size)
+}
+
+// Acquire
+
+func TestAcquire__should_acquire_buffer(t *testing.T) {
+	b := Acquire()
+	assert.NotNil(t, b.state)
+
+	b.Free()
 }
 
 // Free

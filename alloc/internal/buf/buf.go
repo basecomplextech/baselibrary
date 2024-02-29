@@ -23,18 +23,36 @@ type Buffer struct {
 
 type state struct {
 	heap   *heap.Heap
+	pooled bool
+
 	init   int // initial capacity
 	len    int // total length in bytes
 	blocks []*heap.Block
 }
 
 // New returns a new buffer.
-func New(h *heap.Heap) *Buffer {
-	return NewSize(h, heap.MinBlockSize)
+func New() *Buffer {
+	return newBufferSize(heap.Global, heap.MinBlockSize)
 }
 
 // NewSize returns a new buffer with a preallocated memory storage.
-func NewSize(heap *heap.Heap, size int) *Buffer {
+func NewSize(size int) *Buffer {
+	return newBufferSize(heap.Global, size)
+}
+
+// Acquire returns a new buffer from the pool.
+//
+// The buffer must not be used or even referenced after Free.
+// Use these method only when buffers do not escape an isolated scope.
+func Acquire() *Buffer {
+	return acquireBuffer()
+}
+
+func newBuffer(h *heap.Heap) *Buffer {
+	return newBufferSize(h, heap.MinBlockSize)
+}
+
+func newBufferSize(heap *heap.Heap, size int) *Buffer {
 	b := &Buffer{acquireState()}
 	b.heap = heap
 	if size > 0 {
@@ -45,6 +63,11 @@ func NewSize(heap *heap.Heap, size int) *Buffer {
 
 // Free frees the buffer and releases its memory to the heap.
 func (b *Buffer) Free() {
+	if b.pooled {
+		releaseBuffer(b)
+		return
+	}
+
 	b.len = 0
 	b.freeBlocks()
 
@@ -114,26 +137,7 @@ func (b *Buffer) WriteString(s string) (n int, err error) {
 
 // Reset resets the buffer to be empty.
 func (b *Buffer) Reset() {
-	b.len = 0
-	if len(b.blocks) == 0 {
-		return
-	}
-
-	// Maybe just reset the first block
-	n := 0
-	if f := b.blocks[0]; f.Cap() == b.init {
-		n = 1
-		f.Reset()
-
-		if len(b.blocks) == 1 {
-			return
-		}
-	}
-
-	// Free other blocks
-	b.heap.FreeMany(b.blocks[n:]...)
-	slices.Zero(b.blocks[n:]) // for gc
-	b.blocks = b.blocks[:n]
+	b.reset()
 }
 
 // private
@@ -163,6 +167,32 @@ func (b *Buffer) merge() {
 	b.blocks = append(b.blocks, merged)
 }
 
+// reset resets the buffer, frees the blocks except the first one.
+func (b *Buffer) reset() {
+	b.len = 0
+	if len(b.blocks) == 0 {
+		return
+	}
+
+	// Maybe just reset the first block
+	n := 0
+	if f := b.blocks[0]; f.Cap() == b.init {
+		n = 1
+		f.Reset()
+
+		if len(b.blocks) == 1 {
+			return
+		}
+	}
+
+	// Free other blocks
+	b.heap.FreeMany(b.blocks[n:]...)
+	slices.Zero(b.blocks[n:]) // for gc
+	b.blocks = b.blocks[:n]
+}
+
+// blocks
+
 // allocBlock allocates the next block.
 func (b *Buffer) allocBlock(n int) *heap.Block {
 	// Use initial size or double last block capacity
@@ -190,16 +220,35 @@ func (b *Buffer) freeBlocks() {
 	b.blocks = b.blocks[:0]
 }
 
+// pool
+
+var pool = &sync.Pool{
+	New: func() any {
+		b := newBuffer(heap.Global)
+		b.pooled = true
+		return b
+	},
+}
+
+func acquireBuffer() *Buffer {
+	return pool.Get().(*Buffer)
+}
+
+func releaseBuffer(b *Buffer) {
+	b.reset()
+	pool.Put(b)
+}
+
 // state pool
 
-var statePool = &sync.Pool{}
+var statePool = &sync.Pool{
+	New: func() any {
+		return &state{}
+	},
+}
 
 func acquireState() *state {
-	v := statePool.Get()
-	if v != nil {
-		return v.(*state)
-	}
-	return &state{}
+	return statePool.Get().(*state)
 }
 
 func releaseState(s *state) {
