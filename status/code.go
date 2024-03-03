@@ -46,6 +46,9 @@ const (
 	// CodeCancelled indicates that an operation was cancelled or stopped on a request.
 	CodeCancelled Code = "cancelled"
 
+	// CodeRedirect indicates that an operation was redirected.
+	CodeRedirect Code = "redirect"
+
 	// CodeRollback indicates that an operation was rolled backed.
 	CodeRollback Code = "rollback" // TODO: Maybe remove
 

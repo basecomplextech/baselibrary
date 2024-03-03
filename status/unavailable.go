@@ -24,6 +24,19 @@ func Cancelledf(format string, a ...any) Status {
 	return Status{Code: CodeCancelled, Message: msg}
 }
 
+// Redirect
+
+// Redirect returns a redirect status.
+func Redirect(msg string) Status {
+	return Status{Code: CodeRedirect, Message: msg}
+}
+
+// Redirectf formats a message and returns a redirect status.
+func Redirectf(format string, a ...any) Status {
+	msg := fmt.Sprintf(format, a...)
+	return Status{Code: CodeRedirect, Message: msg}
+}
+
 // Rollback
 
 // Rollback returns a rollback status.
