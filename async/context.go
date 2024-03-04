@@ -91,7 +91,8 @@ func ChildContextDeadline(parent Context, deadline time.Time) Context {
 var _ Context = (*context)(nil)
 
 type context struct {
-	mu    sync.Mutex
+	cmu   sync.Mutex // cancel mutex, prevents data race between cancel/free
+	smu   sync.Mutex // state mutex
 	state *contextState
 }
 
@@ -99,7 +100,6 @@ type contextState struct {
 	parent Context // maybe nil
 
 	done    bool
-	doneMu  sync.Mutex // enforce single canceller
 	cause   status.Status
 	channel chan struct{}
 
@@ -145,11 +145,22 @@ func newContextTimeout1(parent Context, timeout time.Duration) *context {
 	}
 
 	// Start timer
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	// Lock to prevent data race with immediate timeout.
+	c.smu.Lock()
+	defer c.smu.Unlock()
 
 	s.timer = time.AfterFunc(timeout, c.timeout)
 	return c
+}
+
+func (s *contextState) reset() {
+	callbacks := s.callbacks
+	*s = contextState{}
+
+	if callbacks != nil {
+		clear(callbacks)
+		s.callbacks = callbacks
+	}
 }
 
 // Cancel cancels the context.
@@ -159,8 +170,8 @@ func (c *context) Cancel() {
 
 // Wait returns a channel which is closed when the context is cancelled.
 func (c *context) Wait() <-chan struct{} {
-	s, ok := c.lock()
-	defer c.mu.Unlock()
+	s, ok := c.lockState()
+	defer c.smu.Unlock()
 
 	if !ok || s.done {
 		return closedChan
@@ -170,11 +181,11 @@ func (c *context) Wait() <-chan struct{} {
 
 // Status returns a cancellation status or OK.
 func (c *context) Status() status.Status {
-	s, ok := c.lock()
+	s, ok := c.lockState()
 	if !ok {
 		return status.Cancelled
 	}
-	defer c.mu.Unlock()
+	defer c.smu.Unlock()
 
 	return s.cause
 }
@@ -183,12 +194,12 @@ func (c *context) Status() status.Status {
 
 // AddCallback adds a callback.
 func (c *context) AddCallback(cb ContextCallback) {
-	s, ok := c.lock()
+	s, ok := c.lockState()
 	if !ok {
 		cb.OnCancelled(status.Cancelled)
 		return
 	}
-	defer c.mu.Unlock()
+	defer c.smu.Unlock()
 
 	// Maybe done
 	if s.done {
@@ -205,11 +216,11 @@ func (c *context) AddCallback(cb ContextCallback) {
 
 // RemoveCallback removes a callback.
 func (c *context) RemoveCallback(cb ContextCallback) {
-	s, ok := c.lock()
+	s, ok := c.lockState()
 	if !ok {
 		return
 	}
-	defer c.mu.Unlock()
+	defer c.smu.Unlock()
 
 	if s.callbacks != nil {
 		delete(s.callbacks, cb)
@@ -227,63 +238,33 @@ func (c *context) OnCancelled(st status.Status) {
 func (c *context) Free() {
 	c.cancel(status.None)
 
-	s, ok := c.lock()
+	c.cmu.Lock()
+	defer c.cmu.Unlock()
+
+	s, ok := c.lockState()
 	if !ok {
 		return
 	}
-	c.state = nil
-	c.mu.Unlock()
+	defer c.smu.Unlock()
 
+	c.state = nil
 	releaseContextState(s)
 }
 
 // internal
 
-func (c *context) lock() (*contextState, bool) {
-	c.mu.Lock()
-
-	if c.state == nil {
-		c.mu.Unlock()
-		return nil, false
-	}
-
-	return c.state, true
-}
-
 func (c *context) cancel(st status.Status) {
-	s, ok := c.lock()
+	c.cmu.Lock()
+	defer c.cmu.Unlock()
+
+	// Try to cancel
+	s, ok := c.doCancel(st)
 	if !ok {
 		return
 	}
 
-	// Enforce single canceller til the end, but do not hold the `s.mu` lock
-	// while calling callbacks. Mostly doneMu exists to prevent race conditions
-	// between cancel() and Free().
-	s.doneMu.Lock()
-	defer s.doneMu.Unlock()
-
-	// Maybe already done
-	if s.done {
-		c.mu.Unlock()
-		return
-	}
-
-	// Mark as done, close channel
-	{
-		s.done = true
-		close(s.channel)
-
-		// Maybe set cause
-		if st.Code != status.CodeNone {
-			s.cause = st
-		}
-
-		// Maybe stop timer
-		if s.timer != nil {
-			s.timer.Stop()
-		}
-	}
-	c.mu.Unlock()
+	// State is immutable here. Notify callbacks,
+	// parent outside of the state lock.
 
 	// Notify callbacks
 	if len(s.callbacks) > 0 {
@@ -300,6 +281,46 @@ func (c *context) cancel(st status.Status) {
 
 func (c *context) timeout() {
 	c.cancel(status.None)
+}
+
+// private
+
+func (c *context) lockState() (*contextState, bool) {
+	c.smu.Lock()
+
+	if c.state == nil {
+		c.smu.Unlock()
+		return nil, false
+	}
+
+	return c.state, true
+}
+
+func (c *context) doCancel(st status.Status) (*contextState, bool) {
+	s, ok := c.lockState()
+	if !ok {
+		return nil, false
+	}
+	defer c.smu.Unlock()
+
+	if s.done {
+		return nil, false
+	}
+
+	// Mark as done, close
+	s.done = true
+	close(s.channel)
+
+	// Maybe set cause
+	if st.Code != status.CodeNone {
+		s.cause = st
+	}
+
+	// Maybe stop timer
+	if s.timer != nil {
+		s.timer.Stop()
+	}
+	return s, true
 }
 
 // done context
@@ -341,13 +362,6 @@ func acquireContextState() *contextState {
 }
 
 func releaseContextState(s *contextState) {
-	callbacks := s.callbacks
-	*s = contextState{}
-
-	if callbacks != nil {
-		clear(callbacks)
-		s.callbacks = callbacks
-	}
-
+	s.reset()
 	contextStatePool.Put(s)
 }

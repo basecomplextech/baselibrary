@@ -9,16 +9,13 @@ import (
 )
 
 func TestContext_Cancel_Free__should_not_race(t *testing.T) {
-	n := 1000
-	cc := make([]Context, n)
+	n := 10_000
 
 	for i := 0; i < n; i++ {
-		ctx := NewContextTimeout(time.Millisecond)
-		cc[i] = ctx
-	}
-
-	for _, c := range cc {
-		c.Free()
+		ctx := NewContextTimeout(1)
+		go func() {
+			ctx.Free()
+		}()
 	}
 }
 
