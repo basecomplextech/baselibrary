@@ -72,6 +72,11 @@ func TestLockMap__should_retain_key_lock_when_already_locked(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	lock1, ok := m.locks[key]
 	assert.True(t, ok)
+
+	// pass race detector
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	assert.Equal(t, 2, lock1.refs)
 }
 
