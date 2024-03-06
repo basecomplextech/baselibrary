@@ -10,9 +10,6 @@ import (
 type Promise[T any] interface {
 	Future[T]
 
-	// Cancelled returns a channel which is closed when the promise is cancelled.
-	Cancelled() <-chan struct{}
-
 	// Complete completes the promise with a status and a result.
 	Complete(result T, st status.Status) bool
 
@@ -30,50 +27,16 @@ func NewPromise[T any]() Promise[T] {
 var _ Promise[any] = (*promise[any])(nil)
 
 type promise[T any] struct {
-	mu sync.Mutex
+	mu   sync.Mutex
+	wait chan struct{} // lazily initialized
 
-	// channels are lazily allocated
-	wait   chan struct{}
-	cancel chan struct{}
-
-	st        status.Status
-	done      bool
-	result    T
-	cancelled bool
+	st     status.Status
+	done   bool
+	result T
 }
 
 func newPromise[T any]() *promise[T] {
 	return &promise[T]{}
-}
-
-// Cancelled returns a channel which is closed when the promise is cancelled.
-func (p *promise[T]) Cancelled() <-chan struct{} {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.cancelled {
-		return closedChan
-	}
-
-	p.initCancel()
-	return p.cancel
-}
-
-// Cancel requests the future to cancel and returns a wait channel.
-func (p *promise[T]) Cancel() <-chan struct{} {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.done || p.cancelled {
-		return closedChan
-	}
-
-	p.initCancel()
-	p.initWait()
-
-	p.cancelled = true
-	close(p.cancel)
-	return p.wait
 }
 
 // Wait returns a channel which is closed when the result is available.
@@ -85,7 +48,9 @@ func (p *promise[T]) Wait() <-chan struct{} {
 		return closedChan
 	}
 
-	p.initWait()
+	if p.wait == nil {
+		p.wait = make(chan struct{})
+	}
 	return p.wait
 }
 
@@ -98,9 +63,9 @@ func (p *promise[T]) Complete(result T, st status.Status) bool {
 		return false
 	}
 
-	p.result = result
 	p.st = st
 	p.done = true
+	p.result = result
 
 	if p.wait != nil {
 		close(p.wait)
@@ -128,18 +93,4 @@ func (p *promise[T]) Status() status.Status {
 	defer p.mu.Unlock()
 
 	return p.st
-}
-
-// private
-
-func (p *promise[T]) initCancel() {
-	if p.cancel == nil {
-		p.cancel = make(chan struct{})
-	}
-}
-
-func (p *promise[T]) initWait() {
-	if p.wait == nil {
-		p.wait = make(chan struct{})
-	}
 }

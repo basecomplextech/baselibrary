@@ -8,6 +8,9 @@ import (
 // and can be cancelled.
 type Routine[T any] interface {
 	Future[T]
+
+	// Cancel requests the routine to cancel and returns a wait channel.
+	Cancel() <-chan struct{}
 }
 
 // Methods

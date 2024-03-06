@@ -8,9 +8,6 @@ var _ Waiter = (Future[any])(nil)
 
 // Future represents a result available in the future.
 type Future[T any] interface {
-	// Cancel requests the future to cancel and returns a wait channel.
-	Cancel() <-chan struct{}
-
 	// Wait returns a channel which is closed when the future is complete.
 	Wait() <-chan struct{}
 
