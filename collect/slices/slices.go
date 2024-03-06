@@ -90,6 +90,20 @@ func InsertAt[S ~[]T, T any](s S, index int, items ...T) []T {
 	return s
 }
 
+// LeftShift shifts the slice left by n, and returns the truncated slice.
+func LeftShift[S ~[]T, T any](s S, n int) S {
+	copy(s, s[n:])
+
+	// Clear n last elements for GC
+	var zero T
+	for i := len(s) - n; i < len(s); i++ {
+		s[i] = zero
+	}
+
+	// Truncate slice
+	return s[:len(s)-n]
+}
+
 // Remove removes the first occurrence of the item from the slice.
 func Remove[S ~[]T, T comparable](s S, item T) S {
 	index := IndexOf(s, item)
