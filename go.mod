@@ -1,6 +1,6 @@
 module github.com/basecomplextech/baselibrary
 
-go 1.21
+go 1.22
 
 require (
 	github.com/edsrzf/mmap-go v1.1.0
