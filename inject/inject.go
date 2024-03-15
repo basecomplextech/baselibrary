@@ -19,7 +19,7 @@ func New() *Context {
 
 // Add adds a constructor or an object to the context.
 func Add[T any](c *Context, v T) {
-	typ := reflect.TypeOf(v)
+	typ := reflect.TypeFor[T]()
 	p := newProvider(v)
 
 	c.mu.Lock()
@@ -30,8 +30,7 @@ func Add[T any](c *Context, v T) {
 
 // AddOnce adds a constructor or an object if it does not exist already.
 func AddOnce[T any](c *Context, v T) {
-	var zero *T
-	typ := reflect.TypeOf(zero).Elem()
+	typ := reflect.TypeFor[T]()
 	p := newProvider(v)
 
 	c.mu.Lock()
