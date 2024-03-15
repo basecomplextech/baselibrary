@@ -30,6 +30,11 @@ func Test(t tests.T) (fs filesys.FileSystem, path string) {
 	return testMemory(t)
 }
 
+func TestNoPath(t tests.T) filesys.FileSystem {
+	fs, _ := Test(t)
+	return fs
+}
+
 func testDisk(t tests.T) (filesys.FileSystem, string) {
 	fs := filesys.New()
 	path, err := fs.TempDir(".", "var_*")
