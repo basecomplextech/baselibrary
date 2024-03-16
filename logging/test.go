@@ -22,14 +22,17 @@ func Test(t tests.T) Logging {
 // TestLogger returns a new test logger.
 func TestLogger(t tests.T) Logger {
 	level := TestLevelEnv()
-	writer := newConsoleWriter(level, true, os.Stdout)
-	return newLogger("test", true /* root */, writer)
+	return TestLoggerLevel(t, level)
 }
 
-// TestDebugLogger returns a new test logger with the debug level.
-func TestDebugLogger(t tests.T) Logger {
-	writer := newConsoleWriter(LevelDebug, true, os.Stdout)
-	return newLogger("test", true /* root */, writer)
+// TestLoggerDebug returns a new test logger with the debug level.
+func TestLoggerDebug(t tests.T) Logger {
+	return TestLoggerLevel(t, LevelDebug)
+}
+
+// TestLoggerInfo returns a new test logger with the info level.
+func TestLoggerInfo(t tests.T) Logger {
+	return TestLoggerLevel(t, LevelInfo)
 }
 
 // TestLoggerLevel returns a new test logger with the specified level.
