@@ -17,6 +17,9 @@ type Context interface {
 	// Cancel cancels the context.
 	Cancel()
 
+	// Done returns true if the context is cancelled.
+	Done() bool
+
 	// Wait returns a channel which is closed when the context is cancelled.
 	Wait() <-chan struct{}
 
@@ -166,6 +169,17 @@ func (s *contextState) reset() {
 // Cancel cancels the context.
 func (c *context) Cancel() {
 	c.cancel(status.None)
+}
+
+// Done returns true if the context is cancelled.
+func (c *context) Done() bool {
+	s, ok := c.lockState()
+	if !ok {
+		return true
+	}
+	defer c.smu.Unlock()
+
+	return s.done
 }
 
 // Wait returns a channel which is closed when the context is cancelled.
@@ -330,6 +344,7 @@ var doneCtx Context = &doneContext{}
 type doneContext struct{}
 
 func (*doneContext) Cancel()                           {}
+func (*doneContext) Done() bool                        { return true }
 func (*doneContext) Wait() <-chan struct{}             { return closedChan }
 func (*doneContext) Status() status.Status             { return status.OK }
 func (*doneContext) AddCallback(cb ContextCallback)    { cb.OnCancelled(status.Cancelled) }
@@ -343,6 +358,7 @@ var noCtx Context = &noContext{}
 type noContext struct{}
 
 func (*noContext) Cancel()                        {}
+func (*noContext) Done() bool                     { return false }
 func (*noContext) Wait() <-chan struct{}          { return nil }
 func (*noContext) Status() status.Status          { return status.OK }
 func (*noContext) AddCallback(ContextCallback)    {}
