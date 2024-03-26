@@ -12,7 +12,7 @@ func TestContext_Cancel_Free__should_not_race(t *testing.T) {
 	n := 10_000
 
 	for i := 0; i < n; i++ {
-		ctx := NewContextTimeout(1)
+		ctx := TimeoutContext(1)
 		go func() {
 			ctx.Free()
 		}()
@@ -48,7 +48,7 @@ func TestContext_Cancel__should_cancel_context_close_done_channel(t *testing.T) 
 
 func TestContext_Cancel__should_cancel_child_context(t *testing.T) {
 	parent := NewContext()
-	child := ChildContextTimeout(parent, time.Second)
+	child := NextTimeoutContext(parent, time.Second)
 
 	go func() {
 		time.Sleep(time.Millisecond * 5)
@@ -67,7 +67,7 @@ func TestContext_Cancel__should_cancel_child_context(t *testing.T) {
 // Timeout
 
 func TestContext_Timeout__should_timeout_context(t *testing.T) {
-	ctx := NewContextTimeout(time.Millisecond * 5)
+	ctx := TimeoutContext(time.Millisecond * 5)
 
 	select {
 	case <-ctx.Wait():
@@ -87,8 +87,8 @@ func TestContext_Timeout__should_timeout_context(t *testing.T) {
 }
 
 func TestContext_Timeout__should_timeout_child_context(t *testing.T) {
-	parent := NewContextTimeout(time.Millisecond * 5)
-	child := ChildContextTimeout(parent, time.Second)
+	parent := TimeoutContext(time.Millisecond * 5)
+	child := NextTimeoutContext(parent, time.Second)
 
 	select {
 	case <-child.Wait():

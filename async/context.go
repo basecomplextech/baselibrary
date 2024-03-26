@@ -63,28 +63,33 @@ func DoneContext() Context {
 	return doneCtx
 }
 
-// More
+// Timeout
 
-// NewContextTimeout returns a new context with a timeout.
-func NewContextTimeout(timeout time.Duration) Context {
+// TimeoutContext returns a context with a timeout.
+func TimeoutContext(timeout time.Duration) Context {
 	return newContextTimeout(nil /* no parent */, timeout)
 }
 
-// NewContextDeadline returns a new context with a deadline.
-func NewContextDeadline(deadline time.Time) Context {
+// DeadlineContext returns a context with a deadline.
+func DeadlineContext(deadline time.Time) Context {
 	timeout := time.Until(deadline)
 	return newContextTimeout(nil /* no parent */, timeout)
 }
 
-// Child
+// Next
 
-// ChildContextTimeout returns a child context with a timeout.
-func ChildContextTimeout(parent Context, timeout time.Duration) Context {
+// NextContext returns a child context.
+func NextContext(parent Context) Context {
+	return newContext(parent)
+}
+
+// NextTimeoutContext returns a child context with a timeout.
+func NextTimeoutContext(parent Context, timeout time.Duration) Context {
 	return newContextTimeout(parent, timeout)
 }
 
-// ChildContextDeadline returns a child context with a deadline.
-func ChildContextDeadline(parent Context, deadline time.Time) Context {
+// NextDeadlineContext returns a child context with a deadline.
+func NextDeadlineContext(parent Context, deadline time.Time) Context {
 	timeout := time.Until(deadline)
 	return newContextTimeout(parent, timeout)
 }
@@ -127,7 +132,7 @@ func newContext(parent Context) *context {
 func newContextTimeout(parent Context, timeout time.Duration) *context {
 	c := newContextTimeout1(parent, timeout)
 
-	// Maybe add callback outside of lock
+	// Add callback outside of lock
 	if parent != nil {
 		parent.AddCallback(c)
 	}
@@ -250,7 +255,7 @@ func (c *context) OnCancelled(st status.Status) {
 
 // Free cancels and releases the context.
 func (c *context) Free() {
-	c.cancel(status.None)
+	c.cancel(status.None /* default */)
 
 	c.cmu.Lock()
 	defer c.cmu.Unlock()
