@@ -38,6 +38,11 @@ func (b0 Bin64) Less(b1 Bin64) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
 }
 
+// Int64 returns an int64 decoded as big-endian.
+func (b Bin64) Int64() int64 {
+	return int64(binary.BigEndian.Uint64(b[:]))
+}
+
 // Hash32 returns a 32-bit hash of the value.
 // The method decodes the value as a big-endian uint64 and then xors the two halves.
 func (b Bin64) Hash32() uint32 {
