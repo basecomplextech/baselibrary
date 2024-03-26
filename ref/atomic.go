@@ -49,9 +49,9 @@ func NewNoFreer[T any](obj T) *R[T] {
 	}
 }
 
-// NewParent returns a new reference with a parent reference as a freer.
+// Next returns a child reference with a parent reference as a freer.
 // The parent is not retained.
-func NewParent[T any, T1 any](obj T, parent *R[T1]) *R[T] {
+func Next[T any, T1 any](obj T, parent *R[T1]) *R[T] {
 	r := (*refFreer[T1])(parent)
 
 	return &R[T]{
@@ -61,8 +61,8 @@ func NewParent[T any, T1 any](obj T, parent *R[T1]) *R[T] {
 	}
 }
 
-// NewParentRetain returns a new reference with a parent reference as a freer, retains the parent.
-func NewParentRetain[T any, T1 any](obj T, parent *R[T1]) *R[T] {
+// NextRetain returns a new reference with a parent reference as a freer, retains the parent.
+func NextRetain[T any, T1 any](obj T, parent *R[T1]) *R[T] {
 	parent.Retain()
 	r := (*refFreer[T1])(parent)
 
@@ -72,6 +72,8 @@ func NewParentRetain[T any, T1 any](obj T, parent *R[T1]) *R[T] {
 		obj:   obj,
 	}
 }
+
+// Methods
 
 // Refcount returns the number of current references.
 func (r *R[T]) Refcount() int64 {
