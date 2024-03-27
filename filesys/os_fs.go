@@ -3,6 +3,8 @@ package filesys
 import (
 	"io/ioutil"
 	"os"
+
+	"github.com/basecomplextech/baselibrary/filesys/disk"
 )
 
 type filesys struct{}
@@ -94,4 +96,9 @@ func (fs *filesys) TempFile(dir, pattern string) (File, error) {
 		return nil, err
 	}
 	return newFile(f), nil
+}
+
+// Usage returns a disk usage info of a directory.
+func (fs *filesys) Usage(path string) (disk.Info, error) {
+	return disk.GetInfo(path)
 }

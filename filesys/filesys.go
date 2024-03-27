@@ -2,6 +2,8 @@ package filesys
 
 import (
 	"os"
+
+	"github.com/basecomplextech/baselibrary/filesys/disk"
 )
 
 type FileSystem interface {
@@ -42,6 +44,9 @@ type FileSystem interface {
 	// TempFile creates a new temporary file in the directory dir,
 	// Opens the file for reading and writing, and returns the resulting *os.File.
 	TempFile(dir, pattern string) (File, error)
+
+	// Usage returns a disk usage info of a directory.
+	Usage(path string) (disk.Info, error)
 }
 
 // New returns a standard file system.
