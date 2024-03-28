@@ -218,15 +218,17 @@ func (c *context) AddCallback(cb ContextCallback) {
 		cb.OnCancelled(status.Cancelled)
 		return
 	}
-	defer c.smu.Unlock()
 
-	// Maybe done
+	// Maybe done, notify immediately outside of lock
 	if s.done {
+		c.smu.Unlock()
 		cb.OnCancelled(s.cause)
 		return
 	}
 
 	// Add callback
+	defer c.smu.Unlock()
+
 	if s.callbacks == nil {
 		s.callbacks = make(map[ContextCallback]struct{})
 	}

@@ -99,3 +99,13 @@ func TestContext_Timeout__should_timeout_child_context(t *testing.T) {
 	st := child.Status()
 	assert.Equal(t, status.Timeout, st)
 }
+
+// NextContext
+
+func TestNextContext__should_not_deadlock_when_parent_cancelled_already(t *testing.T) {
+	ctx := newContext(nil)
+	ctx.cancel(status.None)
+
+	ctx1 := NextContext(ctx)
+	ctx1.Done()
+}
