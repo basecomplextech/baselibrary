@@ -1,4 +1,4 @@
-package disk
+package system
 
 import (
 	"os"
@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetInfo(t *testing.T) {
+func TestDisk(t *testing.T) {
 	path, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	info, err := GetInfo(path)
+	info, err := Disk(path)
 	if err != nil {
 		t.Fatal(err)
 	}

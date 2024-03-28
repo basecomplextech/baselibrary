@@ -3,7 +3,7 @@ package filesys
 import (
 	"os"
 
-	"github.com/basecomplextech/baselibrary/filesys/disk"
+	"github.com/basecomplextech/baselibrary/system"
 )
 
 type FileSystem interface {
@@ -46,7 +46,7 @@ type FileSystem interface {
 	TempFile(dir, pattern string) (File, error)
 
 	// Usage returns a disk usage info of a directory.
-	Usage(path string) (disk.Info, error)
+	Usage(path string) (system.DiskInfo, error)
 }
 
 // New returns a standard file system.

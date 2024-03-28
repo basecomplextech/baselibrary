@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/basecomplextech/baselibrary/filesys"
-	"github.com/basecomplextech/baselibrary/filesys/disk"
+	"github.com/basecomplextech/baselibrary/system"
 )
 
 // New returns a new in-memory file system.
@@ -335,8 +335,8 @@ func (fs *memFS) TempFile(dir, pattern string) (filesys.File, error) {
 }
 
 // Usage returns a disk usage info of a directory.
-func (fs *memFS) Usage(path string) (disk.Info, error) {
-	return disk.GetInfo("/")
+func (fs *memFS) Usage(path string) (system.DiskInfo, error) {
+	return system.Disk("/")
 }
 
 // internal

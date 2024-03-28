@@ -1,7 +1,7 @@
 //go:build darwin || dragonfly
 // +build darwin dragonfly
 
-package disk
+package system
 
 import (
 	"syscall"
@@ -9,12 +9,12 @@ import (
 	"github.com/basecomplextech/baselibrary/units"
 )
 
-// GetInfo returns a disk usage info of a directory, e.g. `/`.
-func GetInfo(path string) (Info, error) {
+// Disk returns a disk usage info of a directory, e.g. `/`.
+func Disk(path string) (DiskInfo, error) {
 	s := syscall.Statfs_t{}
 	err := syscall.Statfs(path, &s)
 	if err != nil {
-		return Info{}, err
+		return DiskInfo{}, err
 	}
 
 	reserved := s.Bfree - s.Bavail // Reserved blocks
@@ -22,7 +22,7 @@ func GetInfo(path string) (Info, error) {
 	free := uint64(s.Bsize) * s.Bavail
 	used := total - free
 
-	info := Info{
+	info := DiskInfo{
 		Total: units.Bytes(total),
 		Free:  units.Bytes(free),
 		Used:  units.Bytes(used),

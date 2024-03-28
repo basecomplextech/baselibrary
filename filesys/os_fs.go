@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/basecomplextech/baselibrary/filesys/disk"
+	"github.com/basecomplextech/baselibrary/system"
 )
 
 type filesys struct{}
@@ -99,6 +99,6 @@ func (fs *filesys) TempFile(dir, pattern string) (File, error) {
 }
 
 // Usage returns a disk usage info of a directory.
-func (fs *filesys) Usage(path string) (disk.Info, error) {
-	return disk.GetInfo(path)
+func (fs *filesys) Usage(path string) (system.DiskInfo, error) {
+	return system.Disk(path)
 }

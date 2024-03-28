@@ -1,9 +1,9 @@
-package disk
+package system
 
 import "github.com/basecomplextech/baselibrary/units"
 
-// Info is a disk stats struct.
-type Info struct {
+// DiskInfo is a disk information struct.
+type DiskInfo struct {
 	Total units.Bytes // Total size
 	Free  units.Bytes // Free size
 	Used  units.Bytes // Used size
