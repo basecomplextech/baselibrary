@@ -12,6 +12,11 @@ func FreeAll[T Freer](objs ...T) {
 	}
 }
 
+// FreeFunc returns an adapter which allows to use a function as a Freer.
+func FreeFunc(f func()) Freer {
+	return freeFunc(f)
+}
+
 // private
 
 // freeFunc is an adapter which allows to use a function as a Freer.
