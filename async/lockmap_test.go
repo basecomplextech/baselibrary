@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLockMap__should_lock_key(t *testing.T) {
-	m := NewLockMap[int]()
+	m := newLockMap[int]()
 	key := 123
 	value := 0
 
@@ -39,20 +40,25 @@ func TestLockMap__should_lock_key(t *testing.T) {
 }
 
 func TestLockMap__should_retain_key_lock(t *testing.T) {
-	m := NewLockMap[int]()
+	m := newLockMap[int]()
 	key := 123
 
 	lock := m.Get(key)
 	defer lock.Free()
 
-	lock1, ok := m.locks[key]
-	assert.True(t, ok)
+	lock1_, ok := m.locks.Load(key)
+	require.True(t, ok)
+
+	lock1 := lock1_.(*keyLock[int])
+	lock1.mu.Lock() // pass race detector
+	defer lock1.mu.Unlock()
+
 	assert.Same(t, lock, lock1)
-	assert.Equal(t, 1, lock1.refs)
+	assert.Equal(t, int32(1), lock1.refs)
 }
 
 func TestLockMap__should_retain_key_lock_when_already_locked(t *testing.T) {
-	m := NewLockMap[int]()
+	m := newLockMap[int]()
 	key := 123
 
 	lock := m.Get(key)
@@ -70,25 +76,42 @@ func TestLockMap__should_retain_key_lock_when_already_locked(t *testing.T) {
 	}()
 
 	time.Sleep(10 * time.Millisecond)
-	lock1, ok := m.locks[key]
-	assert.True(t, ok)
+	lock1_, ok := m.locks.Load(key)
+	require.True(t, ok)
 
-	// pass race detector
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	lock1 := lock1_.(*keyLock[int])
+	lock1.mu.Lock() // pass race detector
+	defer lock1.mu.Unlock()
 
-	assert.Equal(t, 2, lock1.refs)
+	assert.Equal(t, int32(2), lock1.refs)
+}
+
+// Lock
+
+func TestLockMap_Lock__should_acquire_locked_key(t *testing.T) {
+	m := newLockMap[int]()
+	key := 123
+	ctx := NoContext()
+
+	lock, st := m.Lock(ctx, key)
+	if !st.OK() {
+		t.Fatal(st)
+	}
+	lock.Free()
+
+	_, ok := m.locks.Load(key)
+	assert.False(t, ok)
 }
 
 // Free
 
 func TestKeyLock_Free__should_release_delete_key_lock(t *testing.T) {
-	m := NewLockMap[int]()
+	m := newLockMap[int]()
 	key := 123
 
 	lock := m.Get(key)
 	lock.Free()
 
-	_, ok := m.locks[key]
+	_, ok := m.locks.Load(key)
 	assert.False(t, ok)
 }
