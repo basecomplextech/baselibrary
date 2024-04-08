@@ -30,6 +30,16 @@ func (m *Map[K, V]) Delete(key K) {
 	m.raw.Delete(key)
 }
 
+// Len iterates the map, counts the number of keys, and returns the result.
+func (m *Map[K, V]) Len() int {
+	var n int
+	m.raw.Range(func(_, _ any) bool {
+		n++
+		return true
+	})
+	return n
+}
+
 // Load returns the value stored in the map for a key, or nil if no value is present.
 // The ok result indicates whether value was found in the map.
 func (m *Map[K, V]) Load(key K) (value V, ok bool) {

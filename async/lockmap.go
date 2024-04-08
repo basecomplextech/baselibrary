@@ -1,8 +1,10 @@
 package async
 
 import (
+	"runtime"
 	"sync"
 
+	"github.com/basecomplextech/baselibrary/internal/hashing"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -69,164 +71,218 @@ func NewLockMap[K comparable]() LockMap[K] {
 var _ LockMap[any] = &lockMap[any]{}
 
 type lockMap[K comparable] struct {
-	locks sync.Map
+	shards []*lockShard[K]
 }
 
 func newLockMap[K comparable]() *lockMap[K] {
-	return &lockMap[K]{}
+	num := runtime.NumCPU()
+	pool := &sync.Pool{}
+
+	shards := make([]*lockShard[K], num)
+	for i := range shards {
+		shards[i] = newLockShard[K](pool)
+	}
+
+	return &lockMap[K]{
+		shards: shards,
+	}
 }
 
 // Get returns a key key, the lock must be freed after use.
 func (m *lockMap[K]) Get(key K) KeyLock {
-	for {
-		if l, ok := m.load(key); ok {
-			return l
-		}
-		if l, ok := m.store(key); ok {
-			return l
-		}
-	}
+	// Get lock item
+	shard := m.shard(key)
+	item := shard.get(key)
+
+	// Return key lock
+	return &keyLock[K]{item}
 }
 
 // Lock returns a locked key, the key must be freed after use.
 func (m *lockMap[K]) Lock(ctx Context, key K) (LockedKey, status.Status) {
-	// Get key lock
-	l := m.Get(key)
+	// Get lock item
+	shard := m.shard(key)
+	item := shard.get(key)
 
 	// Free if not locked
 	ok := false
 	defer func() {
 		if !ok {
-			l.Free()
+			item.free()
 		}
 	}()
 
 	// Try to lock
 	select {
-	case <-l.Lock():
+	case <-item.lock:
 	case <-ctx.Wait():
 		return nil, ctx.Status()
 	}
 
 	// Return locked key
-	k := newLockedKey[K](l.(*keyLock[K]))
+	k := &lockedKey[K]{item}
 	ok = true
 	return k, status.OK
 }
 
-// private
-
-func (m *lockMap[K]) load(key K) (*keyLock[K], bool) {
-	// Try to load lock
-	lock, ok := m.locks.Load(key)
-	if !ok {
-		return nil, false
-	}
-
-	// Try to increment refs
-	l := lock.(*keyLock[K])
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if l.refs == 0 {
-		return nil, false
-	}
-
-	l.refs++
-	return l, true
+func (m *lockMap[K]) shard(key K) *lockShard[K] {
+	index := hashing.Shard(key, len(m.shards))
+	return m.shards[index]
 }
 
-func (m *lockMap[K]) store(key K) (*keyLock[K], bool) {
-	// Make lock with 1 ref
-	l := newKeyLock(m, key)
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	// Try to store it
-	_, loaded := m.locks.LoadOrStore(key, l)
-	if loaded {
-		return nil, false
-	}
-	return l, true
-}
-
-func (m *lockMap[K]) free(l *keyLock[K]) {
-	// Lock mutex
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if l.refs <= 0 {
-		panic("free of freed key lock")
-	}
-
-	// Decrement refs
-	l.refs--
-	if l.refs > 0 {
-		return
-	}
-
-	// Delete lock with 0 refs, while holding the mutex.
-	// Any other goroutine, which already loaded it, will read 0 refs and skip it.
-	m.locks.Delete(l.key)
-}
-
-// key
+// KeyLock
 
 var _ KeyLock = &keyLock[any]{}
 
 type keyLock[K comparable] struct {
-	m    *lockMap[K]
-	key  K
-	lock chan struct{}
-
-	mu   sync.Mutex
-	refs int32
-}
-
-func newKeyLock[K comparable](m *lockMap[K], key K) *keyLock[K] {
-	l := &keyLock[K]{
-		m:    m,
-		key:  key,
-		lock: make(chan struct{}, 1),
-		refs: 1,
-	}
-	l.lock <- struct{}{}
-	return l
+	item *lockItem[K]
 }
 
 // Lock returns a channel receiving from which locks the key.
 func (l *keyLock[K]) Lock() <-chan struct{} {
-	return l.lock
+	return l.item.lock
 }
 
 // Unlock unlocks the key lock.
 func (l *keyLock[K]) Unlock() {
+	l.item.unlock()
+}
+
+// Free frees the acquired key.
+func (l *keyLock[K]) Free() {
+	if l.item == nil {
+		panic("free of freed key lock")
+	}
+
+	item := l.item
+	l.item = nil
+	item.free()
+}
+
+// LockedKey
+
+var _ LockedKey = &lockedKey[any]{}
+
+type lockedKey[K comparable] struct {
+	item *lockItem[K]
+}
+
+func (l *lockedKey[K]) Free() {
+	if l.item == nil {
+		panic("free of freed locked key")
+	}
+
+	item := l.item
+	l.item = nil
+
+	item.unlock()
+	item.free()
+}
+
+// shard
+
+type lockShard[K comparable] struct {
+	mu    sync.RWMutex
+	items map[K]*lockItem[K]
+	pool  *sync.Pool
+}
+
+func newLockShard[K comparable](pool *sync.Pool) *lockShard[K] {
+	return &lockShard[K]{
+		items: make(map[K]*lockItem[K]),
+		pool:  pool,
+	}
+}
+
+func (s *lockShard[K]) get(key K) *lockItem[K] {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Try to get item
+	m, ok := s.items[key]
+	if ok {
+		m.refs++
+		return m
+	}
+
+	// Make new item with 1 refs
+	if v := s.pool.Get(); v != nil {
+		m = v.(*lockItem[K])
+		m.shard = s
+		m.key = key
+		m.refs = 1
+	} else {
+		m = newLockItem(s, key)
+	}
+
+	// Store item
+	s.items[key] = m
+	return m
+}
+
+func (s *lockShard[K]) free(m *lockItem[K]) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Decrement refs
+	if m.refs <= 0 {
+		panic("free of freed key lock")
+	}
+	m.refs--
+	if m.refs > 0 {
+		return
+	}
+
+	// Delete item with 0 refs
+	delete(s.items, m.key)
+
+	// Release it to the pool
+	m.reset()
+	s.pool.Put(m)
+}
+
+// item
+
+type lockItem[K comparable] struct {
+	shard *lockShard[K]
+	lock  chan struct{}
+	refs  int32
+
+	key K
+}
+
+func newLockItem[K comparable](s *lockShard[K], key K) *lockItem[K] {
+	m := &lockItem[K]{
+		shard: s,
+		lock:  make(chan struct{}, 1),
+		refs:  1,
+
+		key: key,
+	}
+	m.lock <- struct{}{}
+	return m
+}
+
+func (m *lockItem[K]) unlock() {
 	select {
-	case l.lock <- struct{}{}:
+	case m.lock <- struct{}{}:
 	default:
 		panic("unlock of unlocked key lock")
 	}
 }
 
-// Free frees the acquired key.
-func (l *keyLock[K]) Free() {
-	l.m.free(l)
+func (m *lockItem[K]) free() {
+	m.shard.free(m)
 }
 
-// lockedKey
+func (m *lockItem[K]) reset() {
+	var zero K
+	m.shard = nil
+	m.key = zero
+	m.refs = 0
 
-var _ LockedKey = &lockedKey[any]{}
-
-type lockedKey[K comparable] struct {
-	lock *keyLock[K]
-}
-
-func newLockedKey[K comparable](lock *keyLock[K]) *lockedKey[K] {
-	return &lockedKey[K]{lock: lock}
-}
-
-func (l *lockedKey[K]) Free() {
-	defer l.lock.Free()
-
-	l.lock.Unlock()
+	select {
+	case m.lock <- struct{}{}:
+	default:
+	}
 }

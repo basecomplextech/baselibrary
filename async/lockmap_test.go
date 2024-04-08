@@ -43,18 +43,17 @@ func TestLockMap__should_retain_key_lock(t *testing.T) {
 	m := newLockMap[int]()
 	key := 123
 
-	lock := m.Get(key)
+	lock := m.Get(key).(*keyLock[int])
 	defer lock.Free()
 
-	lock1_, ok := m.locks.Load(key)
+	shard := m.shard(key)
+	shard.mu.Lock() // pass race detector
+	defer shard.mu.Unlock()
+
+	item, ok := shard.items[key]
 	require.True(t, ok)
-
-	lock1 := lock1_.(*keyLock[int])
-	lock1.mu.Lock() // pass race detector
-	defer lock1.mu.Unlock()
-
-	assert.Same(t, lock, lock1)
-	assert.Equal(t, int32(1), lock1.refs)
+	assert.Same(t, lock.item, item)
+	assert.Equal(t, int32(1), item.refs)
 }
 
 func TestLockMap__should_retain_key_lock_when_already_locked(t *testing.T) {
@@ -76,14 +75,13 @@ func TestLockMap__should_retain_key_lock_when_already_locked(t *testing.T) {
 	}()
 
 	time.Sleep(10 * time.Millisecond)
-	lock1_, ok := m.locks.Load(key)
+	shard := m.shard(key)
+	shard.mu.Lock() // pass race detector
+	defer shard.mu.Unlock()
+
+	item, ok := shard.items[key]
 	require.True(t, ok)
-
-	lock1 := lock1_.(*keyLock[int])
-	lock1.mu.Lock() // pass race detector
-	defer lock1.mu.Unlock()
-
-	assert.Equal(t, int32(2), lock1.refs)
+	assert.Equal(t, int32(2), item.refs)
 }
 
 // Lock
@@ -99,7 +97,8 @@ func TestLockMap_Lock__should_acquire_locked_key(t *testing.T) {
 	}
 	lock.Free()
 
-	_, ok := m.locks.Load(key)
+	shard := m.shard(key)
+	_, ok := shard.items[key]
 	assert.False(t, ok)
 }
 
@@ -112,6 +111,10 @@ func TestKeyLock_Free__should_release_delete_key_lock(t *testing.T) {
 	lock := m.Get(key)
 	lock.Free()
 
-	_, ok := m.locks.Load(key)
+	shard := m.shard(key)
+	shard.mu.Lock() // pass race detector
+	defer shard.mu.Unlock()
+
+	_, ok := shard.items[key]
 	assert.False(t, ok)
 }
