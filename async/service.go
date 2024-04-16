@@ -14,10 +14,10 @@ type Service interface {
 	// Async
 
 	// Running indicates that the service is running.
-	Running() <-chan struct{}
+	Running() Flag
 
 	// Stopped indicates that the service is stopped.
-	Stopped() <-chan struct{}
+	Stopped() Flag
 
 	// Methods
 
@@ -43,8 +43,8 @@ var _ Service = (*service)(nil)
 type service struct {
 	fn func(ctx Context) status.Status
 
-	running *Flag
-	stopped *Flag
+	running MutFlag
+	stopped MutFlag
 
 	mu      sync.Mutex
 	routine Routine[struct{}]
@@ -60,19 +60,19 @@ func newService(fn func(ctx Context) status.Status) *service {
 
 // IsRunning returns true if the service is running.
 func (s *service) IsRunning() bool {
-	return s.running.IsSet()
+	return s.running.Get()
 }
 
 // Async
 
 // Running indicates that the service is running.
-func (s *service) Running() <-chan struct{} {
-	return s.running.Wait()
+func (s *service) Running() Flag {
+	return s.running
 }
 
 // Stopped indicates that the service is stopped.
-func (s *service) Stopped() <-chan struct{} {
-	return s.stopped.Wait()
+func (s *service) Stopped() Flag {
+	return s.stopped
 }
 
 // Start starts the service if not running and returns its routine.
@@ -93,7 +93,7 @@ func (s *service) Start() (Routine[struct{}], status.Status) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.routine != nil && s.running.IsSet() {
+	if s.routine != nil && s.running.Get() {
 		return s.routine, status.OK
 	}
 

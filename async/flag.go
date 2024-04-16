@@ -5,7 +5,32 @@ import (
 	"sync/atomic"
 )
 
-// Flag is a routine-safe boolean flag that can be set, reset, and waited on until set.
+// Flag is a read-only boolean flag that can be waited on until set.
+//
+// Example:
+//
+//	serving := async.UnsetFlag()
+//
+//	func handle(ctx Context, req *request) {
+//		if !serving.Get() { // just to show Get in example
+//			select {
+//			case <-ctx.Wait():
+//				return ctx.Status()
+//			case <-serving.Wait():
+//			}
+//		}
+//
+//		// ... handle request
+//	}
+type Flag interface {
+	// Get returns true if the flag is set.
+	Get() bool
+
+	// Wait waits for the flag to be set.
+	Wait() <-chan struct{}
+}
+
+// MutFlag is a routine-safe boolean flag that can be set, reset, and waited on until set.
 //
 // Example:
 //
@@ -18,57 +43,71 @@ import (
 //		// ... start server ...
 //	}
 //
-//	func handle(cancel <-chan struct{}, req *request) <-chan struct{} {
-//		// await server handling requests
+//	func handle(ctx Context, req *request) {
 //		select {
+//		case <-ctx.Wait():
+//			return ctx.Status()
 //		case <-serving.Wait():
-//		case <-cancel:
-//			return status.Cancelled
 //		}
 //
-//		// ... handle request ...
+//		// ... handle request
 //	}
-type Flag struct {
-	mu      sync.Mutex
-	set     atomic.Bool
-	setChan chan struct{} // closed when set
+type MutFlag interface {
+	Flag
+
+	// Set sets the flag and notifies the waiters.
+	Set()
+
+	// Unset unsets the flag and replaces its wait channel with an open one.
+	Unset()
 }
 
 // SetFlag returns a new set flag.
-func SetFlag() *Flag {
+func SetFlag() MutFlag {
 	f := UnsetFlag()
 	f.Set()
 	return f
 }
 
 // UnsetFlag returns a new unset flag.
-func UnsetFlag() *Flag {
-	return &Flag{
+func UnsetFlag() MutFlag {
+	return newFlag()
+}
+
+// internal
+
+type flag struct {
+	mu      sync.Mutex
+	set     atomic.Bool
+	setChan chan struct{} // closed when set
+}
+
+func newFlag() *flag {
+	return &flag{
 		setChan: make(chan struct{}),
 	}
 }
 
-// IsSet returns true if the flag is set.
-func (f *Flag) IsSet() bool {
+// Get returns true if the flag is set.
+func (f *flag) Get() bool {
 	return f.set.Load()
 }
 
-// Set sets the flag, notifies waiters and returns true, or false if already set.
-func (f *Flag) Set() bool {
+// Set sets the flag and notifies the waiters.
+func (f *flag) Set() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	if f.set.Load() {
-		return false
+		return
 	}
 
 	f.set.Store(true)
 	close(f.setChan)
-	return true
 }
 
 // Unset unsets the flag and replaces its wait channel with an open one.
-func (f *Flag) Unset() {
+func (f *flag) Unset() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -81,7 +120,7 @@ func (f *Flag) Unset() {
 }
 
 // Wait waits for the flag to be set.
-func (f *Flag) Wait() <-chan struct{} {
+func (f *flag) Wait() <-chan struct{} {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
