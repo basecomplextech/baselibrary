@@ -67,7 +67,7 @@ func Parse128(b []byte) (Bin128, error) {
 	return u, nil
 }
 
-// ParseString128 parses a bin128 from 32-char string.
+// ParseString128 parses a bin128 from 33-char string.
 func ParseString128(s string) (Bin128, error) {
 	switch {
 	case s == "":
@@ -79,14 +79,20 @@ func ParseString128(s string) (Bin128, error) {
 	}
 
 	u := Bin128{}
-	_, err := hex.Decode(u[:], []byte(s))
+	b := unsafeByteString(s)
+
+	_, err := hex.Decode(u[:], b[:16])
+	if err != nil {
+		return u, err
+	}
+	_, err = hex.Decode(u[8:], b[17:])
 	if err != nil {
 		return u, err
 	}
 	return u, nil
 }
 
-// MustParseString128 parses a bin128 from 32-char string or panics.
+// MustParseString128 parses a bin128 from 33-char string or panics.
 func MustParseString128(s string) Bin128 {
 	u, err := ParseString128(s)
 	if err != nil {
@@ -113,7 +119,7 @@ func Parse256(b []byte) (Bin256, error) {
 	return u, nil
 }
 
-// ParseString256 parses a bin256 from 64-char string.
+// ParseString256 parses a bin256 from 67-char string.
 func ParseString256(s string) (Bin256, error) {
 	switch {
 	case s == "":
@@ -125,14 +131,28 @@ func ParseString256(s string) (Bin256, error) {
 	}
 
 	u := Bin256{}
-	_, err := hex.Decode(u[:], []byte(s))
+	b := unsafeByteString(s)
+
+	_, err := hex.Decode(u[:], b[:16])
+	if err != nil {
+		return u, err
+	}
+	_, err = hex.Decode(u[8:], b[17:33])
+	if err != nil {
+		return u, err
+	}
+	_, err = hex.Decode(u[16:], b[34:50])
+	if err != nil {
+		return u, err
+	}
+	_, err = hex.Decode(u[24:], b[51:])
 	if err != nil {
 		return u, err
 	}
 	return u, nil
 }
 
-// MustParseString256 parses a bin256 from 64-char string or panics.
+// MustParseString256 parses a bin256 from 67-char string or panics.
 func MustParseString256(s string) Bin256 {
 	u, err := ParseString256(s)
 	if err != nil {

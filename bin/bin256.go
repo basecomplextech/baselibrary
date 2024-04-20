@@ -11,7 +11,7 @@ import (
 
 const (
 	ByteLen256 = 32
-	CharLen256 = (ByteLen256 * 2)
+	CharLen256 = (ByteLen256 * 2) + 3
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	}
-	Pattern256 = regexp.MustCompile(`^[0-9A-Za-z]{64}$`)
+	Pattern256 = regexp.MustCompile(`^[0-9A-Za-z]{16}-[0-9A-Za-z]{16}-[0-9A-Za-z]{16}-[0-9A-Za-z]{16}$`)
 )
 
 // Bin256 is a 32 byte value.
@@ -105,17 +105,29 @@ func (b Bin256) Size() int {
 // String returns a 64-char lower-case hex-encoded string.
 func (b Bin256) String() string {
 	buf := make([]byte, CharLen256)
-	hex.Encode(buf, b[:])
+	hex.Encode(buf, b[:8])
+	buf[16] = '-'
+	hex.Encode(buf[17:], b[8:16])
+	buf[33] = '-'
+	hex.Encode(buf[34:], b[16:24])
+	buf[50] = '-'
+	hex.Encode(buf[51:], b[24:])
 	return string(buf)
 }
 
-// AppendHexTo appends a 64-char lower-case hex-encoded string to a buffer.
+// AppendHexTo appends a 67-char lower-case hex-encoded string to a buffer.
 func (b Bin256) AppendHexTo(buf []byte) []byte {
 	n := len(buf)
 	n1 := n + CharLen256
 
 	buf = buf[:n1]
-	hex.Encode(buf[n:], b[:])
+	hex.Encode(buf[n:], b[:8])
+	buf[n+16] = '-'
+	hex.Encode(buf[n+17:], b[8:12])
+	buf[n+33] = '-'
+	hex.Encode(buf[n+34:], b[12:16])
+	buf[n+50] = '-'
+	hex.Encode(buf[n+51:], b[16:24])
 	return buf
 }
 

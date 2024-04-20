@@ -10,7 +10,7 @@ import (
 
 const (
 	ByteLen128 = 16
-	CharLen128 = (ByteLen128 * 2) // 341a7d60bc5893a64bda3de06721534c
+	CharLen128 = (ByteLen128 * 2) + 1 // 341a7d60bc5893a6-4bda3de06721534c
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	}
-	Pattern128 = regexp.MustCompile(`^[0-9A-Za-z]{32}$`)
+	Pattern128 = regexp.MustCompile(`^[0-9A-Za-z]{16}-[0-9A-Za-z]{16}$`)
 )
 
 // Bin128 is a 128-bit value.
@@ -29,6 +29,14 @@ func Int128(v0, v1 int64) Bin128 {
 	b := Bin128{}
 	binary.BigEndian.PutUint64(b[:], uint64(v0))
 	binary.BigEndian.PutUint64(b[8:], uint64(v1))
+	return b
+}
+
+// Join128 joins two bin64 values into a bin128.
+func Join128(b0, b1 Bin64) Bin128 {
+	b := Bin128{}
+	copy(b[:], b0[:])
+	copy(b[8:], b1[:])
 	return b
 }
 
@@ -75,20 +83,24 @@ func (b Bin128) Size() int {
 	return len(b)
 }
 
-// String returns a 32-char lower-case hex-encoded string.
+// String returns a 33-char lower-case hex-encoded string.
 func (b Bin128) String() string {
 	buf := make([]byte, CharLen128)
-	hex.Encode(buf, b[:])
+	hex.Encode(buf, b[:8])
+	buf[16] = '-'
+	hex.Encode(buf[17:], b[8:])
 	return string(buf)
 }
 
-// AppendHexTo appends a 32-char lower-case hex-encoded string to a buffer.
+// AppendHexTo appends a 33-char lower-case hex-encoded string to a buffer.
 func (b Bin128) AppendHexTo(buf []byte) []byte {
 	n := len(buf)
 	n1 := n + CharLen128
 
 	buf = buf[:n1]
-	hex.Encode(buf[n:], b[:])
+	hex.Encode(buf[n:], b[:8])
+	buf[n+16] = '-'
+	hex.Encode(buf[n+17:], b[8:])
 	return buf
 }
 
