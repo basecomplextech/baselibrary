@@ -20,18 +20,6 @@ func TestQueue_Clear__should_release_items(t *testing.T) {
 	assert.Equal(t, int64(1), r.Refcount())
 }
 
-// Close
-
-func TestQueue_Close__should_release_items_close_queue(t *testing.T) {
-	r := ref.NewNoop(123)
-
-	q := newQueue[ref.R[int]]()
-	q.Push(r)
-	q.Close()
-
-	assert.Equal(t, int64(1), r.Refcount())
-}
-
 // Push
 
 func TestQueue_Push__should_retain_item(t *testing.T) {

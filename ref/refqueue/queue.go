@@ -10,9 +10,6 @@ import (
 // Queue is a wrapper around async.Queue with reference counting.
 type Queue[T ref.Ref] interface {
 	async.Queue[T]
-
-	// Free closes and frees the queue.
-	Free()
 }
 
 // New returns a new queue.
@@ -41,15 +38,6 @@ func (q *queue[T]) Clear() {
 	defer q.mu.Unlock()
 
 	q.clear()
-}
-
-// Close clears and closes the queue.
-func (q *queue[T]) Close() {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	q.clear()
-	q.q.Close()
 }
 
 // Len returns the number of elements in the queue.
@@ -88,8 +76,7 @@ func (q *queue[T]) Free() {
 	defer q.mu.Unlock()
 
 	q.clear()
-	q.q.Close()
-	q.q = nil
+	q.q.Free()
 }
 
 // internal
