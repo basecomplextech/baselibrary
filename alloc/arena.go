@@ -22,7 +22,7 @@ func NewArenaSize(size int) Arena {
 }
 
 // NewArenaRef allocates an arena and returns a reference to it.
-func NewArenaRef() *ref.R[Arena] {
+func NewArenaRef() ref.R[Arena] {
 	return ref.New(NewArena())
 }
 

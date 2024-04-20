@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testBtree(t tests.T, items ...Item[int, *ref.R[*Value]]) *btree[int, *ref.R[*Value]] {
+func testBtree(t tests.T, items ...Item[int, ref.R[*Value]]) *btree[int, ref.R[*Value]] {
 	compare := func(a, b int) int { return a - b }
-	btree := newBtree[int, *ref.R[*Value]](compare)
+	btree := newBtree[int, ref.R[*Value]](compare)
 
 	for _, item := range items {
 		btree.Put(item.Key, item.Value)
@@ -25,20 +25,20 @@ func testUnwrap[K any, V ref.Ref](m Map[K, V]) *btree[K, V] {
 	return m.(*btree[K, V])
 }
 
-func testItem(v int) Item[int, *ref.R[*Value]] {
-	return Item[int, *ref.R[*Value]]{
+func testItem(v int) Item[int, ref.R[*Value]] {
+	return Item[int, ref.R[*Value]]{
 		Key:   v,
 		Value: testValue(v),
 	}
 }
 
-func testItems() []Item[int, *ref.R[*Value]] {
+func testItems() []Item[int, ref.R[*Value]] {
 	n := 2 * maxItems * maxItems
 	return testItemsN(n)
 }
 
-func testItemsN(n int) []Item[int, *ref.R[*Value]] {
-	items := make([]Item[int, *ref.R[*Value]], 0, n)
+func testItemsN(n int) []Item[int, ref.R[*Value]] {
+	items := make([]Item[int, ref.R[*Value]], 0, n)
 	for i := 0; i < n; i++ {
 		item := testItem(i)
 		items = append(items, item)
@@ -46,14 +46,14 @@ func testItemsN(n int) []Item[int, *ref.R[*Value]] {
 	return items
 }
 
-func sortItems(items []Item[int, *ref.R[*Value]]) {
+func sortItems(items []Item[int, ref.R[*Value]]) {
 	sort.Slice(items, func(i, j int) bool {
 		a, b := items[i].Key, items[j].Key
 		return a < b
 	})
 }
 
-func testPut(t tests.T, btree *btree[int, *ref.R[*Value]], items ...Item[int, *ref.R[*Value]]) {
+func testPut(t tests.T, btree *btree[int, ref.R[*Value]], items ...Item[int, ref.R[*Value]]) {
 	for _, item := range items {
 		btree.Put(item.Key, item.Value)
 	}
@@ -162,7 +162,7 @@ func TestMap_Clone__should_retain_root_branch_children_but_not_values(t *testing
 	}
 
 	// Check children refs
-	root := btree.root.(*branchNode[int, *ref.R[*Value]])
+	root := btree.root.(*branchNode[int, ref.R[*Value]])
 	for _, item := range root.items {
 		child := item.node
 		require.Equal(t, int64(2), child.refcount())
@@ -176,7 +176,7 @@ func TestMap_Freeze__should_recursively_freeze_btree(t *testing.T) {
 	btree := testBtree(t, items...)
 	btree.Freeze()
 
-	walk(btree.root, func(n node[int, *ref.R[*Value]]) {
+	walk(btree.root, func(n node[int, ref.R[*Value]]) {
 		require.False(t, n.mutable())
 	})
 }
@@ -348,11 +348,11 @@ func TestMap_values__should_return_values_as_slice(t *testing.T) {
 	slices.Shuffle(items)
 	testPut(t, btree, items...)
 
-	values := make([]*ref.R[*Value], 0, len(items))
+	values := make([]ref.R[*Value], 0, len(items))
 	for _, item := range items {
 		values = append(values, item.Value)
 	}
-	slices.SortCompare(values, func(a, b *ref.R[*Value]) bool {
+	slices.SortCompare(values, func(a, b ref.R[*Value]) bool {
 		return a.Unwrap().val < b.Unwrap().val
 	})
 
@@ -367,7 +367,7 @@ type Value struct {
 	freed bool
 }
 
-func testValue(v int) *ref.R[*Value] {
+func testValue(v int) ref.R[*Value] {
 	return ref.New(&Value{val: v})
 }
 

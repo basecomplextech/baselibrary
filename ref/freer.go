@@ -26,17 +26,3 @@ type freeFunc func()
 func (f freeFunc) Free() {
 	f()
 }
-
-type refFreer[T any] R[T]
-
-func (f *refFreer[T]) Free() {
-	r := (*R[T])(f)
-	r.Release()
-}
-
-// NoopFreer is a freer which does nothing.
-var NoopFreer Freer = &noopFreer{}
-
-type noopFreer struct{}
-
-func (f *noopFreer) Free() {}

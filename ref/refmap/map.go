@@ -72,7 +72,7 @@ func New[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) Map[K, V] {
 }
 
 // New returns an empty map wrapped in a ref.
-func NewRef[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) *ref.R[Map[K, V]] {
+func NewRef[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) ref.R[Map[K, V]] {
 	m := New[K, V](mutable, compare)
 	return ref.New(m)
 }

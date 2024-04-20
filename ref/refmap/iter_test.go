@@ -167,7 +167,7 @@ func TestIterator_Previous_Next_Previous__should_switch_directions(t *testing.T)
 func TestIterator_SeekToKey__should_position_before_key(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t, items...)
-	it := btree.Iterator().(*iterator[int, *ref.R[*Value]])
+	it := btree.Iterator().(*iterator[int, ref.R[*Value]])
 
 	for _, item := range items {
 		if ok := it.SeekToKey(item.Key); !ok {
@@ -189,7 +189,7 @@ func TestIterator_SeekToKey__should_position_before_key(t *testing.T) {
 func TestIterator_SeekToKey__should_position_at_start_when_first_key_greater_than_sought_key(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items[1:]...)
-	it := btree.Iterator().(*iterator[int, *ref.R[*Value]])
+	it := btree.Iterator().(*iterator[int, ref.R[*Value]])
 
 	ok := it.SeekToKey(0)
 	assert.True(t, ok)
@@ -202,7 +202,7 @@ func TestIterator_SeekToKey__should_position_at_start_when_first_key_greater_tha
 func TestIterator_SeekToKey__should_position_at_end_when_all_keys_less_than_sought_key(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items...)
-	it := btree.Iterator().(*iterator[int, *ref.R[*Value]])
+	it := btree.Iterator().(*iterator[int, ref.R[*Value]])
 
 	ok := it.SeekToKey(11)
 	assert.False(t, ok)
@@ -211,7 +211,7 @@ func TestIterator_SeekToKey__should_position_at_end_when_all_keys_less_than_soug
 	assert.False(t, ok)
 	assert.Equal(t, positionEnd, it.pos)
 
-	items1 := testIterateBackward[int, *ref.R[*Value]](t, it)
+	items1 := testIterateBackward[int, ref.R[*Value]](t, it)
 	slices.Reverse(items1)
 	assert.Equal(t, items, items1)
 }
@@ -221,7 +221,7 @@ func TestIterator_SeekToKey__should_position_at_end_when_all_keys_less_than_soug
 func TestIterator_Next__should_panic_on_concurrent_modification(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items[:5]...)
-	it := btree.Iterator().(*iterator[int, *ref.R[*Value]])
+	it := btree.Iterator().(*iterator[int, ref.R[*Value]])
 
 	ok := it.Next()
 	assert.True(t, ok)
@@ -236,7 +236,7 @@ func TestIterator_Next__should_panic_on_concurrent_modification(t *testing.T) {
 func TestIterator_Previous__should_panic_on_concurrent_modification(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items[:5]...)
-	it := btree.Iterator().(*iterator[int, *ref.R[*Value]])
+	it := btree.Iterator().(*iterator[int, ref.R[*Value]])
 
 	ok := it.SeekToEnd()
 	assert.True(t, ok)
