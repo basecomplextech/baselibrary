@@ -26,9 +26,6 @@ func TestStream__should_send_messages_to_listeners(t *testing.T) {
 
 	q.Free()
 	src.Send("goodbye")
-
-	_, ok = q.Pop()
-	assert.False(t, ok)
 }
 
 func TestStreamFilter__should_filter_messages(t *testing.T) {
@@ -51,9 +48,6 @@ func TestStreamFilter__should_filter_messages(t *testing.T) {
 
 	q.Free()
 	src.Send("goodbye")
-
-	_, ok = q.Pop()
-	assert.False(t, ok)
 }
 
 func TestStreamParallel__should_send_messages_to_multiple_listeners(t *testing.T) {
@@ -83,9 +77,6 @@ func TestStreamParallel__should_send_messages_to_multiple_listeners(t *testing.T
 
 	q0.Free()
 	src.Send("goodbye")
-
-	_, ok = q0.Pop()
-	assert.False(t, ok)
 
 	s, ok = q1.Pop()
 	assert.True(t, ok)

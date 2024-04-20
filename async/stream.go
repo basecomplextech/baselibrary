@@ -30,3 +30,8 @@ type StreamSource[T any] interface {
 func NewStreamSource[T any]() StreamSource[T] {
 	return newStreamSource[T]()
 }
+
+// MapStream returns a stream which maps messages from another stream.
+func MapStream[T, R any](s Stream[T], fn func(T) R) Stream[R] {
+	return newStreamMap(s, fn)
+}

@@ -76,7 +76,7 @@ func Map[T, T1 any](obj T, parent R[T1]) R[T] {
 //
 // Example:
 //
-//	func parse(buf *ref.R[buffer.Buffer]) ref.R[*Event] {
+//	func parse(buf ref.R[buffer.Buffer]) ref.R[*Event] {
 //		event := parseEvent(buf.Unwrap())
 //		return ref.Next(event, buf)
 //	}
@@ -92,7 +92,7 @@ func Next[T, T1 any](obj T, parent R[T1]) R[T] {
 //
 // Example:
 //
-//	func parse(buf *ref.R[buffer.Buffer]) ref.R[*Event] {
+//	func parse(buf ref.R[buffer.Buffer]) ref.R[*Event] {
 //		event := parseEvent(buf.Unwrap())
 //		return ref.NextRetain(event, buf)
 //	}
