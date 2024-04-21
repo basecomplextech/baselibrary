@@ -29,7 +29,7 @@ func NewSource[T ref.Ref]() async.StreamSource[T] {
 
 // Map returns a stream which maps messages from another stream.
 func Map[T, R ref.Ref](s Stream[T], fn func(T) R) Stream[R] {
-	s1 := async.MapStream[T, R](s, fn)
+	s1 := async.MapStream(s, fn)
 	return newStream(s1)
 }
 

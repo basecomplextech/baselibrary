@@ -16,7 +16,7 @@ func newStreamMap[T, R any](src Stream[T], fn func(T) R) *streamMap[T, R] {
 
 // Filter returns a new stream that only contains elements that satisfy the predicate.
 func (s *streamMap[T, R]) Filter(fn func(R) bool) Stream[R] {
-	panic("not implemented")
+	return newStreamFilter(s, fn)
 }
 
 // Listen adds a listener to the stream, and returns an unsubscribe function.
