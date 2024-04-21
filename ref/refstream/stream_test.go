@@ -9,7 +9,7 @@ import (
 )
 
 func TestStream__should_increment_refs(t *testing.T) {
-	src := NewSource[ref.R[int]]()
+	src := NewSource[int]()
 	src.Filter(func(r ref.R[int]) bool {
 		v := r.Unwrap()
 		return v > 10
@@ -29,7 +29,7 @@ func TestStream__should_increment_refs(t *testing.T) {
 }
 
 func TestStreamQueue__should_decrement_refs_on_clear(t *testing.T) {
-	src := NewSource[ref.R[int]]()
+	src := NewSource[int]()
 	q := src.Subscribe()
 
 	r0 := ref.NewNoop(1)
@@ -48,7 +48,7 @@ func TestStreamQueue__should_decrement_refs_on_clear(t *testing.T) {
 }
 
 func TestStreamMap__should_map_refs(t *testing.T) {
-	src := NewSource[ref.R[int]]()
+	src := NewSource[int]()
 	q := Map(src, func(r ref.R[int]) ref.R[int32] {
 		v := r.Unwrap()
 		v1 := (int32)(v)
