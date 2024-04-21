@@ -10,7 +10,7 @@ import (
 //
 // The map retains/releases references internally, but does not retain them when iterating
 // or returning.
-type Map[K any, V ref.Ref] interface {
+type Map[K, V any] interface {
 	// Empty returns true if the map is empty.
 	Empty() bool
 
@@ -30,40 +30,40 @@ type Map[K any, V ref.Ref] interface {
 
 	// Read
 
-	// Get returns an item by a key.
-	Get(key K) (V, bool)
+	// Get returns an item by a key, does not retain the value.
+	Get(key K) (ref.R[V], bool)
 
 	// Contains returns true if the map contains a key.
 	Contains(key K) bool
 
-	// Iterator returns an iterator positioned at the start of the map.
+	// Iterator returns an iterator, the iterator does not retain the values.
 	Iterator() Iterator[K, V]
 
 	// Write
 
-	// Put adds an item to the map.
-	Put(key K, value V)
+	// Put adds an item to the map, retains its value.
+	Put(key K, value ref.R[V])
 
-	// Delete deletes an item by a key.
+	// Delete deletes an item by a key, releases its value.
 	Delete(key K)
 
 	// Internal
 
-	// Free frees the map, implements the ref.Freer interface.
+	// Free frees the map, releases all values.
 	Free()
 }
 
 // Item is a map item.
-type Item[K any, V ref.Ref] struct {
+type Item[K, V any] struct {
 	Key   K
-	Value V
+	Value ref.R[V]
 }
 
 // CompareFunc compares two keys, and returns -1 if a < b, 0 if a == b, 1 if a > b.
 type CompareFunc[K any] func(a, b K) int
 
 // New returns an empty map.
-func New[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) Map[K, V] {
+func New[K, V any](mutable bool, compare CompareFunc[K]) Map[K, V] {
 	m := newBtree[K, V](compare)
 	if !mutable {
 		m.Freeze()
@@ -72,7 +72,7 @@ func New[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) Map[K, V] {
 }
 
 // New returns an empty map wrapped in a ref.
-func NewRef[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) ref.R[Map[K, V]] {
+func NewRef[K, V any](mutable bool, compare CompareFunc[K]) ref.R[Map[K, V]] {
 	m := New[K, V](mutable, compare)
 	return ref.New(m)
 }
@@ -81,13 +81,13 @@ func NewRef[K any, V ref.Ref](mutable bool, compare CompareFunc[K]) ref.R[Map[K,
 
 const maxItems = 16
 
-var _ Map[any, ref.Ref] = (*btree[any, ref.Ref])(nil)
+var _ Map[any, any] = (*btree[any, any])(nil)
 
-type btree[K any, V ref.Ref] struct {
+type btree[K, V any] struct {
 	*state[K, V]
 }
 
-type state[K any, V ref.Ref] struct {
+type state[K, V any] struct {
 	compare CompareFunc[K]
 
 	root    node[K, V]
@@ -97,7 +97,7 @@ type state[K any, V ref.Ref] struct {
 	mutable bool
 }
 
-func newBtree[K any, V ref.Ref](compare CompareFunc[K]) *btree[K, V] {
+func newBtree[K, V any](compare CompareFunc[K]) *btree[K, V] {
 	b := &btree[K, V]{acquireState[K, V]()}
 	b.compare = compare
 	b.root = newLeafNode[K, V]()
@@ -157,8 +157,8 @@ func (t *btree[K, V]) Freeze() {
 
 // Items
 
-// Get returns a value by a key, does not retain the value.
-func (t *btree[K, V]) Get(key K) (v V, ok bool) {
+// Get returns an item by a key, does not retain the value.
+func (t *btree[K, V]) Get(key K) (v ref.R[V], ok bool) {
 	return t.root.get(key, t.compare)
 }
 
@@ -176,8 +176,8 @@ func (t *btree[K, V]) Iterator() Iterator[K, V] {
 
 // Write
 
-// Put adds an item to the map.
-func (t *btree[K, V]) Put(key K, value V) {
+// Put adds an item to the map, retains its value.
+func (t *btree[K, V]) Put(key K, value ref.R[V]) {
 	if !t.mutable {
 		panic("operation on immutable refmap")
 	}
@@ -199,7 +199,7 @@ func (t *btree[K, V]) Put(key K, value V) {
 	t.length++
 }
 
-// Delete deletes an item by a key.
+// Delete deletes an item by a key, releases its value.
 func (t *btree[K, V]) Delete(key K) {
 	if !t.mutable {
 		panic("operation on immutable refmap")
@@ -221,7 +221,7 @@ func (t *btree[K, V]) Delete(key K) {
 
 // Internal
 
-// Free frees the map, implements the ref.Freer interface.
+// Free frees the map, releases all values.
 func (t *btree[K, V]) Free() {
 	t.root.release()
 	t.root = nil
@@ -339,8 +339,8 @@ func (t *btree[K, V]) keys() []K {
 }
 
 // values returns item values as a slice.
-func (t *btree[K, V]) values() []V {
-	result := make([]V, 0, t.length)
+func (t *btree[K, V]) values() []ref.R[V] {
+	result := make([]ref.R[V], 0, t.length)
 
 	// LIFO stack
 	stack := []node[K, V]{t.root}
@@ -370,9 +370,9 @@ func (t *btree[K, V]) values() []V {
 
 var statePools = &sync.Map{}
 
-type poolKey[K any, V ref.Ref] struct{}
+type poolKey[K, V any] struct{}
 
-func acquireState[K any, V ref.Ref]() *state[K, V] {
+func acquireState[K, V any]() *state[K, V] {
 	pool := getStatePool[K, V]()
 
 	v := pool.Get()
@@ -382,14 +382,14 @@ func acquireState[K any, V ref.Ref]() *state[K, V] {
 	return &state[K, V]{}
 }
 
-func releaseState[K any, V ref.Ref](s *state[K, V]) {
+func releaseState[K, V any](s *state[K, V]) {
 	s.reset()
 
 	pool := getStatePool[K, V]()
 	pool.Put(s)
 }
 
-func getStatePool[K any, V ref.Ref]() *sync.Pool {
+func getStatePool[K, V any]() *sync.Pool {
 	var key poolKey[K, V]
 
 	p, ok := statePools.Load(key)

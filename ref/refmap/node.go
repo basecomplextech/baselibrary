@@ -4,7 +4,7 @@ import (
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
-type node[K any, V ref.Ref] interface {
+type node[K, V any] interface {
 	retain()
 	release()
 	refcount() int64
@@ -18,14 +18,14 @@ type node[K any, V ref.Ref] interface {
 	maxKey() K
 
 	indexOf(key K, cmp CompareFunc[K]) int
-	get(key K, cmp CompareFunc[K]) (V, bool)
-	put(key K, value V, cmp CompareFunc[K]) bool
+	get(key K, cmp CompareFunc[K]) (ref.R[V], bool)
+	put(key K, value ref.R[V], cmp CompareFunc[K]) bool
 	delete(key K, cmp CompareFunc[K]) bool
 	contains(key K, cmp CompareFunc[K]) bool
 	split() (node[K, V], bool)
 }
 
-func walk[K any, V ref.Ref](node node[K, V], fn func(node[K, V])) {
+func walk[K, V any](node node[K, V], fn func(node[K, V])) {
 	fn(node)
 
 	n, ok := node.(*branchNode[K, V])

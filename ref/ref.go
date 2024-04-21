@@ -34,15 +34,15 @@ func ReleaseAll[R Ref](refs ...R) {
 	}
 }
 
-// Swap retains a new reference, releases an old one and returns the new.
+// SwapRetain retains a new reference, releases an old one and returns the new.
 //
 // Usage:
 //
 //	tbl := table.Clone()
 //	defer tbl.Release()
 //	...
-//	s.table = Swap(s.table, tbl)
-func Swap[R Ref](old R, new R) R {
+//	s.table = SwapRetain(s.table, tbl)
+func SwapRetain[R Ref](old R, new R) R {
 	new.Retain()
 	old.Release()
 	return new

@@ -29,7 +29,7 @@ type Iterator[K any, V any] interface {
 	Key() K
 
 	// Value returns the current value or zero, the value is valid until the next iteration.
-	Value() V
+	Value() ref.R[V]
 
 	// Iterating
 
@@ -68,14 +68,14 @@ const (
 	positionEnd
 )
 
-var _ Iterator[int, ref.Ref] = (*iterator[int, ref.Ref])(nil)
+var _ Iterator[int, int] = (*iterator[int, int])(nil)
 
 // iterator iterates over a btree, does not retain the values.
-type iterator[K any, V ref.Ref] struct {
+type iterator[K, V any] struct {
 	*iterState[K, V]
 }
 
-type iterState[K any, V ref.Ref] struct {
+type iterState[K, V any] struct {
 	tree *btree[K, V]
 
 	st    status.Status    // current iterator status
@@ -85,12 +85,12 @@ type iterState[K any, V ref.Ref] struct {
 }
 
 // iterElem combines a node and an iteration index of the node elements.
-type iterElem[K any, V ref.Ref] struct {
+type iterElem[K, V any] struct {
 	node[K, V]
 	index int // index maybe == len(node.items) as in sort.Search
 }
 
-func newIterator[K any, V ref.Ref](tree *btree[K, V]) *iterator[K, V] {
+func newIterator[K, V any](tree *btree[K, V]) *iterator[K, V] {
 	it := &iterator[K, V]{acquireIterState[K, V]()}
 	it.tree = tree
 
@@ -132,7 +132,7 @@ func (it *iterator[K, V]) Key() (key K) {
 }
 
 // Value returns the current value or zero, the value is valid until the next iteration.
-func (it *iterator[K, V]) Value() (value V) {
+func (it *iterator[K, V]) Value() (value ref.R[V]) {
 	if !it.st.OK() {
 		return
 	}
@@ -474,7 +474,7 @@ func (it *iterator[K, V]) pushEnd(node node[K, V]) {
 
 var iterStatePools = &sync.Map{}
 
-func acquireIterState[K any, V ref.Ref]() *iterState[K, V] {
+func acquireIterState[K, V any]() *iterState[K, V] {
 	pool := getIterStatePool[K, V]()
 
 	v := pool.Get()
@@ -484,14 +484,14 @@ func acquireIterState[K any, V ref.Ref]() *iterState[K, V] {
 	return &iterState[K, V]{}
 }
 
-func releaseIterState[K any, V ref.Ref](s *iterState[K, V]) {
+func releaseIterState[K, V any](s *iterState[K, V]) {
 	s.reset()
 
 	pool := getIterStatePool[K, V]()
 	pool.Put(s)
 }
 
-func getIterStatePool[K any, V ref.Ref]() *sync.Pool {
+func getIterStatePool[K, V any]() *sync.Pool {
 	var key poolKey[K, V]
 
 	p, ok := iterStatePools.Load(key)

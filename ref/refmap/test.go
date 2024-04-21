@@ -1,11 +1,10 @@
 package refmap
 
 import (
-	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/basecomplextech/baselibrary/tests"
 )
 
-func testIterate[K any, V ref.Ref](t tests.T, it Iterator[K, V]) []Item[K, V] {
+func testIterate[K, V any](t tests.T, it Iterator[K, V]) []Item[K, V] {
 	result := []Item[K, V]{}
 
 	for it.Next() {
@@ -22,7 +21,7 @@ func testIterate[K any, V ref.Ref](t tests.T, it Iterator[K, V]) []Item[K, V] {
 	return result
 }
 
-func testIterateN[K any, V ref.Ref](t tests.T, it Iterator[K, V], n int) []Item[K, V] {
+func testIterateN[K, V any](t tests.T, it Iterator[K, V], n int) []Item[K, V] {
 	result := []Item[K, V]{}
 
 	for it.Next() {
@@ -43,7 +42,7 @@ func testIterateN[K any, V ref.Ref](t tests.T, it Iterator[K, V], n int) []Item[
 	return result
 }
 
-func testIterateBackward[K any, V ref.Ref](t tests.T, it Iterator[K, V]) []Item[K, V] {
+func testIterateBackward[K, V any](t tests.T, it Iterator[K, V]) []Item[K, V] {
 	result := []Item[K, V]{}
 
 	for it.Previous() {
@@ -60,7 +59,7 @@ func testIterateBackward[K any, V ref.Ref](t tests.T, it Iterator[K, V]) []Item[
 	return result
 }
 
-func testIterateBackwardN[K any, V ref.Ref](t tests.T, it Iterator[K, V], n int) []Item[K, V] {
+func testIterateBackwardN[K, V any](t tests.T, it Iterator[K, V], n int) []Item[K, V] {
 	result := []Item[K, V]{}
 
 	for it.Previous() {

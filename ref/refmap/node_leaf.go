@@ -9,9 +9,9 @@ import (
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
-var _ node[any, ref.Ref] = (*leafNode[any, ref.Ref])(nil)
+var _ node[any, any] = (*leafNode[any, any])(nil)
 
-type leafNode[K any, V ref.Ref] struct {
+type leafNode[K, V any] struct {
 	items  []leafItem[K, V]
 	_items [maxItems]leafItem[K, V]
 
@@ -19,13 +19,13 @@ type leafNode[K any, V ref.Ref] struct {
 	refs int64
 }
 
-type leafItem[K any, V ref.Ref] struct {
+type leafItem[K, V any] struct {
 	key   K
-	value V
+	value ref.R[V]
 }
 
 // newLeafNode returns a new mutable node.
-func newLeafNode[K any, V ref.Ref](items ...Item[K, V]) *leafNode[K, V] {
+func newLeafNode[K, V any](items ...Item[K, V]) *leafNode[K, V] {
 	// Make node
 	n := acquireLeaf[K, V]()
 	n.items = n._items[:0]
@@ -48,7 +48,7 @@ func newLeafNode[K any, V ref.Ref](items ...Item[K, V]) *leafNode[K, V] {
 }
 
 // cloneLeafNode returns a mutable node clone.
-func cloneLeafNode[K any, V ref.Ref](n *leafNode[K, V]) *leafNode[K, V] {
+func cloneLeafNode[K, V any](n *leafNode[K, V]) *leafNode[K, V] {
 	// Copy node
 	n1 := acquireLeaf[K, V]()
 	n1.items = n1._items[:0]
@@ -66,7 +66,7 @@ func cloneLeafNode[K any, V ref.Ref](n *leafNode[K, V]) *leafNode[K, V] {
 }
 
 // nextLeafNode returns a new mutable node on a split, moves items to it.
-func nextLeafNode[K any, V ref.Ref](items []leafItem[K, V]) *leafNode[K, V] {
+func nextLeafNode[K, V any](items []leafItem[K, V]) *leafNode[K, V] {
 	n := acquireLeaf[K, V]()
 	n.items = n._items[:0]
 	n.refs = 1
@@ -156,7 +156,7 @@ func (n *leafNode[K, V]) indexOf(key K, compare CompareFunc[K]) int {
 	})
 }
 
-func (n *leafNode[K, V]) get(key K, compare CompareFunc[K]) (v V, ok bool) {
+func (n *leafNode[K, V]) get(key K, compare CompareFunc[K]) (v ref.R[V], ok bool) {
 	index := n.indexOf(key, compare)
 
 	// Return if not found
@@ -171,7 +171,7 @@ func (n *leafNode[K, V]) get(key K, compare CompareFunc[K]) (v V, ok bool) {
 	return item.value, true
 }
 
-func (n *leafNode[K, V]) put(key K, value V, compare CompareFunc[K]) bool {
+func (n *leafNode[K, V]) put(key K, value ref.R[V], compare CompareFunc[K]) bool {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -188,7 +188,7 @@ func (n *leafNode[K, V]) put(key K, value V, compare CompareFunc[K]) bool {
 
 		// Swap item
 		if compare(item.key, key) == 0 {
-			item.value = ref.Swap(item.value, value)
+			item.value = ref.SwapRetain(item.value, value)
 			return false
 		}
 	}
@@ -283,7 +283,7 @@ func (n *leafNode[K, V]) split() (node[K, V], bool) {
 
 var leafNodePools = &sync.Map{}
 
-func acquireLeaf[K any, V ref.Ref]() *leafNode[K, V] {
+func acquireLeaf[K, V any]() *leafNode[K, V] {
 	pool := getLeafPool[K, V]()
 
 	v := pool.Get()
@@ -293,14 +293,14 @@ func acquireLeaf[K any, V ref.Ref]() *leafNode[K, V] {
 	return &leafNode[K, V]{}
 }
 
-func releaseLeaf[K any, V ref.Ref](n *leafNode[K, V]) {
+func releaseLeaf[K, V any](n *leafNode[K, V]) {
 	n.reset()
 
 	pool := getLeafPool[K, V]()
 	pool.Put(n)
 }
 
-func getLeafPool[K any, V ref.Ref]() *sync.Pool {
+func getLeafPool[K, V any]() *sync.Pool {
 	var key poolKey[K, V]
 
 	p, ok := leafNodePools.Load(key)

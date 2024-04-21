@@ -9,9 +9,9 @@ import (
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
-var _ node[any, ref.Ref] = (*branchNode[any, ref.Ref])(nil)
+var _ node[any, any] = (*branchNode[any, any])(nil)
 
-type branchNode[K any, V ref.Ref] struct {
+type branchNode[K, V any] struct {
 	items  []branchItem[K, V]
 	_items [maxItems]branchItem[K, V]
 
@@ -19,13 +19,13 @@ type branchNode[K any, V ref.Ref] struct {
 	refs int64
 }
 
-type branchItem[K any, V ref.Ref] struct {
+type branchItem[K, V any] struct {
 	minKey K
 	node   node[K, V]
 }
 
 // newBranchNode returns a new mutable node, moves the children to it.
-func newBranchNode[K any, V ref.Ref](children ...node[K, V]) *branchNode[K, V] {
+func newBranchNode[K, V any](children ...node[K, V]) *branchNode[K, V] {
 	// Make node
 	n := acquireBranch[K, V]()
 	n.items = n._items[:0]
@@ -44,7 +44,7 @@ func newBranchNode[K any, V ref.Ref](children ...node[K, V]) *branchNode[K, V] {
 }
 
 // cloneBranchNode returns a mutable node clone, retains its children.
-func cloneBranchNode[K any, V ref.Ref](n *branchNode[K, V]) *branchNode[K, V] {
+func cloneBranchNode[K, V any](n *branchNode[K, V]) *branchNode[K, V] {
 	// Copy node
 	n1 := acquireBranch[K, V]()
 	n1.items = n1._items[:0]
@@ -62,7 +62,7 @@ func cloneBranchNode[K any, V ref.Ref](n *branchNode[K, V]) *branchNode[K, V] {
 }
 
 // nextBranchNode returns a new mutable node on a split, moves items to it.
-func nextBranchNode[K any, V ref.Ref](items []branchItem[K, V]) *branchNode[K, V] {
+func nextBranchNode[K, V any](items []branchItem[K, V]) *branchNode[K, V] {
 	// Make node
 	n := acquireBranch[K, V]()
 	n.items = n._items[:0]
@@ -169,13 +169,13 @@ func (n *branchNode[K, V]) indexOf(key K, compare CompareFunc[K]) int {
 	return 0
 }
 
-func (n *branchNode[K, V]) get(key K, compare CompareFunc[K]) (V, bool) {
+func (n *branchNode[K, V]) get(key K, compare CompareFunc[K]) (ref.R[V], bool) {
 	index := n.indexOf(key, compare)
 	node := n.child(index)
 	return node.get(key, compare)
 }
 
-func (n *branchNode[K, V]) put(key K, value V, compare CompareFunc[K]) bool {
+func (n *branchNode[K, V]) put(key K, value ref.R[V], compare CompareFunc[K]) bool {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -349,7 +349,7 @@ func (n *branchNode[K, V]) splitChild(index int) bool {
 
 var branchPools = &sync.Map{}
 
-func acquireBranch[K any, V ref.Ref]() *branchNode[K, V] {
+func acquireBranch[K, V any]() *branchNode[K, V] {
 	pool := getBranchPool[K, V]()
 
 	v := pool.Get()
@@ -359,14 +359,14 @@ func acquireBranch[K any, V ref.Ref]() *branchNode[K, V] {
 	return &branchNode[K, V]{}
 }
 
-func releaseBranch[K any, V ref.Ref](n *branchNode[K, V]) {
+func releaseBranch[K, V any](n *branchNode[K, V]) {
 	n.reset()
 
 	pool := getBranchPool[K, V]()
 	pool.Put(n)
 }
 
-func getBranchPool[K any, V ref.Ref]() *sync.Pool {
+func getBranchPool[K, V any]() *sync.Pool {
 	var key poolKey[K, V]
 
 	p, ok := branchPools.Load(key)
