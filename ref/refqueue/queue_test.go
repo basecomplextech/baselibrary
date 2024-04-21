@@ -13,7 +13,7 @@ import (
 func TestQueue_Clear__should_release_items(t *testing.T) {
 	r := ref.NewNoop(123)
 
-	q := newQueue[ref.R[int]]()
+	q := newQueue[int]()
 	q.Push(r)
 	q.Clear()
 
@@ -25,7 +25,7 @@ func TestQueue_Clear__should_release_items(t *testing.T) {
 func TestQueue_Push__should_retain_item(t *testing.T) {
 	r := ref.NewNoop(123)
 
-	q := newQueue[ref.R[int]]()
+	q := newQueue[int]()
 	q.Push(r)
 
 	assert.Equal(t, int64(2), r.Refcount())
@@ -36,7 +36,7 @@ func TestQueue_Push__should_retain_item(t *testing.T) {
 func TestQueue_Pop__should_pop_item_noop(t *testing.T) {
 	r := ref.NewNoop(123)
 
-	q := newQueue[ref.R[int]]()
+	q := newQueue[int]()
 	q.Push(r)
 
 	r1, ok := q.Pop()
@@ -51,7 +51,7 @@ func TestQueue_Pop__should_pop_item_noop(t *testing.T) {
 func TestQueue_Free__should_release_items_close_queue(t *testing.T) {
 	r := ref.NewNoop(123)
 
-	q := newQueue[ref.R[int]]()
+	q := newQueue[int]()
 	q.Push(r)
 	q.Free()
 

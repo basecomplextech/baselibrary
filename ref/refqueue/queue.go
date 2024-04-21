@@ -8,27 +8,27 @@ import (
 )
 
 // Queue is a wrapper around async.Queue with reference counting.
-type Queue[T ref.Ref] interface {
-	async.Queue[T]
+type Queue[T any] interface {
+	async.Queue[ref.R[T]]
 }
 
 // New returns a new queue.
-func New[T ref.Ref]() Queue[T] {
+func New[T any]() Queue[T] {
 	return newQueue[T]()
 }
 
 // internal
 
-var _ Queue[ref.Ref] = (*queue[ref.Ref])(nil)
+var _ Queue[any] = (*queue[any])(nil)
 
-type queue[T ref.Ref] struct {
+type queue[T any] struct {
 	mu sync.Mutex
-	q  async.Queue[T]
+	q  async.Queue[ref.R[T]]
 }
 
-func newQueue[T ref.Ref]() *queue[T] {
+func newQueue[T any]() *queue[T] {
 	return &queue[T]{
-		q: async.NewQueue[T](),
+		q: async.NewQueue[ref.R[T]](),
 	}
 }
 
@@ -49,7 +49,7 @@ func (q *queue[T]) Len() int {
 }
 
 // Push adds an element to the queue, panics if the queue is closed.
-func (q *queue[T]) Push(v T) {
+func (q *queue[T]) Push(v ref.R[T]) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -58,7 +58,7 @@ func (q *queue[T]) Push(v T) {
 }
 
 // Pop removes an element from the queue, returns false if the queue is empty.
-func (q *queue[T]) Pop() (v T, ok bool) {
+func (q *queue[T]) Pop() (v ref.R[T], ok bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
