@@ -8,6 +8,8 @@ import (
 
 // Service is a service which can be started and stopped.
 type Service interface {
+	Routine[struct{}]
+
 	// IsRunning returns true if the service is running.
 	IsRunning() bool
 
@@ -25,10 +27,7 @@ type Service interface {
 	Start() (Routine[struct{}], status.Status)
 
 	// Stop requests the service to stop and returns its routine or a stopped routine.
-	Stop() Routine[struct{}]
-
-	// Routine returns the service routine or a stopped routine if the service is not running.
-	Routine() Routine[struct{}]
+	Stop() <-chan struct{}
 }
 
 // NewService returns a new stopped service.
@@ -63,6 +62,41 @@ func (s *service) IsRunning() bool {
 	return s.running.Get()
 }
 
+// Future
+
+// Wait returns a channel which is closed when the future is complete.
+func (s *service) Wait() <-chan struct{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.routine == nil {
+		return stoppedRoutine.Wait()
+	}
+	return s.routine.Wait()
+}
+
+// Result returns a value and a status.
+func (s *service) Result() (struct{}, status.Status) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.routine == nil {
+		return struct{}{}, status.None
+	}
+	return s.routine.Result()
+}
+
+// Status returns a status or none.
+func (s *service) Status() status.Status {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.routine == nil {
+		return status.None
+	}
+	return s.routine.Status()
+}
+
 // Async
 
 // Running indicates that the service is running.
@@ -73,17 +107,6 @@ func (s *service) Running() Flag {
 // Stopped indicates that the service is stopped.
 func (s *service) Stopped() Flag {
 	return s.stopped
-}
-
-// Start starts the service if not running and returns its routine.
-func (s *service) Routine() Routine[struct{}] {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.routine == nil {
-		return stoppedRoutine
-	}
-	return s.routine
 }
 
 // Methods
@@ -104,17 +127,14 @@ func (s *service) Start() (Routine[struct{}], status.Status) {
 }
 
 // Stop requests the service to stop.
-func (s *service) Stop() Routine[struct{}] {
+func (s *service) Stop() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.routine == nil {
-		return stoppedRoutine
+		return closedChan
 	}
-
-	r := s.routine
-	r.Cancel()
-	return r
+	return s.routine.Stop()
 }
 
 // private

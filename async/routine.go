@@ -9,8 +9,8 @@ import (
 type Routine[T any] interface {
 	Future[T]
 
-	// Cancel requests the routine to cancel and returns a wait channel.
-	Cancel() <-chan struct{}
+	// Stop requests the routine to stop and returns a wait channel.
+	Stop() <-chan struct{}
 }
 
 // Methods
@@ -66,7 +66,7 @@ func Call[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 // The routine returns all the results and the first non-OK status.
 func Join[T any](routines ...Routine[T]) Routine[[]T] {
 	return Call(func(ctx Context) ([]T, status.Status) {
-		// Await all or cancel
+		// Await all or stop
 		st := status.OK
 	loop:
 		for _, r := range routines {
@@ -78,9 +78,9 @@ func Join[T any](routines ...Routine[T]) Routine[[]T] {
 			}
 		}
 
-		// Cancel all
+		// Stop all
 		for _, r := range routines {
-			r.Cancel()
+			r.Stop()
 		}
 
 		// Collect results
@@ -122,8 +122,8 @@ func newRoutine[T any]() *routine[T] {
 	}
 }
 
-// Cancel requests the future to cancel and returns a wait channel.
-func (r *routine[T]) Cancel() <-chan struct{} {
+// Stop requests the future to stop and returns a wait channel.
+func (r *routine[T]) Stop() <-chan struct{} {
 	r.ctx.Cancel()
 	return r.result.Wait()
 }
