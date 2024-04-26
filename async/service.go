@@ -116,8 +116,12 @@ func (s *service) Start() (Routine[struct{}], status.Status) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.routine != nil && s.running.Get() {
-		return s.routine, status.OK
+	if s.routine != nil {
+		select {
+		case <-s.routine.Wait():
+		default:
+			return s.routine, status.OK
+		}
 	}
 
 	s.routine = Go(s.run)
@@ -151,7 +155,6 @@ func (s *service) stop() {
 
 	s.running.Unset()
 	s.stopped.Set()
-	s.routine = nil
 }
 
 var stoppedRoutine = func() Routine[struct{}] {
