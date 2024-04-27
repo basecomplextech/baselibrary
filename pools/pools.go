@@ -27,15 +27,27 @@ func Acquire[K any, T any](p *Pools) (zero T) {
 	return v.(T)
 }
 
+// Acquire1 returns a value from a generic pool, and its pool
+func Acquire1[K any, T any](p *Pools) (zero T, pool *sync.Pool) {
+	pool = Get[K](p)
+	v := pool.Get()
+	if v == nil {
+		return zero, pool
+	}
+	return v.(T), pool
+}
+
 // Release returns a value to a generic pool.
 func Release[K any, T any](p *Pools, v T) {
 	pool := Get[K](p)
 	pool.Put(v)
 }
 
+type keyType[K any] struct{}
+
 // Get returns a pool for a type.
 func Get[K any](p *Pools) *sync.Pool {
-	var key K
+	var key keyType[K]
 
 	// Fast path
 	v := p.cur.Load()

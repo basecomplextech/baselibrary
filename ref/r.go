@@ -3,6 +3,7 @@ package ref
 import (
 	"fmt"
 	"sync/atomic"
+	"unsafe"
 )
 
 // R is a generic atomic countable reference.
@@ -31,19 +32,28 @@ func New[T Freer](obj T) R[T] {
 
 // NewFree returns a new reference with a free function.
 func NewFree[T any](obj T, free func()) R[T] {
-	return &refFreer[T]{
-		refs:  1,
-		obj:   obj,
-		freer: freeFunc(free),
-	}
+	freer := freeFunc(free)
+	return NewFreer(obj, freer)
 }
 
 // NewFreer returns a new reference with a custom freer.
 func NewFreer[T any](obj T, freer Freer) R[T] {
-	return &refFreer[T]{
-		refs:  1,
-		obj:   obj,
-		freer: freer,
+	size := unsafe.Sizeof(obj)
+	if size <= maxUnpooledSize {
+		return &refFreer[T]{
+			refs:  1,
+			obj:   obj,
+			freer: freer,
+		}
+	}
+
+	s := acquireRefFreer[T]()
+	s.obj = obj
+	s.freer = freer
+
+	return &refFreerPooled[T]{
+		refs:          1,
+		refFreerState: s,
 	}
 }
 
@@ -81,10 +91,22 @@ func Map[T, T1 any](obj T, parent R[T1]) R[T] {
 //		return ref.Next(event, buf)
 //	}
 func Next[T, T1 any](obj T, parent R[T1]) R[T] {
-	return &refNext[T, T1]{
-		refs:   1,
-		obj:    obj,
-		parent: parent,
+	size := unsafe.Sizeof(obj)
+	if size <= maxUnpooledSize {
+		return &refNext[T, T1]{
+			refs:   1,
+			obj:    obj,
+			parent: parent,
+		}
+	}
+
+	s := acquireRefNext[T, T1]()
+	s.obj = obj
+	s.parent = parent
+
+	return &refNextPooled[T, T1]{
+		refs:         1,
+		refNextState: s,
 	}
 }
 
@@ -97,14 +119,15 @@ func Next[T, T1 any](obj T, parent R[T1]) R[T] {
 //		return ref.NextRetain(event, buf)
 //	}
 func NextRetain[T, T1 any](obj T, parent R[T1]) R[T] {
+	ref := Next(obj, parent)
 	parent.Retain()
-
-	return &refNext[T, T1]{
-		refs:   1,
-		obj:    obj,
-		parent: parent,
-	}
+	return ref
 }
+
+// internal
+
+// maxUnpooledSize specifies the maximum object size before using a pooled reference.
+const maxUnpooledSize = 24
 
 // types
 
