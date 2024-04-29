@@ -50,17 +50,11 @@ type Logger interface {
 	// Error logs an error message.
 	Error(msg string, keyValues ...any)
 
-	// ErrorStack logs an error message with a stack trace.
-	ErrorStack(msg string, stack []byte, keyValues ...any)
-
 	// ErrorStatus logs an error message with a status and a stack trace.
 	ErrorStatus(msg string, st status.Status, keyValues ...any)
 
 	// Fatal logs a fatal mesage.
 	Fatal(msg string, keyValues ...any)
-
-	// FatalStack logs a fatal message with a stack trace.
-	FatalStack(msg string, stack []byte, keyValues ...any)
 
 	// FatalStatus logs a fatal message with a status and a stack trace.
 	FatalStatus(msg string, st status.Status, keyValues ...any)
@@ -214,15 +208,6 @@ func (l *logger) Error(msg string, keyValues ...any) {
 	l.Write(rec)
 }
 
-// ErrorStack logs an error message with a stack trace.
-func (l *logger) ErrorStack(msg string, stack []byte, keyValues ...any) {
-	rec := NewRecord(l.name, LevelError).
-		WithMessage(msg).
-		WithFields(keyValues...).
-		WithStack(stack)
-	l.Write(rec)
-}
-
 // ErrorStatus logs an error message with a status and a stack trace.
 func (l *logger) ErrorStatus(msg string, st status.Status, keyValues ...any) {
 	rec := NewRecord(l.name, LevelError).
@@ -237,15 +222,6 @@ func (l *logger) Fatal(msg string, keyValues ...any) {
 	rec := NewRecord(l.name, LevelFatal).
 		WithMessage(msg).
 		WithFields(keyValues...)
-	l.Write(rec)
-}
-
-// FatalStack logs a fatal message with a stack trace.
-func (l *logger) FatalStack(msg string, stack []byte, keyValues ...any) {
-	rec := NewRecord(l.name, LevelFatal).
-		WithMessage(msg).
-		WithFields(keyValues...).
-		WithStack(stack)
 	l.Write(rec)
 }
 

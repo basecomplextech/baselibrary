@@ -137,15 +137,6 @@ func (l *prefixLogger) Error(msg string, keyValues ...any) {
 	l.logger.Error(msg, keyValues...)
 }
 
-// ErrorStack logs an error record with a stack trace.
-func (l *prefixLogger) ErrorStack(msg string, stack []byte, keyValues ...any) {
-	if p := l.prefix.load(); p != "" {
-		msg = p + msg
-	}
-
-	l.logger.ErrorStack(msg, stack, keyValues...)
-}
-
 // ErrorStatus logs an error message with a status and a stack trace.
 func (l *prefixLogger) ErrorStatus(msg string, st status.Status, keyValues ...any) {
 	if p := l.prefix.load(); p != "" {
@@ -162,15 +153,6 @@ func (l *prefixLogger) Fatal(msg string, keyValues ...any) {
 	}
 
 	l.logger.Fatal(msg, keyValues...)
-}
-
-// FatalStack logs a fatal record with a stack trace.
-func (l *prefixLogger) FatalStack(msg string, stack []byte, keyValues ...any) {
-	if p := l.prefix.load(); p != "" {
-		msg = p + msg
-	}
-
-	l.logger.FatalStack(msg, stack, keyValues...)
 }
 
 // FatalStatus logs a fatal message with a status and a stack trace.
