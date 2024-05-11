@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/basecomplextech/baselibrary/internal/hashing"
+	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -76,11 +77,10 @@ type lockMap[K comparable] struct {
 
 func newLockMap[K comparable]() *lockMap[K] {
 	num := runtime.NumCPU()
-	pool := &sync.Pool{}
-
 	shards := make([]*lockShard[K], num)
+
 	for i := range shards {
-		shards[i] = newLockShard[K](pool)
+		shards[i] = newLockShard[K]()
 	}
 
 	return &lockMap[K]{
@@ -184,13 +184,13 @@ func (l *lockedKey[K]) Free() {
 type lockShard[K comparable] struct {
 	mu    sync.RWMutex
 	items map[K]*lockItem[K]
-	pool  *sync.Pool
+	pool  pools.Pool[*lockItem[K]]
 }
 
-func newLockShard[K comparable](pool *sync.Pool) *lockShard[K] {
+func newLockShard[K comparable]() *lockShard[K] {
 	return &lockShard[K]{
 		items: make(map[K]*lockItem[K]),
-		pool:  pool,
+		pool:  pools.NewPool[*lockItem[K]](),
 	}
 }
 
@@ -206,8 +206,8 @@ func (s *lockShard[K]) get(key K) *lockItem[K] {
 	}
 
 	// Make new item with 1 refs
-	if v := s.pool.Get(); v != nil {
-		m = v.(*lockItem[K])
+	m, ok = s.pool.Get()
+	if ok {
 		m.shard = s
 		m.key = key
 		m.refs = 1

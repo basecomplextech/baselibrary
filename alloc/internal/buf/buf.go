@@ -1,12 +1,12 @@
 package buf
 
 import (
-	"sync"
 	"unicode/utf8"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 	"github.com/basecomplextech/baselibrary/buffer"
 	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -228,16 +228,16 @@ func (b *Buffer) freeBlocks() {
 
 // pool
 
-var pool = &sync.Pool{
-	New: func() any {
+var pool = pools.NewPoolFunc(
+	func() *Buffer {
 		b := newBuffer(heap.Global)
 		b.pooled = true
 		return b
 	},
-}
+)
 
 func acquireBuffer() *Buffer {
-	return pool.Get().(*Buffer)
+	return pool.New()
 }
 
 func releaseBuffer(b *Buffer) {
@@ -247,14 +247,14 @@ func releaseBuffer(b *Buffer) {
 
 // state pool
 
-var statePool = &sync.Pool{
-	New: func() any {
+var statePool = pools.NewPoolFunc(
+	func() *state {
 		return &state{}
 	},
-}
+)
 
 func acquireState() *state {
-	return statePool.Get().(*state)
+	return statePool.New()
 }
 
 func releaseState(s *state) {

@@ -1,8 +1,7 @@
 package refmap
 
 import (
-	"sync"
-
+	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -368,35 +367,17 @@ func (t *btree[K, V]) values() []ref.R[V] {
 
 // state pool
 
-var statePools = &sync.Map{}
-
-type poolKey[K, V any] struct{}
+var statePools = pools.New()
 
 func acquireState[K, V any]() *state[K, V] {
-	pool := getStatePool[K, V]()
-
-	v := pool.Get()
-	if v != nil {
-		return v.(*state[K, V])
+	v, ok := pools.Acquire[*state[K, V]](statePools)
+	if ok {
+		return v
 	}
 	return &state[K, V]{}
 }
 
 func releaseState[K, V any](s *state[K, V]) {
 	s.reset()
-
-	pool := getStatePool[K, V]()
-	pool.Put(s)
-}
-
-func getStatePool[K, V any]() *sync.Pool {
-	var key poolKey[K, V]
-
-	p, ok := statePools.Load(key)
-	if ok {
-		return p.(*sync.Pool)
-	}
-
-	p, _ = statePools.LoadOrStore(key, &sync.Pool{})
-	return p.(*sync.Pool)
+	pools.Release(statePools, s)
 }

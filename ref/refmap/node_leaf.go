@@ -2,10 +2,10 @@ package refmap
 
 import (
 	"sort"
-	"sync"
 	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -281,33 +281,17 @@ func (n *leafNode[K, V]) split() (node[K, V], bool) {
 
 // leaf state pool
 
-var leafNodePools = &sync.Map{}
+var leafNodePools = pools.New()
 
 func acquireLeaf[K, V any]() *leafNode[K, V] {
-	pool := getLeafPool[K, V]()
-
-	v := pool.Get()
-	if v != nil {
-		return v.(*leafNode[K, V])
+	v, ok := pools.Acquire[*leafNode[K, V]](leafNodePools)
+	if ok {
+		return v
 	}
 	return &leafNode[K, V]{}
 }
 
 func releaseLeaf[K, V any](n *leafNode[K, V]) {
 	n.reset()
-
-	pool := getLeafPool[K, V]()
-	pool.Put(n)
-}
-
-func getLeafPool[K, V any]() *sync.Pool {
-	var key poolKey[K, V]
-
-	p, ok := leafNodePools.Load(key)
-	if ok {
-		return p.(*sync.Pool)
-	}
-
-	p, _ = leafNodePools.LoadOrStore(key, &sync.Pool{})
-	return p.(*sync.Pool)
+	pools.Release(leafNodePools, n)
 }

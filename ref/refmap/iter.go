@@ -1,9 +1,8 @@
 package refmap
 
 import (
-	"sync"
-
 	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/basecomplextech/baselibrary/status"
 )
@@ -472,33 +471,17 @@ func (it *iterator[K, V]) pushEnd(node node[K, V]) {
 
 // iterator state pool
 
-var iterStatePools = &sync.Map{}
+var iterStatePools = pools.New()
 
 func acquireIterState[K, V any]() *iterState[K, V] {
-	pool := getIterStatePool[K, V]()
-
-	v := pool.Get()
-	if v != nil {
-		return v.(*iterState[K, V])
+	s, ok := pools.Acquire[*iterState[K, V]](iterStatePools)
+	if ok {
+		return s
 	}
 	return &iterState[K, V]{}
 }
 
 func releaseIterState[K, V any](s *iterState[K, V]) {
 	s.reset()
-
-	pool := getIterStatePool[K, V]()
-	pool.Put(s)
-}
-
-func getIterStatePool[K, V any]() *sync.Pool {
-	var key poolKey[K, V]
-
-	p, ok := iterStatePools.Load(key)
-	if ok {
-		return p.(*sync.Pool)
-	}
-
-	p, _ = iterStatePools.LoadOrStore(key, &sync.Pool{})
-	return p.(*sync.Pool)
+	pools.Release(iterStatePools, s)
 }

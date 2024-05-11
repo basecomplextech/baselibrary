@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -374,14 +375,14 @@ func (*noContext) Free()                          {}
 
 // state pool
 
-var contextStatePool = &sync.Pool{
-	New: func() any {
+var contextStatePool = pools.NewPoolFunc(
+	func() *contextState {
 		return &contextState{}
 	},
-}
+)
 
 func acquireContextState() *contextState {
-	return contextStatePool.Get().(*contextState)
+	return contextStatePool.New()
 }
 
 func releaseContextState(s *contextState) {

@@ -2,10 +2,10 @@ package refmap
 
 import (
 	"sort"
-	"sync"
 	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 )
 
@@ -347,33 +347,17 @@ func (n *branchNode[K, V]) splitChild(index int) bool {
 
 // branch state pool
 
-var branchPools = &sync.Map{}
+var branchPools = pools.New()
 
 func acquireBranch[K, V any]() *branchNode[K, V] {
-	pool := getBranchPool[K, V]()
-
-	v := pool.Get()
-	if v != nil {
-		return v.(*branchNode[K, V])
+	v, ok := pools.Acquire[*branchNode[K, V]](branchPools)
+	if ok {
+		return v
 	}
 	return &branchNode[K, V]{}
 }
 
 func releaseBranch[K, V any](n *branchNode[K, V]) {
 	n.reset()
-
-	pool := getBranchPool[K, V]()
-	pool.Put(n)
-}
-
-func getBranchPool[K, V any]() *sync.Pool {
-	var key poolKey[K, V]
-
-	p, ok := branchPools.Load(key)
-	if ok {
-		return p.(*sync.Pool)
-	}
-
-	p, _ = branchPools.LoadOrStore(key, &sync.Pool{})
-	return p.(*sync.Pool)
+	pools.Release(branchPools, n)
 }
