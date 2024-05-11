@@ -18,42 +18,41 @@ func New() *Pools {
 	return &Pools{}
 }
 
+// Values
+
 // Acquire returns a value from a generic pool.
-func Acquire[K any, T any](p *Pools) (zero T) {
-	pool := Get[K](p)
-	v := pool.Get()
-	if v == nil {
-		return zero
-	}
-	return v.(T)
+func Acquire[K, T any](p *Pools) (T, bool) {
+	pool := GetPool[K, T](p)
+	return pool.Get()
 }
 
-// Acquire1 returns a value from a generic pool, and its pool
-func Acquire1[K any, T any](p *Pools) (zero T, pool *sync.Pool) {
-	pool = Get[K](p)
-	v := pool.Get()
-	if v == nil {
-		return zero, pool
-	}
-	return v.(T), pool
+// Acquire1 returns a value from a generic pool, and its pool.
+func Acquire1[K, T any](p *Pools) (T, bool, Pool[T]) {
+	pool := GetPool[K, T](p)
+	v, ok := pool.Get()
+	return v, ok, pool
 }
 
 // Release returns a value to a generic pool.
-func Release[K any, T any](p *Pools, v T) {
-	pool := Get[K](p)
+func Release[K, T any](p *Pools, v T) {
+	pool := GetPool[K, T](p)
 	pool.Put(v)
 }
 
-// Get returns a pool for a type.
-func Get[K any](p *Pools) *sync.Pool {
-	key := reflect.TypeFor[K]()
+// Pool
+
+type keyType[K, T any] struct{}
+
+// GetPool returns a pool for a type.
+func GetPool[K, T any](p *Pools) Pool[T] {
+	key := reflect.TypeFor[keyType[K, T]]()
 
 	// Fast path
 	v := p.cur.Load()
 	if v != nil {
 		pool, ok := v.m[key]
 		if ok {
-			return pool
+			return pool.(Pool[T])
 		}
 	}
 
@@ -66,7 +65,7 @@ func Get[K any](p *Pools) *sync.Pool {
 	if v != nil {
 		pool, ok := v.m[key]
 		if ok {
-			return pool
+			return pool.(Pool[T])
 		}
 	}
 
@@ -79,7 +78,7 @@ func Get[K any](p *Pools) *sync.Pool {
 	}
 
 	// Add pool, replace version
-	pool := &sync.Pool{}
+	pool := newPool[T](nil)
 	v1.m[key] = pool
 	p.cur.Store(v1)
 	return pool
@@ -88,12 +87,12 @@ func Get[K any](p *Pools) *sync.Pool {
 // private
 
 type version struct {
-	m map[reflect.Type]*sync.Pool
+	m map[reflect.Type]any // Pool[T]
 }
 
 func newVersion() *version {
 	return &version{
-		m: make(map[reflect.Type]*sync.Pool),
+		m: make(map[reflect.Type]any),
 	}
 }
 
