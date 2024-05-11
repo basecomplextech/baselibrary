@@ -2,7 +2,6 @@ package ref
 
 import (
 	"fmt"
-	"sync"
 	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/pools"
@@ -21,7 +20,7 @@ type refFreerPooled[T any] struct {
 }
 
 type refFreerState[T any] struct {
-	pool  *sync.Pool
+	pool  pools.Pool[*refFreerState[T]]
 	freer Freer
 	obj   T
 }
@@ -34,7 +33,7 @@ type refNextPooled[T, T1 any] struct {
 }
 
 type refNextState[T, T1 any] struct {
-	pool   *sync.Pool
+	pool   pools.Pool[*refNextState[T, T1]]
 	parent R[T1]
 	obj    T
 }
@@ -125,8 +124,8 @@ var (
 )
 
 func acquireRefFreer[T any]() *refFreerState[T] {
-	s, pool := pools.Acquire1[T, *refFreerState[T]](refFreerPools)
-	if s != nil {
+	s, ok, pool := pools.Acquire1[T, *refFreerState[T]](refFreerPools)
+	if ok {
 		return s
 	}
 
@@ -136,8 +135,8 @@ func acquireRefFreer[T any]() *refFreerState[T] {
 }
 
 func acquireRefNext[T, T1 any]() *refNextState[T, T1] {
-	s, pool := pools.Acquire1[T, *refNextState[T, T1]](refNextPools)
-	if s != nil {
+	s, ok, pool := pools.Acquire1[T, *refNextState[T, T1]](refNextPools)
+	if ok {
 		return s
 	}
 
