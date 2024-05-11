@@ -281,7 +281,7 @@ func (n *leafNode[K, V]) split() (node[K, V], bool) {
 
 // leaf state pool
 
-var leafNodePools = pools.New()
+var leafNodePools = pools.NewPools()
 
 func acquireLeaf[K, V any]() *leafNode[K, V] {
 	v, ok := pools.Acquire[*leafNode[K, V]](leafNodePools)

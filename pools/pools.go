@@ -13,8 +13,8 @@ type Pools struct {
 	cur atomic.Pointer[version]
 }
 
-// New returns a new pools instance.
-func New() *Pools {
+// NewPools returns a new pools instance.
+func NewPools() *Pools {
 	return &Pools{}
 }
 

@@ -119,8 +119,8 @@ func (r *refNextPooled[T, T1]) Unwrap() T {
 // pools
 
 var (
-	refFreerPools = pools.New()
-	refNextPools  = pools.New()
+	refFreerPools = pools.NewPools()
+	refNextPools  = pools.NewPools()
 )
 
 func acquireRefFreer[T any]() *refFreerState[T] {

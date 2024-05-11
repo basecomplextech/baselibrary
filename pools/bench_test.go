@@ -7,7 +7,7 @@ import (
 
 func BenchmarkGetPool(b *testing.B) {
 	b.ReportAllocs()
-	pp := New()
+	pp := NewPools()
 
 	for i := 0; i < b.N; i++ {
 		_ = GetPool[int32](pp)

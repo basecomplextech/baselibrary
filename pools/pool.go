@@ -14,13 +14,13 @@ type Pool[T any] interface {
 	Put(T)
 }
 
-// NewPool returns a new pool.
+// NewPool returns a new pool without a new function.
 func NewPool[T any]() Pool[T] {
 	return newPool[T](nil)
 }
 
-// NewPoolFunc returns a new pool with a new function.
-func NewPoolFunc[T any](new func() T) Pool[T] {
+// MakePool returns a new pool with a new function.
+func MakePool[T any](new func() T) Pool[T] {
 	return newPool[T](new)
 }
 

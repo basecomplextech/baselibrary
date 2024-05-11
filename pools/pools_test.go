@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetPool(t *testing.T) {
-	pp := New()
+	pp := NewPools()
 
 	// Same types
 	a0 := GetPool[int32](pp)

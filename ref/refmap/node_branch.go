@@ -347,7 +347,7 @@ func (n *branchNode[K, V]) splitChild(index int) bool {
 
 // branch state pool
 
-var branchPools = pools.New()
+var branchPools = pools.NewPools()
 
 func acquireBranch[K, V any]() *branchNode[K, V] {
 	v, ok := pools.Acquire[*branchNode[K, V]](branchPools)

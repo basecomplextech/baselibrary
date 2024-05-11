@@ -471,7 +471,7 @@ func (it *iterator[K, V]) pushEnd(node node[K, V]) {
 
 // iterator state pool
 
-var iterStatePools = pools.New()
+var iterStatePools = pools.NewPools()
 
 func acquireIterState[K, V any]() *iterState[K, V] {
 	s, ok := pools.Acquire[*iterState[K, V]](iterStatePools)

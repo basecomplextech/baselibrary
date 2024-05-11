@@ -367,7 +367,7 @@ func (t *btree[K, V]) values() []ref.R[V] {
 
 // state pool
 
-var statePools = pools.New()
+var statePools = pools.NewPools()
 
 func acquireState[K, V any]() *state[K, V] {
 	v, ok := pools.Acquire[*state[K, V]](statePools)
