@@ -10,7 +10,7 @@ func BenchmarkGetPool(b *testing.B) {
 	pp := New()
 
 	for i := 0; i < b.N; i++ {
-		_ = GetPool[int32, int32](pp)
+		_ = GetPool[int32](pp)
 	}
 
 	sec := b.Elapsed().Seconds()

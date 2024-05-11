@@ -124,7 +124,7 @@ var (
 )
 
 func acquireRefFreer[T any]() *refFreerState[T] {
-	s, ok, pool := pools.Acquire1[T, *refFreerState[T]](refFreerPools)
+	s, ok, pool := pools.Acquire1[*refFreerState[T]](refFreerPools)
 	if ok {
 		return s
 	}
@@ -135,7 +135,7 @@ func acquireRefFreer[T any]() *refFreerState[T] {
 }
 
 func acquireRefNext[T, T1 any]() *refNextState[T, T1] {
-	s, ok, pool := pools.Acquire1[T, *refNextState[T, T1]](refNextPools)
+	s, ok, pool := pools.Acquire1[*refNextState[T, T1]](refNextPools)
 	if ok {
 		return s
 	}

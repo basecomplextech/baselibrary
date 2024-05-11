@@ -21,31 +21,29 @@ func New() *Pools {
 // Values
 
 // Acquire returns a value from a generic pool.
-func Acquire[K, T any](p *Pools) (T, bool) {
-	pool := GetPool[K, T](p)
+func Acquire[T any](p *Pools) (T, bool) {
+	pool := GetPool[T](p)
 	return pool.Get()
 }
 
 // Acquire1 returns a value from a generic pool, and its pool.
-func Acquire1[K, T any](p *Pools) (T, bool, Pool[T]) {
-	pool := GetPool[K, T](p)
+func Acquire1[T any](p *Pools) (T, bool, Pool[T]) {
+	pool := GetPool[T](p)
 	v, ok := pool.Get()
 	return v, ok, pool
 }
 
 // Release returns a value to a generic pool.
-func Release[K, T any](p *Pools, v T) {
-	pool := GetPool[K, T](p)
+func Release[T any](p *Pools, v T) {
+	pool := GetPool[T](p)
 	pool.Put(v)
 }
 
 // Pool
 
-type keyType[K, T any] struct{}
-
 // GetPool returns a pool for a type.
-func GetPool[K, T any](p *Pools) Pool[T] {
-	key := reflect.TypeFor[keyType[K, T]]()
+func GetPool[T any](p *Pools) Pool[T] {
+	key := reflect.TypeFor[T]()
 
 	// Fast path
 	v := p.cur.Load()
