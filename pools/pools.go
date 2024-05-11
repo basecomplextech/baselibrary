@@ -2,6 +2,7 @@ package pools
 
 import (
 	"maps"
+	"reflect"
 	"sync"
 	"sync/atomic"
 )
@@ -43,11 +44,9 @@ func Release[K any, T any](p *Pools, v T) {
 	pool.Put(v)
 }
 
-type keyType[K any] struct{}
-
 // Get returns a pool for a type.
 func Get[K any](p *Pools) *sync.Pool {
-	var key keyType[K]
+	key := reflect.TypeFor[K]()
 
 	// Fast path
 	v := p.cur.Load()
@@ -89,12 +88,12 @@ func Get[K any](p *Pools) *sync.Pool {
 // private
 
 type version struct {
-	m map[any]*sync.Pool
+	m map[reflect.Type]*sync.Pool
 }
 
 func newVersion() *version {
 	return &version{
-		m: make(map[any]*sync.Pool),
+		m: make(map[reflect.Type]*sync.Pool),
 	}
 }
 
