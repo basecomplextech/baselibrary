@@ -7,9 +7,9 @@ import (
 )
 
 func TestTimeRandom64(t *testing.T) {
-	u0 := TimeRandom64().String()
-	u1 := TimeRandom64().String()
-	assert.NotEqual(t, u0, u1)
+	b0 := TimeRandom64().String()
+	b1 := TimeRandom64().String()
+	assert.NotEqual(t, b0, b1)
 }
 
 func TestPattern64__should_match_string(t *testing.T) {

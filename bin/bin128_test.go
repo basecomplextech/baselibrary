@@ -6,16 +6,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseString128(t *testing.T) {
-	v0 := Random128()
-	s := v0.String()
+func TestTimeRandom128(t *testing.T) {
+	b0 := TimeRandom128().String()
+	b1 := TimeRandom128().String()
+	assert.NotEqual(t, b0, b1)
+}
 
-	v1, err := ParseString128(s)
+func TestParseString128(t *testing.T) {
+	b0 := Random128()
+	s := b0.String()
+
+	b1, err := ParseString128(s)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, v0, v1)
+	assert.Equal(t, b0, b1)
 }
 
 func TestPattern128__should_match_byte_string(t *testing.T) {

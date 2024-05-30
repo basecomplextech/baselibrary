@@ -7,15 +7,15 @@ import (
 )
 
 func TestParseString256(t *testing.T) {
-	u0 := Random256()
-	s := u0.String()
+	b0 := Random256()
+	s := b0.String()
 
-	u1, err := ParseString256(s)
+	b1, err := ParseString256(s)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, u0, u1)
+	assert.Equal(t, b0, b1)
 }
 
 func TestPattern256__should_match_byte_string(t *testing.T) {
