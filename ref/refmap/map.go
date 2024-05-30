@@ -38,6 +38,9 @@ type Map[K, V any] interface {
 	// Iterator returns an iterator, the iterator does not retain the values.
 	Iterator() Iterator[K, V]
 
+	// Keys returns all keys.
+	Keys() []K
+
 	// Write
 
 	// Put adds an item to the map, retains its value.
@@ -171,6 +174,24 @@ func (t *btree[K, V]) Iterator() Iterator[K, V] {
 	it := newIterator(t)
 	it.SeekToStart()
 	return it
+}
+
+// Keys returns all keys.
+func (t *btree[K, V]) Keys() []K {
+	n := t.length
+	if n == 0 {
+		return nil
+	}
+
+	it := t.Iterator()
+	defer it.Free()
+
+	keys := make([]K, 0, n)
+	for it.Next() {
+		key := it.Key()
+		keys = append(keys, key)
+	}
+	return keys
 }
 
 // Write
