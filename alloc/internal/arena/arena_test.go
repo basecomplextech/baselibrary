@@ -11,12 +11,7 @@ import (
 
 func testArena() *arena {
 	h := heap.New()
-	return newArenaSize(h, 0)
-}
-
-func testArenaSize(size int) *arena {
-	h := heap.New()
-	return newArenaSize(h, size)
+	return newArena(h)
 }
 
 // Acquire
@@ -39,15 +34,18 @@ func TestArena_Free__should_free_arena(t *testing.T) {
 	assert.Nil(t, a.state)
 }
 
-func TestArena_free__should_release_blocks(t *testing.T) {
+func TestArena_Free__should_reset_first_block_other_release_blocks(t *testing.T) {
 	a := testArena()
 	a.Alloc(1)
+	a.Alloc(1024)
+	require.Len(t, a.blocks, 2)
 
 	b := a.blocks[0]
 	require.Equal(t, 1, b.Len())
 
-	a.free()
-	assert.Len(t, a.blocks, 0)
+	s := a.state
+	a.Free()
+	assert.Len(t, s.blocks, 1)
 	assert.Equal(t, 0, b.Len())
 }
 
@@ -64,27 +62,31 @@ func TestArena_Len__should_return_allocated_memory(t *testing.T) {
 
 // Reset
 
-func TestArena_Reset__should_free_blocks(t *testing.T) {
+func TestArena_Reset__should_reset_first_free_other_blocks(t *testing.T) {
 	a := testArena()
 
 	a.Alloc(16)
+	a.Alloc(1024)
+	a.Alloc(4096)
+	require.Len(t, a.blocks, 3)
+
 	b := a.blocks[0]
 	a.Reset()
 
-	assert.Equal(t, int64(0), a.cap)
-	assert.Len(t, a.blocks, 0)
+	assert.Equal(t, b.Cap(), int(a.cap))
+	assert.Len(t, a.blocks, 1)
 	assert.Equal(t, 0, len(b.Bytes()))
 }
 
-func TestArena_Reset__should_free_blocks_except_for_first_when_capacity_matches(t *testing.T) {
-	a := testArenaSize(128)
+func TestArena_Reset__should_free_blocks_except_for_first_when_small(t *testing.T) {
+	a := testArena()
 
 	a.Alloc(1024)
 	a.Alloc(1)
 	assert.Len(t, a.blocks, 2)
 
 	a.Reset()
-	assert.Equal(t, int64(0), a.cap)
+	assert.Equal(t, int64(1024), a.cap)
 	assert.Len(t, a.blocks, 1)
 }
 

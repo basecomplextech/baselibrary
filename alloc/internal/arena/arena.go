@@ -1,12 +1,12 @@
 package arena
 
 import (
-	"sync"
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 	"github.com/basecomplextech/baselibrary/collect/sets"
 	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/pools"
 )
 
 // Arena is an arena allocator, which internally allocates memory in blocks.
@@ -44,11 +44,6 @@ func New() Arena {
 	return newArena(heap.Global)
 }
 
-// NewSize returns an arena with an initial capacity.
-func NewSize(size int) Arena {
-	return newArenaSize(heap.Global, size)
-}
-
 // AcquireArena returns a pooled arena, which is released to the pool on Free.
 //
 // The arena must not be used or even referenced after Free.
@@ -71,25 +66,15 @@ type arena struct {
 type state struct {
 	heap   *heap.Heap
 	pooled bool
-
-	init int   // initial capacity
-	cap  int64 // total allocated capacity
+	cap    int64 // total allocated capacity
 
 	blocks []*heap.Block
 	pinned sets.Set[any]
 }
 
 func newArena(h *heap.Heap) *arena {
-	return newArenaSize(h, heap.MinBlockSize)
-}
-
-func newArenaSize(heap *heap.Heap, size int) *arena {
 	a := &arena{acquireState()}
-	a.heap = heap
-
-	if size > 0 {
-		a.init = a.allocBlock(size).Cap()
-	}
+	a.heap = h
 	return a
 }
 
@@ -147,7 +132,6 @@ func (a *arena) Free() {
 		return
 	}
 
-	a.free()
 	s := a.state
 	a.state = nil
 	releaseState(s)
@@ -155,47 +139,37 @@ func (a *arena) Free() {
 
 // private
 
-func (a *arena) free() {
-	a.heap.FreeMany(a.blocks...)
-
-	a.cap = 0
-	a.blocks = slices.Clear(a.blocks)
-
-	if a.pinned != nil {
-		clear(a.pinned)
-	}
-}
-
-func (a *arena) reset() {
+func (s *state) reset() {
 	// Clear pinned objects
-	if a.pinned != nil {
-		clear(a.pinned)
+	if s.pinned != nil {
+		clear(s.pinned)
 	}
 
-	// Reset blocks
-	if len(a.blocks) == 0 {
+	// Return if no blocks
+	if len(s.blocks) == 0 {
 		return
 	}
 
-	// Maybe just reset the first block
+	// Reset capacity
+	s.cap = 0
+
+	// Reset the first block if small
 	n := 0
-	if b := a.blocks[0]; b.Cap() == a.init {
+	if b := s.blocks[0]; b.Cap() == heap.MinBlockSize {
 		n = 1
 
 		b.Reset()
-		a.cap = int64(b.Cap())
+		s.cap = int64(b.Cap())
 
-		if len(a.blocks) == 1 {
+		if len(s.blocks) == 1 {
 			return
 		}
 	}
 
 	// Free other blocks
-	a.heap.FreeMany(a.blocks[n:]...)
-	slices.Zero(a.blocks[n:]) // for gc
-
-	a.cap = 0
-	a.blocks = a.blocks[:n]
+	s.heap.FreeMany(s.blocks[n:]...)
+	slices.Zero(s.blocks[n:]) // for gc
+	s.blocks = s.blocks[:n]
 }
 
 // blocks
@@ -220,16 +194,16 @@ func (a *arena) allocBlock(n int) *heap.Block {
 
 // arena pool
 
-var arenaPool = &sync.Pool{
-	New: func() any {
+var arenaPool = pools.MakePool(
+	func() *arena {
 		a := newArena(heap.Global)
 		a.pooled = true
 		return a
 	},
-}
+)
 
 func acquireArena() *arena {
-	return arenaPool.Get().(*arena)
+	return arenaPool.New()
 }
 
 func releaseArena(a *arena) {
@@ -239,24 +213,17 @@ func releaseArena(a *arena) {
 
 // state pool
 
-var statePool = &sync.Pool{}
+var statePool = pools.MakePool(
+	func() *state {
+		return &state{}
+	},
+)
 
 func acquireState() *state {
-	v := statePool.Get()
-	if v != nil {
-		return v.(*state)
-	}
-	return &state{}
+	return statePool.New()
 }
 
 func releaseState(s *state) {
 	s.reset()
 	statePool.Put(s)
-}
-
-func (s *state) reset() {
-	blocks := slices.Clear(s.blocks)
-
-	*s = state{}
-	s.blocks = blocks
 }

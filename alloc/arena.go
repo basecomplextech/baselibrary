@@ -16,11 +16,6 @@ func NewArena() Arena {
 	return arena.New()
 }
 
-// NewArenaSize allocates an arena of a preallocated capacity.
-func NewArenaSize(size int) Arena {
-	return arena.NewSize(size)
-}
-
 // NewArenaRef allocates an arena and returns a reference to it.
 func NewArenaRef() ref.R[Arena] {
 	return ref.New(NewArena())
