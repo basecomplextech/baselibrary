@@ -50,36 +50,29 @@ func (b0 Bin128) Less(b1 Bin128) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
 }
 
-// Int128 returns two int64s decoded as big-endian.
-func (b Bin128) Int128() (int64, int64) {
+// Size returns 16 bytes.
+func (b Bin128) Size() int {
+	return len(b)
+}
+
+// Parts
+
+// Ints returns two int64s decoded as big-endian.
+func (b Bin128) Ints() (int64, int64) {
 	v0 := binary.BigEndian.Uint64(b[:])
 	v1 := binary.BigEndian.Uint64(b[8:])
 	return int64(v0), int64(v1)
 }
 
-// Split returns two bin64 values.
-func (b Bin128) Split() [2]Bin64 {
+// Parts returns two bin64 values.
+func (b Bin128) Parts() [2]Bin64 {
 	var b0, b1 Bin64
 	copy(b0[:], b[:])
 	copy(b1[:], b[8:])
 	return [2]Bin64{b0, b1}
 }
 
-// Size returns 16 bytes.
-func (b Bin128) Size() int {
-	return len(b)
-}
-
-// String returns a 33-char lower-case hex-encoded string.
-func (b Bin128) String() string {
-	buf := make([]byte, CharLen128)
-	hex.Encode(buf, b[:8])
-	buf[16] = '-'
-	hex.Encode(buf[17:], b[8:])
-	return string(buf)
-}
-
-// Hashing
+// Hash
 
 // Hash32 returns a 32-bit hash.
 // The method decodes the value as two big-endian uint64s and then xors their halves.
@@ -102,7 +95,16 @@ func (b Bin128) Hash64() uint64 {
 	return v0 ^ v1
 }
 
-// Encoding
+// String/Hex
+
+// String returns a 33-char lower-case hex-encoded string.
+func (b Bin128) String() string {
+	buf := make([]byte, CharLen128)
+	hex.Encode(buf, b[:8])
+	buf[16] = '-'
+	hex.Encode(buf[17:], b[8:])
+	return string(buf)
+}
 
 // AppendHexTo appends a 33-char lower-case hex-encoded string to a buffer.
 func (b Bin128) AppendHexTo(buf []byte) []byte {
@@ -115,6 +117,8 @@ func (b Bin128) AppendHexTo(buf []byte) []byte {
 	hex.Encode(buf[n+17:], b[8:])
 	return buf
 }
+
+// Marshal
 
 // Marshal marshals the value to a 16-byte array.
 func (b Bin128) Marshal() ([]byte, error) {

@@ -27,13 +27,23 @@ var (
 // Bin256 is a 32 byte value.
 type Bin256 [ByteLen256]byte
 
-// Int256 returns a Bin256 from four int64s encoded as big-endian.
+// Int256 returns a bin256 from four int64s encoded as big-endian.
 func Int256(v0, v1, v2, v3 int64) Bin256 {
 	b := Bin256{}
 	binary.BigEndian.PutUint64(b[:], uint64(v0))
 	binary.BigEndian.PutUint64(b[8:], uint64(v1))
 	binary.BigEndian.PutUint64(b[16:], uint64(v2))
 	binary.BigEndian.PutUint64(b[24:], uint64(v3))
+	return b
+}
+
+// Join256 joins four bin64 values into a bin256.
+func Join256(b0, b1, b2, b3 Bin64) Bin256 {
+	b := Bin256{}
+	copy(b[:], b0[:])
+	copy(b[8:], b1[:])
+	copy(b[16:], b2[:])
+	copy(b[24:], b3[:])
 	return b
 }
 
@@ -59,14 +69,33 @@ func (b0 Bin256) Less(b1 Bin256) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
 }
 
-// Int256 returns four int64s decoded as big-endian.
-func (b Bin256) Int256() [4]int64 {
+// Size returns 32 bytes.
+func (b Bin256) Size() int {
+	return len(b)
+}
+
+// Parts
+
+// Ints returns four int64s decoded as big-endian.
+func (b Bin256) Ints() [4]int64 {
 	v0 := binary.BigEndian.Uint64(b[:])
 	v1 := binary.BigEndian.Uint64(b[8:])
 	v2 := binary.BigEndian.Uint64(b[16:])
 	v3 := binary.BigEndian.Uint64(b[24:])
 	return [4]int64{int64(v0), int64(v1), int64(v2), int64(v3)}
 }
+
+// Parts returns four bin64 values.
+func (b Bin256) Parts() [4]Bin64 {
+	var b0, b1, b2, b3 Bin64
+	copy(b0[:], b[:])
+	copy(b1[:], b[8:])
+	copy(b2[:], b[16:])
+	copy(b3[:], b[24:])
+	return [4]Bin64{b0, b1, b2, b3}
+}
+
+// Hash
 
 // Hash32 returns a 32-bit hash.
 // The method decodes the value as four big-endian uint64s and then xors their halves.
@@ -97,10 +126,7 @@ func (b Bin256) Hash64() uint64 {
 	return v
 }
 
-// Size returns 32 bytes.
-func (b Bin256) Size() int {
-	return len(b)
-}
+// String/Hex
 
 // String returns a 64-char lower-case hex-encoded string.
 func (b Bin256) String() string {
@@ -130,6 +156,8 @@ func (b Bin256) AppendHexTo(buf []byte) []byte {
 	hex.Encode(buf[n+51:], b[16:24])
 	return buf
 }
+
+// Marshal
 
 // Marshal marshals the value to a 32-byte array.
 func (b Bin256) Marshal() ([]byte, error) {

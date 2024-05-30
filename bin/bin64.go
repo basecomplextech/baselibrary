@@ -38,10 +38,19 @@ func (b0 Bin64) Less(b1 Bin64) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
 }
 
+// Size returns 8 bytes.
+func (b Bin64) Size() int {
+	return len(b)
+}
+
+// Int
+
 // Int64 returns an int64 decoded as big-endian.
 func (b Bin64) Int64() int64 {
 	return int64(binary.BigEndian.Uint64(b[:]))
 }
+
+// Hash
 
 // Hash32 returns a 32-bit hash of the value.
 // The method decodes the value as a big-endian uint64 and then xors the two halves.
@@ -57,10 +66,7 @@ func (b Bin64) Hash64() uint64 {
 	return binary.BigEndian.Uint64(b[:])
 }
 
-// Size returns 8 bytes.
-func (b Bin64) Size() int {
-	return len(b)
-}
+// String/Hex
 
 // String returns a 16-char lower-case hex-encoded string.
 func (b Bin64) String() string {
@@ -78,6 +84,8 @@ func (b Bin64) AppendHexTo(buf []byte) []byte {
 	hex.Encode(buf[n:], b[:])
 	return buf
 }
+
+// Marshal
 
 // Marshal marshals the value to a 16-byte array.
 func (b Bin64) Marshal() ([]byte, error) {
