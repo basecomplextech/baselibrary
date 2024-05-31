@@ -10,6 +10,9 @@ import (
 )
 
 // LockMap holds locks for different keys.
+//
+// The map is a sharded map, which uses a lock per shard.
+// The number of shards is equal to the number of CPU cores.
 type LockMap[K comparable] interface {
 	// Get returns a key lock, the lock must be freed after use.
 	//
@@ -72,12 +75,12 @@ func NewLockMap[K comparable]() LockMap[K] {
 var _ LockMap[any] = &lockMap[any]{}
 
 type lockMap[K comparable] struct {
-	shards []*lockShard[K]
+	shards []lockShard[K]
 }
 
 func newLockMap[K comparable]() *lockMap[K] {
 	num := runtime.NumCPU()
-	shards := make([]*lockShard[K], num)
+	shards := make([]lockShard[K], num)
 
 	for i := range shards {
 		shards[i] = newLockShard[K]()
@@ -127,7 +130,7 @@ func (m *lockMap[K]) Lock(ctx Context, key K) (LockedKey, status.Status) {
 
 func (m *lockMap[K]) shard(key K) *lockShard[K] {
 	index := hashing.Shard(key, len(m.shards))
-	return m.shards[index]
+	return &m.shards[index]
 }
 
 // KeyLock
@@ -185,10 +188,11 @@ type lockShard[K comparable] struct {
 	mu    sync.RWMutex
 	items map[K]*lockItem[K]
 	pool  pools.Pool[*lockItem[K]]
+	_     [208]byte // cache line padding
 }
 
-func newLockShard[K comparable]() *lockShard[K] {
-	return &lockShard[K]{
+func newLockShard[K comparable]() lockShard[K] {
+	return lockShard[K]{
 		items: make(map[K]*lockItem[K]),
 		pool:  pools.NewPool[*lockItem[K]](),
 	}

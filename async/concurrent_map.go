@@ -3,6 +3,9 @@ package async
 import "sync"
 
 // ConcurrentMap is a generic wrapper around concurrent sync.Map.
+//
+// This map is optimized mostly for read operations.
+// Use async.Map if you need a map optimized for read-write operations.
 type ConcurrentMap[K comparable, V any] interface {
 	// CompareAndDelete deletes the entry for key if its value is equal to old.
 	// If there is no current value for key in the map, CompareAndDelete returns false

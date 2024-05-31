@@ -3,6 +3,7 @@ package async
 import (
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -117,4 +118,11 @@ func TestKeyLock_Free__should_release_delete_key_lock(t *testing.T) {
 
 	_, ok := shard.items[key]
 	assert.False(t, ok)
+}
+
+// Shard
+
+func TestLockShard__size_must_be_256(t *testing.T) {
+	size := unsafe.Sizeof(lockShard[int]{})
+	assert.Equal(t, 256, int(size))
 }
