@@ -230,7 +230,7 @@ func (q *queue) _writeBlock(size int) (*block, bool) {
 
 	// Return tail if it has enough free space.
 	tail := q.tail()
-	if tail != nil && tail.free() >= n {
+	if tail != nil && tail.rem() >= n {
 		return tail, true
 	}
 
@@ -389,12 +389,16 @@ func (q *queue) alloc(n int) *block {
 
 func (q *queue) freeBlocks() {
 	if q.head != nil {
-		q.heap.Free(q.head.b)
+		b := q.head
 		q.head = nil
+
+		b.free(q.heap)
+		releaseBlock(b)
 	}
 
 	for _, b := range q.more {
-		q.heap.Free(b.b)
+		b.free(q.heap)
+		releaseBlock(b)
 	}
 
 	slices.Clear(q.more)

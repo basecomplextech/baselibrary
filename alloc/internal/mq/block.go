@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/pools"
 )
 
 type block struct {
@@ -16,7 +17,10 @@ type block struct {
 
 func newBlock(b *heap.Block) *block {
 	b.Grow(b.Cap()) // use all available space
-	return &block{b: b}
+
+	bb := acquireBlock()
+	bb.b = b
+	return bb
 }
 
 func (b *block) loadWriteIndex() int32 {
@@ -77,8 +81,8 @@ func (b *block) cap() int {
 	return b.b.Cap()
 }
 
-// free returns the remaining free space in bytes.
-func (b *block) free() int {
+// rem returns the remaining space in bytes.
+func (b *block) rem() int {
 	cp := b.b.Cap()
 	wi := int(b.writeIndex)
 	return cp - wi
@@ -88,4 +92,24 @@ func (b *block) free() int {
 func (b *block) reset() {
 	b.readIndex = 0
 	b.writeIndex = 0
+}
+
+func (b *block) free(heap *heap.Heap) {
+	heap.Free(b.b)
+	b.b = nil
+}
+
+// pool
+
+var pool = pools.MakePool(func() *block {
+	return &block{}
+})
+
+func acquireBlock() *block {
+	return pool.New()
+}
+
+func releaseBlock(b *block) {
+	*b = block{}
+	pool.Put(b)
 }
