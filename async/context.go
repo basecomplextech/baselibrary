@@ -59,8 +59,8 @@ func NoContext() Context {
 	return noCtx
 }
 
-// DoneContext returns a cancelled context.
-func DoneContext() Context {
+// CancelledContext returns a cancelled context.
+func CancelledContext() Context {
 	return doneCtx
 }
 
