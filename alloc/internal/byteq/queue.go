@@ -1,4 +1,4 @@
-package mq
+package byteq
 
 import (
 	"math"
@@ -11,10 +11,11 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-// MQueue is a single reader multiple writers binary message queue.
+// Queue is a single reader multiple writers binary message queue.
+//
 // The queue can be unbounded, or can be configured with a soft max capacity.
 // Writes mostly do not block readers.
-type MQueue interface {
+type Queue interface {
 	// Closed returns true if the queue is closed.
 	Closed() bool
 
@@ -26,6 +27,8 @@ type MQueue interface {
 	// Close closes the queue for writing, it is still possible to read pending messages.
 	Close()
 
+	// Read
+
 	// Read reads an message from the queue, the message is valid until the next iteration.
 	// The method returns a close status when there are no more items and the queue is closed.
 	Read() ([]byte, bool, status.Status)
@@ -34,12 +37,16 @@ type MQueue interface {
 	// The method returns a closed channel if the queue is closed.
 	ReadWait() <-chan struct{}
 
+	// Write
+
 	// Write writes an message to the queue, returns false if full, or an end if closed.
 	Write(msg []byte) (bool, status.Status)
 
 	// WriteWait returns a channel which is notified when a message can be written.
 	// The method returns a closed channel if the queue is closed.
 	WriteWait(size int) <-chan struct{}
+
+	// Reset
 
 	// Reset resets the queue, releases all unread messages, the queue can be used again.
 	Reset()
@@ -50,19 +57,19 @@ type MQueue interface {
 	Free()
 }
 
-// New allocates an unbounded message queue.
-func New(heap *heap.Heap) MQueue {
+// New allocates an unbounded byte queue.
+func New(heap *heap.Heap) Queue {
 	return newQueue(heap, 0)
 }
 
-// NewCap allocates a message queue with a soft max capacity.
-func NewCap(heap *heap.Heap, cap int) MQueue {
+// NewCap allocates a byte queue with a soft max capacity.
+func NewCap(heap *heap.Heap, cap int) Queue {
 	return newQueue(heap, cap)
 }
 
 // internal
 
-var _ MQueue = (*queue)(nil)
+var _ Queue = (*queue)(nil)
 
 const (
 	// maxBlockSize tries to keep blocks from growing too large.
