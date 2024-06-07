@@ -13,7 +13,7 @@ import (
 func testWrite(t *testing.T, q *queue, msg []byte) {
 	t.Helper()
 
-	ok, st := q.write(msg)
+	ok, st := q.Write(msg)
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -25,7 +25,7 @@ func testWrite(t *testing.T, q *queue, msg []byte) {
 func testRead(t *testing.T, q *queue) []byte {
 	t.Helper()
 
-	msg, ok, st := q.read()
+	msg, ok, st := q.Read()
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -35,20 +35,20 @@ func testRead(t *testing.T, q *queue) []byte {
 	return msg
 }
 
-// queue
+// Queue
 
 func TestQueue__should_write_and_read_message(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
 	msg0 := []byte("hello, world")
-	ok, st := q.write(msg0)
+	ok, st := q.Write(msg0)
 	if !st.OK() {
 		t.Fatal(st)
 	}
 	require.True(t, ok)
 
-	msg1, ok, st := q.read()
+	msg1, ok, st := q.Read()
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -56,9 +56,9 @@ func TestQueue__should_write_and_read_message(t *testing.T) {
 	assert.Equal(t, msg0, msg1)
 }
 
-// clear
+// Clear
 
-func TestQueue_clear__should_release_all_blocks(t *testing.T) {
+func TestQueue_Clear__should_release_all_blocks(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
@@ -68,23 +68,23 @@ func TestQueue_clear__should_release_all_blocks(t *testing.T) {
 	testWrite(t, q, msg)
 	testWrite(t, q, msg)
 
-	q.clear()
+	q.Clear()
 	assert.False(t, q.closed)
 	assert.Nil(t, q.head)
 	assert.Equal(t, 0, len(q.more))
 }
 
-// close
+// Close
 
-func TestQueue_close__should_close_queue(t *testing.T) {
+func TestQueue_Close__should_close_queue(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
-	q.close()
+	q.Close()
 	assert.True(t, q.closed)
 }
 
-func TestQueue_close__should_allow_reading_pending_messages_til_end(t *testing.T) {
+func TestQueue_Close__should_allow_reading_pending_messages_til_end(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
@@ -93,24 +93,24 @@ func TestQueue_close__should_allow_reading_pending_messages_til_end(t *testing.T
 	testWrite(t, q, msg)
 	testWrite(t, q, msg)
 	testWrite(t, q, msg)
-	q.close()
+	q.Close()
 
 	testRead(t, q)
 	testRead(t, q)
 	testRead(t, q)
 	testRead(t, q)
 
-	_, ok, st := q.read()
+	_, ok, st := q.Read()
 	assert.False(t, ok)
 	assert.Equal(t, status.End, st)
 }
 
-func TestQueue_close__should_notify_waiting_reader(t *testing.T) {
+func TestQueue_Close__should_notify_waiting_reader(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
-	wait := q.readWait()
-	q.close()
+	wait := q.ReadWait()
+	q.Close()
 
 	select {
 	case <-wait:
@@ -119,16 +119,16 @@ func TestQueue_close__should_notify_waiting_reader(t *testing.T) {
 	}
 }
 
-// read
+// Read
 
-func TestQueue_read__should_read_message(t *testing.T) {
+func TestQueue_Read__should_read_message(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
 	msg := []byte("hello, world")
 	testWrite(t, q, msg)
 
-	msg1, ok, st := q.read()
+	msg1, ok, st := q.Read()
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -136,11 +136,11 @@ func TestQueue_read__should_read_message(t *testing.T) {
 	assert.Equal(t, msg, msg1)
 }
 
-func TestQueue_read__should_return_false_when_no_messages(t *testing.T) {
+func TestQueue_Read__should_return_false_when_no_messages(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
-	msg, ok, st := q.read()
+	msg, ok, st := q.Read()
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -148,7 +148,7 @@ func TestQueue_read__should_return_false_when_no_messages(t *testing.T) {
 	assert.Nil(t, msg)
 }
 
-func TestQueue_read__should_return_false_when_no_unread_messages(t *testing.T) {
+func TestQueue_Read__should_return_false_when_no_unread_messages(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
@@ -156,7 +156,7 @@ func TestQueue_read__should_return_false_when_no_unread_messages(t *testing.T) {
 	testWrite(t, q, msg)
 	testRead(t, q)
 
-	msg1, ok, st := q.read()
+	msg1, ok, st := q.Read()
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -164,7 +164,7 @@ func TestQueue_read__should_return_false_when_no_unread_messages(t *testing.T) {
 	assert.Nil(t, msg1)
 }
 
-func TestQueue_read__should_return_false_when_no_unread_messages_in_all_blocks(t *testing.T) {
+func TestQueue_Read__should_return_false_when_no_unread_messages_in_all_blocks(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
@@ -180,14 +180,14 @@ func TestQueue_read__should_return_false_when_no_unread_messages_in_all_blocks(t
 	testRead(t, q)
 	testRead(t, q)
 
-	_, ok, st := q.read()
+	_, ok, st := q.Read()
 	if !st.OK() {
 		t.Fatal(st)
 	}
 	assert.False(t, ok)
 }
 
-func TestQueue_read__should_reset_only_block_when_all_messages_read(t *testing.T) {
+func TestQueue_Read__should_reset_only_block_when_all_messages_read(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
@@ -195,7 +195,7 @@ func TestQueue_read__should_reset_only_block_when_all_messages_read(t *testing.T
 	testWrite(t, q, msg)
 	testRead(t, q)
 
-	_, ok, st := q.read()
+	_, ok, st := q.Read()
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -207,7 +207,7 @@ func TestQueue_read__should_reset_only_block_when_all_messages_read(t *testing.T
 	assert.Equal(t, int32(0), block.writeIndex)
 }
 
-func TestQueue_read__should_release_read_blocks(t *testing.T) {
+func TestQueue_Read__should_release_read_blocks(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
@@ -221,7 +221,7 @@ func TestQueue_read__should_release_read_blocks(t *testing.T) {
 	require.Equal(t, 0, len(q.more))
 }
 
-func TestQueue_read__should_notify_waiting_writer(t *testing.T) {
+func TestQueue_Read__should_notify_waiting_writer(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 1024)
 
@@ -230,10 +230,10 @@ func TestQueue_read__should_notify_waiting_writer(t *testing.T) {
 	testWrite(t, q, msg0)
 	testWrite(t, q, msg1)
 
-	wait := q.writeWait(len(msg1))
+	wait := q.WriteWait(len(msg1))
 	testRead(t, q)
 
-	_, ok, st := q.read()
+	_, ok, st := q.Read()
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -246,33 +246,33 @@ func TestQueue_read__should_notify_waiting_writer(t *testing.T) {
 	}
 }
 
-func TestQueue_read__should_read_existing_messages_when_queue_closed(t *testing.T) {
+func TestQueue_Read__should_read_existing_messages_when_queue_closed(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 	msg := []byte("hello, world")
 
 	testWrite(t, q, msg)
 	testWrite(t, q, msg)
-	q.close()
+	q.Close()
 
 	testRead(t, q)
 	testRead(t, q)
 
-	_, ok, st := q.read()
+	_, ok, st := q.Read()
 	assert.Equal(t, status.End, st)
 	assert.False(t, ok)
 }
 
-// readWait
+// ReadWait
 
-func TestQueue_readWait__should_return_closed_chan_when_head_not_empty(t *testing.T) {
+func TestQueue_ReadWait__should_return_closed_chan_when_head_not_empty(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
 	msg := []byte("hello, world")
 	testWrite(t, q, msg)
 
-	wait := q.readWait()
+	wait := q.ReadWait()
 	select {
 	case <-wait:
 	default:
@@ -280,14 +280,14 @@ func TestQueue_readWait__should_return_closed_chan_when_head_not_empty(t *testin
 	}
 }
 
-// write
+// Write
 
-func TestQueue_write__should_write_message(t *testing.T) {
+func TestQueue_Write__should_write_message(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 	msg := []byte("hello, world")
 
-	ok, st := q.write(msg)
+	ok, st := q.Write(msg)
 	if !st.OK() {
 		t.Fatal(st)
 	}
@@ -296,14 +296,14 @@ func TestQueue_write__should_write_message(t *testing.T) {
 	b := q.head.b.Bytes()[4 : 4+len(msg)]
 	assert.Equal(t, msg, b)
 
-	ok, st = q.write(msg)
+	ok, st = q.Write(msg)
 	if !st.OK() {
 		t.Fatal(st)
 	}
 	assert.True(t, ok)
 }
 
-func TestQueue_write__should_alloc_next_block(t *testing.T) {
+func TestQueue_Write__should_alloc_next_block(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
@@ -314,7 +314,7 @@ func TestQueue_write__should_alloc_next_block(t *testing.T) {
 	assert.Equal(t, 1, len(q.more))
 }
 
-func TestQueue_write__should_return_false_when_queue_full(t *testing.T) {
+func TestQueue_Write__should_return_false_when_queue_full(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 1024)
 
@@ -323,14 +323,14 @@ func TestQueue_write__should_return_false_when_queue_full(t *testing.T) {
 	testWrite(t, q, msg0)
 	testWrite(t, q, msg1)
 
-	ok, st := q.write(msg1)
+	ok, st := q.Write(msg1)
 	if !st.OK() {
 		t.Fatal(st)
 	}
 	assert.False(t, ok)
 }
 
-func TestQueue_write__should_return_false_when_all_blocks_full(t *testing.T) {
+func TestQueue_Write__should_return_false_when_all_blocks_full(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 4096)
 
@@ -340,19 +340,19 @@ func TestQueue_write__should_return_false_when_all_blocks_full(t *testing.T) {
 	testWrite(t, q, msg)
 	testWrite(t, q, msg)
 
-	ok, st := q.write(msg)
+	ok, st := q.Write(msg)
 	if !st.OK() {
 		t.Fatal(st)
 	}
 	assert.False(t, ok)
 }
 
-func TestQueue_write__should_notify_waiting_reader(t *testing.T) {
+func TestQueue_Write__should_notify_waiting_reader(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
 	msg := []byte("hello, world")
-	wait := q.readWait()
+	wait := q.ReadWait()
 	testWrite(t, q, msg)
 
 	select {
@@ -362,24 +362,24 @@ func TestQueue_write__should_notify_waiting_reader(t *testing.T) {
 	}
 }
 
-func TestQueue_write__should_return_error_when_queue_closed(t *testing.T) {
+func TestQueue_Write__should_return_error_when_queue_closed(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
-	q.close()
+	q.Close()
 
 	msg := []byte("hello, world")
-	ok, st := q.write(msg)
+	ok, st := q.Write(msg)
 	assert.Equal(t, status.End, st)
 	assert.False(t, ok)
 }
 
-// writeWait
+// WriteWait
 
-func TestQueue_writeWait__should_return_closed_chan_when_space_available(t *testing.T) {
+func TestQueue_WriteWait__should_return_closed_chan_when_space_available(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 1024)
 
-	wait := q.writeWait(1024 - 4)
+	wait := q.WriteWait(1024 - 4)
 	select {
 	case <-wait:
 	default:
@@ -387,9 +387,9 @@ func TestQueue_writeWait__should_return_closed_chan_when_space_available(t *test
 	}
 }
 
-// reset
+// Reset
 
-func TestQueue_reset__should_reset_queue(t *testing.T) {
+func TestQueue_Reset__should_reset_queue(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
@@ -397,8 +397,8 @@ func TestQueue_reset__should_reset_queue(t *testing.T) {
 	testWrite(t, q, msg)
 	testWrite(t, q, msg)
 
-	q.close()
-	q.reset()
+	q.Close()
+	q.Reset()
 
 	assert.False(t, q.closed)
 	assert.Nil(t, q.head)
@@ -415,9 +415,9 @@ func TestQueue_reset__should_reset_queue(t *testing.T) {
 	}
 }
 
-// free
+// Free
 
-func TestQueue_free__should_free_blocks(t *testing.T) {
+func TestQueue_Free__should_free_blocks(t *testing.T) {
 	h := heap.New()
 	q := newQueue(h, 0)
 
