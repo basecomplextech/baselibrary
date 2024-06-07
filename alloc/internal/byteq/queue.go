@@ -236,18 +236,6 @@ func (q *queue) WriteWait(size int) <-chan struct{} {
 
 // Reset resets the queue, releases all unread messages, the queue can be used again.
 func (q *queue) Reset() {
-	q.reset()
-}
-
-// Free releases the queue and its internal resources.
-func (q *queue) Free() {
-	q.free()
-}
-
-// internal
-
-// reset resets the queue, releases all unread messages, the queue can be used again.
-func (q *queue) reset() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -257,15 +245,15 @@ func (q *queue) reset() {
 	q.closed = false
 }
 
-// free releases the queue and its internal resources.
-func (q *queue) free() {
+// Free releases the queue and its internal resources.
+func (q *queue) Free() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	q.freeBlocks()
 }
 
-// read
+// internal
 
 // readBlock returns a block to read from, or nil if the queue is empty.
 func (q *queue) readBlock() (*block, bool, status.Status) {

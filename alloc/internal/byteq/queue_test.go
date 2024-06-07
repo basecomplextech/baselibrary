@@ -427,7 +427,7 @@ func TestQueue_Free__should_free_blocks(t *testing.T) {
 	testWrite(t, q, msg)
 	testWrite(t, q, msg)
 
-	q.free()
+	q.Free()
 
 	assert.Nil(t, q.head)
 	assert.Equal(t, 0, len(q.more))
