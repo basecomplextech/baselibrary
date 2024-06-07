@@ -4,9 +4,89 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 )
 
+type Context interface {
+	// Add adds a constructor or an object to the context.
+	//
+	// When passed an object, the method adds the concrete object, not an interface.
+	// Should you need to add an interface, use inject.Add[T], or pass a function
+	// that returns an interface `func() T { return obj }`.
+	Add(v any) Context
+
+	// AddOnce adds a constructor or an object if it does not exist already.
+	//
+	// When passed an object, the method adds the concrete object, not an interface.
+	// Should you need to add an interface, use inject.AddOnce[T], or pass a function
+	// that returns an interface `func() T { return obj }`.
+	AddOnce(v any) Context
+
+	// AddObject adds an object to the context.
+	//
+	// When passed an object, the method adds the concrete object, not an interface.
+	// Should you need to add an interface, use inject.AddObject[T].
+	AddObject(obj any) Context
+
+	// Get inits an object and sets the pointer.
+	Get(ptr any) Context
+}
+
+// New returns a new context.
+func New() Context {
+	return newContext()
+}
+
+// Add adds a constructor or an object to the context.
+func Add[T any](c Context, v T) {
+	typ := reflect.TypeFor[T]()
+	p := newProvider(v)
+
+	x := c.(*context)
+	x.mu.Lock()
+	defer x.mu.Unlock()
+
+	x.addType(typ, p, false)
+}
+
+// AddOnce adds a constructor or an object if it does not exist already.
+func AddOnce[T any](c Context, v T) {
+	typ := reflect.TypeFor[T]()
+	p := newProvider(v)
+
+	x := c.(*context)
+	x.mu.Lock()
+	defer x.mu.Unlock()
+
+	x.addType(typ, p, true /* skip existing */)
+}
+
+// AddObject adds an object to the context.
+func AddObject[T any](c Context, obj T) {
+	typ := reflect.TypeOf(obj)
+	p := newObjectProvider(obj)
+
+	x := c.(*context)
+	x.mu.Lock()
+	defer x.mu.Unlock()
+
+	x.addType(typ, p, false)
+}
+
+// Get returns an object.
+func Get[T any](c Context) T {
+	var obj T
+	c.Get(&obj)
+	return obj
+}
+
+// internal
+
+var _ Context = (*context)(nil)
+
 type context struct {
+	mu sync.Mutex
+
 	objects   map[reflect.Type]reflect.Value
 	providers map[reflect.Type]provider
 
@@ -21,6 +101,59 @@ func newContext() *context {
 		stackMap:  make(map[reflect.Type]struct{}),
 	}
 }
+
+// Add adds a constructor or an object to the context.
+func (x *context) Add(v any) Context {
+	p := newProvider(v)
+
+	x.mu.Lock()
+	defer x.mu.Unlock()
+
+	x.add(p, false)
+	return x
+}
+
+// AddOnce adds a constructor or an object if it does not exist already.
+func (x *context) AddOnce(v any) Context {
+	p := newProvider(v)
+
+	x.mu.Lock()
+	defer x.mu.Unlock()
+
+	x.add(p, true /* skip existing */)
+	return x
+}
+
+// AddObject adds an object to the context.
+func (x *context) AddObject(obj any) Context {
+	p := newObjectProvider(obj)
+
+	x.mu.Lock()
+	defer x.mu.Unlock()
+
+	x.add(p, false)
+	return x
+}
+
+// Get inits an object and sets the pointer.
+func (x *context) Get(ptr any) Context {
+	pval := reflect.ValueOf(ptr)
+	if pval.Kind() != reflect.Ptr {
+		panic("must be a pointer")
+	}
+
+	elem := pval.Elem()
+	typ := elem.Type()
+
+	x.mu.Lock()
+	defer x.mu.Unlock()
+
+	obj := x.get(typ)
+	elem.Set(obj)
+	return x
+}
+
+// private
 
 func (x *context) add(p provider, skipExisting bool) {
 	typ := p.typ()

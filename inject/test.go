@@ -5,7 +5,7 @@ import (
 )
 
 // Test returns a test context.
-func Test(t tests.T) *Context {
+func Test(t tests.T) Context {
 	return New().
 		Add(t).
 		Add(func() tests.T { return t }) // Add interface
