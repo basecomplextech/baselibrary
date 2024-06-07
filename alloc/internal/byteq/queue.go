@@ -29,8 +29,8 @@ type Queue interface {
 
 	// Read
 
-	// Read reads an message from the queue, the message is valid until the next iteration.
-	// The method returns a close status when there are no more items and the queue is closed.
+	// Read reads an message from the queue, the message is valid until the next call to read.
+	// The method returns an end status when there are no more items and the queue is closed.
 	Read() ([]byte, bool, status.Status)
 
 	// ReadWait returns a channel which is notified when more messages are available.
@@ -53,7 +53,7 @@ type Queue interface {
 
 	// Internal
 
-	// Free releases the queue and its iternal resources.
+	// Free releases the queue and its internal resources.
 	Free()
 }
 
@@ -138,7 +138,7 @@ func (q *queue) Close() {
 }
 
 // Read reads an message from the queue, the message is valid until the next call to read.
-// The method returns a close status when there are no more items and the queue is closed.
+// The method returns an end status when there are no more items and the queue is closed.
 func (q *queue) Read() ([]byte, bool, status.Status) {
 	q.rmu.Lock()
 	defer q.rmu.Unlock()
@@ -239,7 +239,7 @@ func (q *queue) Reset() {
 	q.reset()
 }
 
-// Free releases the queue and its iternal resources.
+// Free releases the queue and its internal resources.
 func (q *queue) Free() {
 	q.free()
 }
@@ -257,7 +257,7 @@ func (q *queue) reset() {
 	q.closed = false
 }
 
-// free releases the queue and its iternal resources.
+// free releases the queue and its internal resources.
 func (q *queue) free() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
