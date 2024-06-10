@@ -25,6 +25,9 @@ type Map[K comparable, V any] interface {
 	// GetOrSet returns a value by key, or sets a value if it does not exist.
 	GetOrSet(key K, value V) (_ V, set bool)
 
+	// Pop deletes and returns a value by key, or false.
+	Pop(key K) (V, bool)
+
 	// Set sets a value for a key.
 	Set(key K, value V)
 
@@ -87,6 +90,12 @@ func (m *shardedMap[K, V]) Get(key K) (V, bool) {
 func (m *shardedMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
 	s := m.shard(key)
 	return s.getOrSet(key, value)
+}
+
+// Pop deletes and returns a value by key, or false.
+func (m *shardedMap[K, V]) Pop(key K) (V, bool) {
+	s := m.shard(key)
+	return s.pop(key)
 }
 
 // Set sets a value for a key.
@@ -162,6 +171,19 @@ func (s *mapShard[K, V]) getOrSet(key K, value V) (V, bool) {
 	}
 
 	s.items[key] = value
+	return value, true
+}
+
+func (s *mapShard[K, V]) pop(key K) (V, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	value, ok := s.items[key]
+	if !ok {
+		return value, false
+	}
+
+	delete(s.items, key)
 	return value, true
 }
 
