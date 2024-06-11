@@ -33,6 +33,12 @@ type LockMap[K comparable] interface {
 	//	defer lock.Unlock()
 	Get(key K) KeyLock
 
+	// Contains returns true if the key is present.
+	//
+	// Usually it means that the key is locked, but it is not guaranteed.
+	// In the latter case the key is unlocked but is not yet freed.
+	Contains(key K) bool
+
 	// Lock returns a locked key, the key must be freed after use.
 	//
 	// Usage:
@@ -45,6 +51,33 @@ type LockMap[K comparable] interface {
 	//	}
 	//	defer lock.Free()
 	Lock(ctx Context, key K) (LockedKey, status.Status)
+
+	// LockMap locks the map itself, internally it locks all shards.
+	//
+	// Usage:
+	//
+	//	m := NewLockMap[int]()
+	//
+	//	locks := m.LockMap()
+	//	defer locks.Free()
+	//
+	//	for key := range keys {
+	//		ok := locks.Contains(key)
+	//		// ...
+	//	}
+	LockMap() LockedMap[K]
+}
+
+// LockedMap is an interface to interact with a map locked in exclusive mode.
+type LockedMap[K comparable] interface {
+	// Contains returns true if the key is present.
+	Contains(key K) bool
+
+	// Range ranges over all keys.
+	Range(f func(key K) bool)
+
+	// Free unlocks the map itself, internally it unlocks all shards.
+	Free()
 }
 
 // KeyLock is a single lock for a key, the lock must be freed after use.
@@ -101,6 +134,15 @@ func (m *lockMap[K]) Get(key K) KeyLock {
 	return &keyLock[K]{item}
 }
 
+// Contains returns true if the key is present.
+//
+// Usually it means that the key is locked, but it is not guaranteed.
+// In the latter case the key is unlocked but is not yet freed.
+func (m *lockMap[K]) Contains(key K) bool {
+	shard := m.shard(key)
+	return shard.contains(key)
+}
+
 // Lock returns a locked key, the key must be freed after use.
 func (m *lockMap[K]) Lock(ctx Context, key K) (LockedKey, status.Status) {
 	// Get lock item
@@ -128,9 +170,54 @@ func (m *lockMap[K]) Lock(ctx Context, key K) (LockedKey, status.Status) {
 	return k, status.OK
 }
 
+// LockMap locks the map itself, internally it locks all shards.
+func (m *lockMap[K]) LockMap() LockedMap[K] {
+	for i := range m.shards {
+		shard := &m.shards[i]
+		shard.mu.Lock()
+	}
+
+	return &lockedMap[K]{m}
+}
+
+// unlockMap unlocks the map itself, internally it unlocks all shards.
+func (m *lockMap[K]) unlockMap() {
+	for i := range m.shards {
+		shard := &m.shards[i]
+		shard.mu.Unlock()
+	}
+}
+
 func (m *lockMap[K]) shard(key K) *lockShard[K] {
 	index := hashing.Shard(key, len(m.shards))
 	return &m.shards[index]
+}
+
+// LockedMap
+
+var _ LockedMap[any] = &lockedMap[any]{}
+
+type lockedMap[K comparable] struct {
+	m *lockMap[K]
+}
+
+// Contains returns true if the key is present.
+func (m *lockedMap[K]) Contains(key K) bool {
+	shard := m.m.shard(key)
+	return shard.containsLocked(key)
+}
+
+// Range ranges over all keys.
+func (m *lockedMap[K]) Range(f func(key K) bool) {
+	for i := range m.m.shards {
+		shard := &m.m.shards[i]
+		shard.rangeLocked(f)
+	}
+}
+
+// Free unlocks the map itself, internally it unlocks all shards.
+func (m *lockedMap[K]) Free() {
+	m.m.unlockMap()
 }
 
 // KeyLock
@@ -243,6 +330,27 @@ func (s *lockShard[K]) free(m *lockItem[K]) {
 	// Release it to the pool
 	m.reset()
 	s.pool.Put(m)
+}
+
+func (s *lockShard[K]) contains(key K) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	_, ok := s.items[key]
+	return ok
+}
+
+func (s *lockShard[K]) containsLocked(key K) bool {
+	_, ok := s.items[key]
+	return ok
+}
+
+func (s *lockShard[K]) rangeLocked(f func(key K) bool) {
+	for key := range s.items {
+		if !f(key) {
+			break
+		}
+	}
 }
 
 // item
