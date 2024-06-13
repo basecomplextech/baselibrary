@@ -130,7 +130,7 @@ func (m *shardedMap[K, V]) shard(key K) *mapShard[K, V] {
 type mapShard[K comparable, V any] struct {
 	mu    sync.RWMutex
 	items map[K]V
-	_     [240]byte // cache line padding
+	_     [224]byte // cache line padding
 }
 
 func newAsyncMapShard[K comparable, V any]() mapShard[K, V] {
