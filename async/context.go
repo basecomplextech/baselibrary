@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/basecomplextech/baselibrary/opt"
 	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/status"
 )
@@ -110,7 +111,7 @@ type contextState struct {
 
 	done    bool
 	cause   status.Status
-	channel chan struct{}
+	channel opt.Opt[chan struct{}] // lazily created
 
 	timer     *time.Timer                  // maybe nil
 	callbacks map[ContextCallback]struct{} // maybe nil
@@ -120,7 +121,6 @@ func newContext(parent Context) *context {
 	s := acquireContextState()
 	s.parent = parent
 	s.cause = status.Cancelled
-	s.channel = make(chan struct{})
 	c := &context{state: s}
 
 	// Maybe add callback
@@ -144,7 +144,6 @@ func newContextTimeout1(parent Context, timeout time.Duration) *context {
 	s := acquireContextState()
 	s.parent = parent
 	s.cause = status.Timeout
-	s.channel = make(chan struct{})
 	c := &context{state: s}
 
 	// Maybe already done
@@ -196,7 +195,11 @@ func (c *context) Wait() <-chan struct{} {
 	if !ok || s.done {
 		return closedChan
 	}
-	return s.channel
+
+	if !s.channel.Set {
+		s.channel = opt.New(make(chan struct{}))
+	}
+	return s.channel.Value
 }
 
 // Status returns a cancellation status or OK.
@@ -331,7 +334,9 @@ func (c *context) doCancel(st status.Status) (*contextState, bool) {
 
 	// Mark as done, close
 	s.done = true
-	close(s.channel)
+	if s.channel.Set {
+		close(s.channel.Value)
+	}
 
 	// Maybe set cause
 	if st.Code != status.CodeNone {
