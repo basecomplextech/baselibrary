@@ -157,11 +157,17 @@ func (m *lockMap[K]) Lock(ctx Context, key K) (LockedKey, status.Status) {
 		}
 	}()
 
-	// Try to lock
+	// Try lock
 	select {
 	case <-item.lock:
-	case <-ctx.Wait():
-		return nil, ctx.Status()
+	default:
+		// Lock or wait
+		// Context channel is lazily allocated, so try to postpone calling wait.
+		select {
+		case <-item.lock:
+		case <-ctx.Wait():
+			return nil, ctx.Status()
+		}
 	}
 
 	// Return locked key
