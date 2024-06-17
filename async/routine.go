@@ -76,47 +76,6 @@ func Exited[T any](result T, st status.Status) Routine[T] {
 	return r
 }
 
-// Join
-
-// TODO: Maybe remove this function.
-//
-// Join joins all routines into a single routine.
-// The routine returns all the results and the first non-OK status.
-func Join[T any](routines ...Routine[T]) Routine[[]T] {
-	return Call(func(ctx Context) ([]T, status.Status) {
-		// Await all or stop
-		st := status.OK
-	loop:
-		for _, r := range routines {
-			select {
-			case <-r.Wait():
-			case <-ctx.Wait():
-				st = ctx.Status()
-				break loop
-			}
-		}
-
-		// Stop all
-		for _, r := range routines {
-			r.Stop()
-		}
-
-		// Collect results
-		results := make([]T, 0, len(routines))
-		for _, r := range routines {
-			<-r.Wait()
-
-			r, st1 := r.Result()
-			if !st1.OK() && st.OK() {
-				st = st1
-			}
-
-			results = append(results, r)
-		}
-		return results, st
-	})
-}
-
 // internal
 
 var _ Routine[any] = (*routine[any])(nil)

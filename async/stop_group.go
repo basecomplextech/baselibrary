@@ -80,8 +80,8 @@ func (g *StopGroup) AddTimer(t *time.Timer) {
 	g.timers = append(g.timers, t)
 }
 
-// Cancel stops all operations in the group.
-func (g *StopGroup) Cancel() {
+// Stop stops all operations in the group.
+func (g *StopGroup) Stop() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -106,7 +106,7 @@ func (g *StopGroup) Cancel() {
 
 // StopWait stops all operations in the group and awaits them.
 func (g *StopGroup) StopWait() {
-	g.Cancel()
+	g.Stop()
 	g.Wait()
 }
 
