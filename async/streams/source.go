@@ -1,18 +1,37 @@
-package async
+package streams
 
-import "sync"
+import (
+	"sync"
 
-var _ StreamSource[any] = (*streamSource[any])(nil)
+	"github.com/basecomplextech/baselibrary/async"
+)
+
+// Source is a stream which can be written to.
+type Source[T any] interface {
+	Stream[T]
+
+	// Send sends a message to the stream.
+	Send(T)
+}
+
+// NewSource returns a new stream source.
+func NewSource[T any]() Source[T] {
+	return newSource[T]()
+}
+
+// internal
+
+var _ Source[any] = (*streamSource[any])(nil)
 
 type streamSource[T any] struct {
 	mu sync.Mutex
 	i  int
-	ln map[int]StreamListener[T]
+	ln map[int]Listener[T]
 }
 
-func newStreamSource[T any]() *streamSource[T] {
+func newSource[T any]() *streamSource[T] {
 	return &streamSource[T]{
-		ln: make(map[int]StreamListener[T]),
+		ln: make(map[int]Listener[T]),
 	}
 }
 
@@ -22,7 +41,7 @@ func (s *streamSource[T]) Filter(fn func(T) bool) Stream[T] {
 }
 
 // Listen adds a listener to the stream, and returns an unsubscribe function.
-func (s *streamSource[T]) Listen(ln StreamListener[T]) (unsub func()) {
+func (s *streamSource[T]) Listen(ln Listener[T]) (unsub func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -40,8 +59,8 @@ func (s *streamSource[T]) Listen(ln StreamListener[T]) (unsub func()) {
 }
 
 // Subscribe returns a queue subscribed to the stream, free the queue to unsubscribe.
-func (s *streamSource[T]) Subscribe() Queue[T] {
-	queue := newStreamQueue[T]()
+func (s *streamSource[T]) Subscribe() async.Queue[T] {
+	queue := newQueue[T]()
 	queue.unsub = s.Listen(queue)
 	return queue
 }

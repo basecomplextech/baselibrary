@@ -1,4 +1,4 @@
-package async
+package streams
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestStream__should_send_messages_to_listeners(t *testing.T) {
-	src := NewStreamSource[string]()
+	src := NewSource[string]()
 	q := src.Subscribe()
 
 	src.Send("hello")
@@ -29,7 +29,7 @@ func TestStream__should_send_messages_to_listeners(t *testing.T) {
 }
 
 func TestStreamFilter__should_filter_messages(t *testing.T) {
-	src := NewStreamSource[string]()
+	src := NewSource[string]()
 	stream := src.Filter(func(s string) bool {
 		return s == "hello"
 	})
@@ -51,7 +51,7 @@ func TestStreamFilter__should_filter_messages(t *testing.T) {
 }
 
 func TestStreamParallel__should_send_messages_to_multiple_listeners(t *testing.T) {
-	src := NewStreamSource[string]()
+	src := NewSource[string]()
 	q0 := src.Subscribe()
 	q1 := src.Filter(func(s string) bool {
 		return s != "world"
