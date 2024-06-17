@@ -2,9 +2,8 @@ package async
 
 import "sync"
 
-// WaitLock is a single writer multiple waiters lock.
+// WaitLock is a lock which allows others to wait until it is unlocked.
 //
-// It allows one writer to acquire the lock, and other readers to wait until the lock is unlocked.
 // WaitLock does not guarantee that the lock is not acquired by another writer after its waiters
 // are notified.
 //

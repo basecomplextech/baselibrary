@@ -4,8 +4,6 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-var _ Waiter = (Future[any])(nil)
-
 // Future represents a result available in the future.
 type Future[T any] interface {
 	// Wait returns a channel which is closed when the future is complete.
@@ -18,7 +16,24 @@ type Future[T any] interface {
 	Status() status.Status
 }
 
-// Utility
+// FutureDyn is a future interface without generics, i.e. Future[?].
+type FutureDyn interface {
+	// Wait returns a channel which is closed when the future is complete.
+	Wait() <-chan struct{}
+
+	// Status returns a status or none.
+	Status() status.Status
+}
+
+// Result
+
+// Result is a struct which combines a future result value and a status.
+type Result[T any] struct {
+	Value  T
+	Status status.Status
+}
+
+// Constructors
 
 // Resolved returns a successful future.
 func Resolved[T any](result T) Future[T] {

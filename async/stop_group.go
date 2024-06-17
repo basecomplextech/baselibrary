@@ -10,10 +10,10 @@ type StopGroup struct {
 	mu   sync.Mutex
 	done bool
 
+	routines []RoutineDyn
 	services []Service
 	timers   []*time.Timer
 	tickers  []*time.Ticker
-	waiters  []StopWaiter
 }
 
 // NewStopGroup creates a new stop group.
@@ -22,22 +22,22 @@ func NewStopGroup() *StopGroup {
 }
 
 // Add adds a routine to the group, or immediately stops it if the group is stopped.
-func (g *StopGroup) Add(c StopWaiter) {
+func (g *StopGroup) Add(r RoutineDyn) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
 	if g.done {
-		c.Stop()
+		r.Stop()
 		return
 	}
 
-	g.waiters = append(g.waiters, c)
+	g.routines = append(g.routines, r)
 }
 
 // AddMany adds multiple routines to the group, or immediatelly stops them if the group is stopped.
-func (g *StopGroup) AddMany(c ...StopWaiter) {
-	for _, c := range c {
-		g.Add(c)
+func (g *StopGroup) AddMany(routines ...RoutineDyn) {
+	for _, r := range routines {
+		g.Add(r)
 	}
 }
 
@@ -99,7 +99,7 @@ func (g *StopGroup) Cancel() {
 	for _, t := range g.timers {
 		t.Stop()
 	}
-	for _, w := range g.waiters {
+	for _, w := range g.routines {
 		w.Stop()
 	}
 }
@@ -119,7 +119,7 @@ func (g *StopGroup) Wait() {
 		<-s.Wait()
 	}
 
-	for _, w := range g.waiters {
+	for _, w := range g.routines {
 		<-w.Wait()
 	}
 }

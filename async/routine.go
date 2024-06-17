@@ -13,7 +13,14 @@ type Routine[T any] interface {
 	Stop() <-chan struct{}
 }
 
-// Methods
+// RoutineDyn is a routine interface without generics, i.e. Routine[?].
+type RoutineDyn interface {
+	FutureDyn
+
+	Stop() <-chan struct{}
+}
+
+// Constructors
 
 // Go runs a function in a new routine, recovers on panics.
 func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
@@ -62,6 +69,17 @@ func Call[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 	return r
 }
 
+// Exited returns a routine which has exited with the given result and status.
+func Exited[T any](result T, st status.Status) Routine[T] {
+	r := newRoutine[T]()
+	r.result.Complete(result, st)
+	return r
+}
+
+// Join
+
+// TODO: Maybe remove this function.
+//
 // Join joins all routines into a single routine.
 // The routine returns all the results and the first non-OK status.
 func Join[T any](routines ...Routine[T]) Routine[[]T] {
@@ -97,13 +115,6 @@ func Join[T any](routines ...Routine[T]) Routine[[]T] {
 		}
 		return results, st
 	})
-}
-
-// Exited returns a routine which has exited with the given result and status.
-func Exited[T any](result T, st status.Status) Routine[T] {
-	r := newRoutine[T]()
-	r.result.Complete(result, st)
-	return r
 }
 
 // internal
