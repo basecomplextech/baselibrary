@@ -30,17 +30,20 @@ import "sync"
 //
 //		// ... Do work ...
 //	}
-type WaitLock struct {
-	mu sync.Mutex
+type WaitLock interface {
+	// Lock returns a channel receiving from which locks the lock.
+	Lock() <-chan struct{}
 
-	lock       chan struct{}
-	wait       chan struct{} // Open on lock, closed on unlock
-	waitClosed bool
+	// Unlock unlocks the lock and notifies all waiters.
+	Unlock()
+
+	// Wait returns a channel which is closed when the lock is unlocked.
+	Wait() <-chan struct{}
 }
 
 // NewWaitLock returns a new unlocked lock.
-func NewWaitLock() *WaitLock {
-	l := &WaitLock{
+func NewWaitLock() WaitLock {
+	l := &waitLock{
 		lock:       make(chan struct{}, 1),
 		wait:       make(chan struct{}),
 		waitClosed: true,
@@ -51,8 +54,18 @@ func NewWaitLock() *WaitLock {
 	return l
 }
 
+// internal
+
+type waitLock struct {
+	mu sync.Mutex
+
+	lock       chan struct{}
+	wait       chan struct{} // Open on lock, closed on unlock
+	waitClosed bool
+}
+
 // Lock returns a channel receiving from which locks the lock.
-func (l *WaitLock) Lock() <-chan struct{} {
+func (l *waitLock) Lock() <-chan struct{} {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -66,7 +79,7 @@ func (l *WaitLock) Lock() <-chan struct{} {
 }
 
 // Unlock unlocks the lock and notifies all waiters.
-func (l *WaitLock) Unlock() {
+func (l *waitLock) Unlock() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -81,7 +94,7 @@ func (l *WaitLock) Unlock() {
 }
 
 // Wait returns a channel which is closed when the lock is unlocked.
-func (l *WaitLock) Wait() <-chan struct{} {
+func (l *waitLock) Wait() <-chan struct{} {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
