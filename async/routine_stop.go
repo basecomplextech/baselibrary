@@ -1,7 +1,7 @@
 package async
 
 // StopAll stops all routines, but does not await their stop.
-func StopAll[S ~[]R, R RoutineDyn](routines S) {
+func StopAll[R RoutineDyn](routines ...R) {
 	for _, r := range routines {
 		r.Stop()
 	}
