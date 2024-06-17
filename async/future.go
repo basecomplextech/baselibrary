@@ -25,14 +25,6 @@ type FutureDyn interface {
 	Status() status.Status
 }
 
-// Result
-
-// Result is a struct which combines a future result value and a status.
-type Result[T any] struct {
-	Value  T
-	Status status.Status
-}
-
 // Constructors
 
 // Resolved returns a successful future.
