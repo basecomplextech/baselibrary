@@ -104,6 +104,12 @@ func LeftShift[S ~[]T, T any](s S, n int) S {
 	return s[:len(s)-n]
 }
 
+// Random returns a random item from the slice, panics if the slice is empty.
+// Internally uses math/rand.Intn to generate a random index.
+func Random[S ~[]T, T any](s S) T {
+	return s[rand.Intn(len(s))]
+}
+
 // Remove removes the first occurrence of the item from the slice.
 func Remove[S ~[]T, T comparable](s S, item T) S {
 	index := IndexOf(s, item)
