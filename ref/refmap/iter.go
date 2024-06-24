@@ -46,8 +46,8 @@ type Iterator[K any, V any] interface {
 	// SeekToEnd positions the iterator at the end.
 	SeekToEnd() bool
 
-	// SeekToKey positions the iterator at an item with key >= key.
-	SeekToKey(key K) bool
+	// SeekBefore positions the iterator before an item with key >= key.
+	SeekBefore(key K) bool
 
 	// Internal
 
@@ -352,8 +352,8 @@ func (it *iterator[K, V]) SeekToEnd() bool {
 	return true
 }
 
-// SeekToKey positions the iterator at an item with key >= key, and returns ok/end/error.
-func (it *iterator[K, V]) SeekToKey(key K) bool {
+// SeekBefore positions the iterator before an item with key >= key, and returns ok/end/error.
+func (it *iterator[K, V]) SeekBefore(key K) bool {
 	switch it.st.Code {
 	case status.CodeOK,
 		status.CodeEnd,

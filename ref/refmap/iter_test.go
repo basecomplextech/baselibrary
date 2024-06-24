@@ -46,13 +46,13 @@ func TestIterator_Next__should_end_when_empty(t *testing.T) {
 	assert.Equal(t, items0, items1)
 }
 
-func TestIterator_Next_SeekToKey__should_iterate_forward_from_key(t *testing.T) {
+func TestIterator_Next_SeekBefore__should_iterate_forward_from_key(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t, items...)
 	it := btree.Iterator()
 
 	for i, item := range items {
-		if ok := it.SeekToKey(item.Key); !ok {
+		if ok := it.SeekBefore(item.Key); !ok {
 			t.Fatal(ok)
 		}
 
@@ -122,13 +122,13 @@ func TestIterator_Previous__should_end_when_empty(t *testing.T) {
 	assert.Equal(t, items0, items1)
 }
 
-func TestIterator_Previous_SeekToKey__should_iterate_backward_from_key(t *testing.T) {
+func TestIterator_Previous_SeekBefore__should_iterate_backward_from_key(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t, items...)
 	it := btree.Iterator()
 
 	for i, item := range items {
-		if ok := it.SeekToKey(item.Key); !ok {
+		if ok := it.SeekBefore(item.Key); !ok {
 			t.Fatal(ok)
 		}
 
@@ -161,15 +161,15 @@ func TestIterator_Previous_Next_Previous__should_switch_directions(t *testing.T)
 	assert.Equal(t, items[n:], items3)
 }
 
-// SeekToKey
+// SeekBefore
 
-func TestIterator_SeekToKey__should_position_before_key(t *testing.T) {
+func TestIterator_SeekBefore__should_position_before_key(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t, items...)
 	it := btree.Iterator().(*iterator[int, *Value])
 
 	for _, item := range items {
-		if ok := it.SeekToKey(item.Key); !ok {
+		if ok := it.SeekBefore(item.Key); !ok {
 			t.Fatal(ok)
 		}
 
@@ -185,12 +185,12 @@ func TestIterator_SeekToKey__should_position_before_key(t *testing.T) {
 	}
 }
 
-func TestIterator_SeekToKey__should_position_at_start_when_first_key_greater_than_sought_key(t *testing.T) {
+func TestIterator_SeekBefore__should_position_at_start_when_first_key_greater_than_sought_key(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items[1:]...)
 	it := btree.Iterator().(*iterator[int, *Value])
 
-	ok := it.SeekToKey(0)
+	ok := it.SeekBefore(0)
 	assert.True(t, ok)
 
 	ok = it.OK()
@@ -198,12 +198,12 @@ func TestIterator_SeekToKey__should_position_at_start_when_first_key_greater_tha
 	assert.Equal(t, positionBefore, it.pos)
 }
 
-func TestIterator_SeekToKey__should_position_at_end_when_all_keys_less_than_sought_key(t *testing.T) {
+func TestIterator_SeekBefore__should_position_at_end_when_all_keys_less_than_sought_key(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items...)
 	it := btree.Iterator().(*iterator[int, *Value])
 
-	ok := it.SeekToKey(11)
+	ok := it.SeekBefore(11)
 	assert.False(t, ok)
 
 	ok = it.OK()
