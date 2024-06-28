@@ -8,12 +8,9 @@ import (
 
 // Service is a service which can be started and stopped.
 type Service interface {
-	Routine[struct{}]
+	Future[struct{}]
 
-	// IsRunning returns true if the service is running.
-	IsRunning() bool
-
-	// Async
+	// Flags
 
 	// Running indicates that the service is running.
 	Running() Flag
@@ -57,9 +54,16 @@ func newService(fn func(ctx Context) status.Status) *service {
 	}
 }
 
-// IsRunning returns true if the service is running.
-func (s *service) IsRunning() bool {
-	return s.running.Get()
+// Flags
+
+// Running indicates that the service is running.
+func (s *service) Running() Flag {
+	return s.running
+}
+
+// Stopped indicates that the service is stopped.
+func (s *service) Stopped() Flag {
+	return s.stopped
 }
 
 // Future
@@ -95,18 +99,6 @@ func (s *service) Status() status.Status {
 		return status.None
 	}
 	return s.routine.Status()
-}
-
-// Async
-
-// Running indicates that the service is running.
-func (s *service) Running() Flag {
-	return s.running
-}
-
-// Stopped indicates that the service is stopped.
-func (s *service) Stopped() Flag {
-	return s.stopped
 }
 
 // Methods
