@@ -380,7 +380,7 @@ func (*noContext) Free()                          {}
 
 // state pool
 
-var contextStatePool = pools.MakePool(
+var contextStatePool = pools.NewPoolFunc(
 	func() *contextState {
 		return &contextState{}
 	},

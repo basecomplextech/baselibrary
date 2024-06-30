@@ -228,7 +228,7 @@ func (b *Buffer) freeBlocks() {
 
 // pool
 
-var pool = pools.MakePool(
+var pool = pools.NewPoolFunc(
 	func() *Buffer {
 		b := newBuffer(heap.Global)
 		b.pooled = true
@@ -247,7 +247,7 @@ func releaseBuffer(b *Buffer) {
 
 // state pool
 
-var statePool = pools.MakePool(
+var statePool = pools.NewPoolFunc(
 	func() *state {
 		return &state{}
 	},

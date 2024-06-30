@@ -194,7 +194,7 @@ func (a *arena) allocBlock(n int) *heap.Block {
 
 // arena pool
 
-var arenaPool = pools.MakePool(
+var arenaPool = pools.NewPoolFunc(
 	func() *arena {
 		a := newArena(heap.Global)
 		a.pooled = true
@@ -213,7 +213,7 @@ func releaseArena(a *arena) {
 
 // state pool
 
-var statePool = pools.MakePool(
+var statePool = pools.NewPoolFunc(
 	func() *state {
 		return &state{}
 	},

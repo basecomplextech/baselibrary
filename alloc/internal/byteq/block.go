@@ -101,7 +101,7 @@ func (b *block) free(heap *heap.Heap) {
 
 // pool
 
-var pool = pools.MakePool(func() *block {
+var pool = pools.NewPoolFunc(func() *block {
 	return &block{}
 })
 

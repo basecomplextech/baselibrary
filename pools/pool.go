@@ -19,9 +19,9 @@ func NewPool[T any]() Pool[T] {
 	return newPool[T](nil)
 }
 
-// MakePool returns a new pool with a new function.
-func MakePool[T any](new func() T) Pool[T] {
-	return newPool[T](new)
+// NewPoolFunc returns a new pool with a new function.
+func NewPoolFunc[T any](new func() T) Pool[T] {
+	return newPool(new)
 }
 
 // internal
