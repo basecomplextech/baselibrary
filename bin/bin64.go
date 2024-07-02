@@ -29,6 +29,12 @@ func Int64(v int64) Bin64 {
 }
 
 // Compare compares two values.
+//
+// Returns:
+//
+//	-1 if a < b
+//	 0 if a == b
+//	 1 if a > b
 func (b0 Bin64) Compare(b1 Bin64) int {
 	return bytes.Compare(b0[:], b1[:])
 }

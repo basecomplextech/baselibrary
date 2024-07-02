@@ -41,6 +41,12 @@ func Join128(b0, b1 Bin64) Bin128 {
 }
 
 // Compare compares two values.
+//
+// Returns:
+//
+//	-1 if a < b
+//	 0 if a == b
+//	 1 if a > b
 func (b0 Bin128) Compare(b1 Bin128) int {
 	return bytes.Compare(b0[:], b1[:])
 }
