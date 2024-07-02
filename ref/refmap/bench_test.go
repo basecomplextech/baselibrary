@@ -7,7 +7,7 @@ import (
 
 const benchTableSize = 100_000
 
-func BenchmarkTree_Put(b *testing.B) {
+func BenchmarkTree_SetRetain(b *testing.B) {
 	btree := testBtree(b)
 	items := testItemsN(benchTableSize)
 
@@ -23,7 +23,7 @@ func BenchmarkTree_Put(b *testing.B) {
 		}
 
 		item := items[j]
-		btree.Put(item.Key, item.Value)
+		btree.SetRetain(item.Key, item.Value)
 
 		j++
 	}
@@ -63,7 +63,7 @@ func BenchmarkTree_Clone(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkTree_Clone_Put(b *testing.B) {
+func BenchmarkTree_Clone_Set(b *testing.B) {
 	btree := testBtree(b)
 	btree.Freeze()
 	items := testItemsN(benchTableSize)
@@ -81,7 +81,7 @@ func BenchmarkTree_Clone_Put(b *testing.B) {
 
 		item := items[j]
 		clone := btree.Clone()
-		clone.Put(item.Key, item.Value)
+		clone.SetRetain(item.Key, item.Value)
 		clone.Freeze()
 
 		prev := btree
@@ -95,7 +95,7 @@ func BenchmarkTree_Clone_Put(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkTree_Clone_Put__small(b *testing.B) {
+func BenchmarkTree_Clone_Set__small(b *testing.B) {
 	btree := testBtree(b)
 	btree.Freeze()
 	items := testItemsN(16)
@@ -113,7 +113,7 @@ func BenchmarkTree_Clone_Put__small(b *testing.B) {
 
 		item := items[j]
 		clone := btree.Clone()
-		clone.Put(item.Key, item.Value)
+		clone.SetRetain(item.Key, item.Value)
 		clone.Freeze()
 		clone.Free()
 

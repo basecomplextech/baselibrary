@@ -16,7 +16,7 @@ func testBtree(t tests.T, items ...Item[int, *Value]) *btree[int, *Value] {
 	btree := newBtree[int, *Value](compare)
 
 	for _, item := range items {
-		btree.Put(item.Key, item.Value)
+		btree.SetRetain(item.Key, item.Value)
 	}
 	return btree
 }
@@ -55,7 +55,7 @@ func sortItems(items []Item[int, *Value]) {
 
 func testPut(t tests.T, btree *btree[int, *Value], items ...Item[int, *Value]) {
 	for _, item := range items {
-		btree.Put(item.Key, item.Value)
+		btree.SetRetain(item.Key, item.Value)
 	}
 }
 
@@ -94,7 +94,7 @@ func TestMap_Length__should_return_item_count(t *testing.T) {
 	slices.Shuffle(items)
 
 	for i, item := range items {
-		btree.Put(item.Key, item.Value)
+		btree.SetRetain(item.Key, item.Value)
 
 		n := btree.Length()
 		assert.Equal(t, int64(i+1), n)
@@ -189,7 +189,7 @@ func TestMap_Get__should_return_item_value(t *testing.T) {
 	slices.Shuffle(items)
 
 	for _, item := range items {
-		btree.Put(item.Key, item.Value)
+		btree.SetRetain(item.Key, item.Value)
 
 		value, ok := btree.Get(item.Key)
 		if !ok {
@@ -216,7 +216,7 @@ func TestMap_Get__should_not_retain_value(t *testing.T) {
 	}
 }
 
-// Put
+// Set
 
 func TestMap_Put__should_insert_items_in_correct_order(t *testing.T) {
 	btree := testBtree(t)
@@ -224,7 +224,7 @@ func TestMap_Put__should_insert_items_in_correct_order(t *testing.T) {
 	slices.Shuffle(items)
 
 	for _, item := range items {
-		btree.Put(item.Key, item.Value)
+		btree.SetRetain(item.Key, item.Value)
 	}
 
 	sortItems(items)
@@ -236,10 +236,10 @@ func TestMap_Put__should_retain_value(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t)
 
-	// Put items
+	// Set items
 	for _, item := range items {
 		require.Equal(t, int64(1), item.Value.Refcount())
-		btree.Put(item.Key, item.Value)
+		btree.SetRetain(item.Key, item.Value)
 
 		require.Equal(t, int64(2), item.Value.Refcount())
 	}
@@ -261,7 +261,7 @@ func TestMap_Put__should_retain_release_item_on_replace(t *testing.T) {
 		require.Equal(t, int64(2), item0.Value.Refcount())
 		require.Equal(t, int64(1), item1.Value.Refcount())
 
-		btree.Put(item0.Key, item1.Value)
+		btree.SetRetain(item0.Key, item1.Value)
 
 		require.Equal(t, int64(1), item0.Value.Refcount())
 		require.Equal(t, int64(2), item1.Value.Refcount())
@@ -303,7 +303,7 @@ func TestMap_Contains__should_return_true_when_btree_contains_item(t *testing.T)
 	slices.Shuffle(items)
 
 	for _, item := range items {
-		btree.Put(item.Key, item.Value)
+		btree.SetRetain(item.Key, item.Value)
 
 		ok := btree.Contains(item.Key)
 		require.True(t, ok)

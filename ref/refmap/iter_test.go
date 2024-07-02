@@ -225,7 +225,7 @@ func TestIterator_Next__should_panic_on_concurrent_modification(t *testing.T) {
 	ok := it.Next()
 	assert.True(t, ok)
 
-	btree.Put(items[5].Key, items[5].Value)
+	btree.SetRetain(items[5].Key, items[5].Value)
 
 	assert.Panics(t, func() {
 		it.Next()
@@ -240,7 +240,7 @@ func TestIterator_Previous__should_panic_on_concurrent_modification(t *testing.T
 	ok := it.SeekToEnd()
 	assert.True(t, ok)
 
-	btree.Put(items[5].Key, items[5].Value)
+	btree.SetRetain(items[5].Key, items[5].Value)
 
 	assert.Panics(t, func() {
 		it.Previous()

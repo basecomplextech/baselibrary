@@ -43,8 +43,11 @@ type Map[K, V any] interface {
 
 	// Write
 
-	// Put adds an item to the map, retains its value.
-	Put(key K, value ref.R[V])
+	// Set adds an item to the map, wraps into into a reference.
+	Set(key K, value V)
+
+	// SetRetain adds an item reference to the map, and retains it.
+	SetRetain(key K, value ref.R[V])
 
 	// Delete deletes an item by a key, releases its value.
 	Delete(key K)
@@ -196,8 +199,23 @@ func (t *btree[K, V]) Keys() []K {
 
 // Write
 
-// Put adds an item to the map, retains its value.
-func (t *btree[K, V]) Put(key K, value ref.R[V]) {
+// Set adds an item to the map, wraps into into a reference.
+func (t *btree[K, V]) Set(key K, value V) {
+	var r ref.R[V]
+
+	v, ok := (any)(value).(ref.Freer)
+	if ok {
+		r = ref.NewFreer(value, v)
+	} else {
+		r = ref.NewNoop(value)
+	}
+
+	t.SetRetain(key, r)
+	r.Release()
+}
+
+// SetRetain adds an item reference to the map, and retains it.
+func (t *btree[K, V]) SetRetain(key K, value ref.R[V]) {
 	if !t.mutable {
 		panic("operation on immutable refmap")
 	}
