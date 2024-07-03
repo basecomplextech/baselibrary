@@ -28,6 +28,14 @@ func Int64(v int64) Bin64 {
 	return b
 }
 
+// Join64 returns a bin64 from two int32 encoded as big-endian.
+func Join64(v0, v1 int32) Bin64 {
+	b := Bin64{}
+	binary.BigEndian.PutUint32(b[:], uint32(v0))
+	binary.BigEndian.PutUint32(b[4:], uint32(v1))
+	return b
+}
+
 // Compare compares two values.
 //
 // Returns:
@@ -49,7 +57,14 @@ func (b Bin64) Size() int {
 	return len(b)
 }
 
-// Int
+// Ints
+
+// Int32s returns two int32s decoded as big-endian.
+func (b Bin64) Int32s() (int32, int32) {
+	v0 := binary.BigEndian.Uint32(b[:])
+	v1 := binary.BigEndian.Uint32(b[4:])
+	return int32(v0), int32(v1)
+}
 
 // Int64 returns an int64 decoded as big-endian.
 func (b Bin64) Int64() int64 {

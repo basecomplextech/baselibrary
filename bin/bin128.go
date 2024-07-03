@@ -63,15 +63,15 @@ func (b Bin128) Size() int {
 
 // Parts
 
-// Ints returns two int64s decoded as big-endian.
-func (b Bin128) Ints() (int64, int64) {
+// Int64s returns two int64s decoded as big-endian.
+func (b Bin128) Int64s() (int64, int64) {
 	v0 := binary.BigEndian.Uint64(b[:])
 	v1 := binary.BigEndian.Uint64(b[8:])
 	return int64(v0), int64(v1)
 }
 
-// Parts returns two bin64 values.
-func (b Bin128) Parts() [2]Bin64 {
+// Bin64s returns two bin64 values.
+func (b Bin128) Bin64s() [2]Bin64 {
 	var b0, b1 Bin64
 	copy(b0[:], b[:])
 	copy(b1[:], b[8:])

@@ -82,8 +82,8 @@ func (b Bin256) Size() int {
 
 // Parts
 
-// Ints returns four int64s decoded as big-endian.
-func (b Bin256) Ints() [4]int64 {
+// Int64s returns four int64s decoded as big-endian.
+func (b Bin256) Int64s() [4]int64 {
 	v0 := binary.BigEndian.Uint64(b[:])
 	v1 := binary.BigEndian.Uint64(b[8:])
 	v2 := binary.BigEndian.Uint64(b[16:])
@@ -91,8 +91,8 @@ func (b Bin256) Ints() [4]int64 {
 	return [4]int64{int64(v0), int64(v1), int64(v2), int64(v3)}
 }
 
-// Parts returns four bin64 values.
-func (b Bin256) Parts() [4]Bin64 {
+// Bin64s returns four bin64 values.
+func (b Bin256) Bin64s() [4]Bin64 {
 	var b0, b1, b2, b3 Bin64
 	copy(b0[:], b[:])
 	copy(b1[:], b[8:])
