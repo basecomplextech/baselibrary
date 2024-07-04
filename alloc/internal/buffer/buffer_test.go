@@ -1,4 +1,4 @@
-package buf
+package buffer
 
 import (
 	"testing"

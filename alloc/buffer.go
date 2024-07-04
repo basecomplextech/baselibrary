@@ -1,21 +1,21 @@
 package alloc
 
 import (
-	"github.com/basecomplextech/baselibrary/alloc/internal/buf"
+	"github.com/basecomplextech/baselibrary/alloc/internal/buffer"
 )
 
 // Buffer is a buffer allocated by an allocator.
 // The buffer must be freed after usage.
-type Buffer = buf.Buffer
+type Buffer = buffer.Buffer
 
 // NewBuffer allocates a buffer.
 func NewBuffer() Buffer {
-	return buf.New()
+	return buffer.New()
 }
 
 // NewBuffer allocates a buffer of a preallocated capacity.
 func NewBufferSize(size int) Buffer {
-	return buf.NewSize(size)
+	return buffer.NewSize(size)
 }
 
 // AcquireBuffer returns a new buffer from the pool.
@@ -28,5 +28,5 @@ func NewBufferSize(size int) Buffer {
 //	buf := alloc.AcquireBuffer()
 //	defer buf.Free() // free immediately
 func AcquireBuffer() Buffer {
-	return buf.Acquire()
+	return buffer.Acquire()
 }
