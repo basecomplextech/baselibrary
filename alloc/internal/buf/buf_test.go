@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testBuffer() *Buffer {
+func testBuffer() *bufferImpl {
 	h := heap.New()
 	return newBuffer(h)
 }
 
-func testBufferSize(size int) *Buffer {
+func testBufferSize(size int) *bufferImpl {
 	h := heap.New()
 	return newBufferSize(h, size)
 }
@@ -21,7 +21,7 @@ func testBufferSize(size int) *Buffer {
 // Acquire
 
 func TestAcquire__should_acquire_buffer(t *testing.T) {
-	b := Acquire()
+	b := Acquire().(*bufferImpl)
 	assert.NotNil(t, b.state)
 
 	b.Free()

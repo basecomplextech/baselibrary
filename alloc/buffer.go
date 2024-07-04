@@ -9,12 +9,12 @@ import (
 type Buffer = buf.Buffer
 
 // NewBuffer allocates a buffer.
-func NewBuffer() *Buffer {
+func NewBuffer() Buffer {
 	return buf.New()
 }
 
 // NewBuffer allocates a buffer of a preallocated capacity.
-func NewBufferSize(size int) *Buffer {
+func NewBufferSize(size int) Buffer {
 	return buf.NewSize(size)
 }
 
@@ -27,6 +27,6 @@ func NewBufferSize(size int) *Buffer {
 //
 //	buf := alloc.AcquireBuffer()
 //	defer buf.Free() // free immediately
-func AcquireBuffer() *Buffer {
+func AcquireBuffer() Buffer {
 	return buf.Acquire()
 }

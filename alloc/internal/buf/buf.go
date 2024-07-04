@@ -7,17 +7,44 @@ import (
 	"github.com/basecomplextech/baselibrary/buffer"
 	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/basecomplextech/baselibrary/pools"
-	"github.com/basecomplextech/baselibrary/ref"
-)
-
-var (
-	_ buffer.Buffer = (*Buffer)(nil)
-	_ buffer.Writer = (*Buffer)(nil)
-	_ ref.Freer     = (*Buffer)(nil)
 )
 
 // Buffer is a byte buffer, which internally allocates memory in blocks.
-type Buffer struct {
+type Buffer interface {
+	buffer.Buffer
+	buffer.Writer
+
+	// Free releases the buffer and its internal resources.
+	// The buffer cannot be used after it has been freed.
+	Free()
+}
+
+// New returns a new buffer.
+func New() Buffer {
+	return newBufferSize(heap.Global, heap.MinBlockSize)
+}
+
+// NewSize returns a new buffer with a preallocated memory storage.
+func NewSize(size int) Buffer {
+	return newBufferSize(heap.Global, size)
+}
+
+// Acquire returns a new buffer from the pool.
+//
+// The buffer must not be used or even referenced after Free.
+// Use these method only when buffers do not escape an isolated scope.
+//
+// Typical usage:
+//
+//	buf := alloc.AcquireBuffer()
+//	defer buf.Free() // free immediately
+func Acquire() Buffer {
+	return acquireBuffer()
+}
+
+// internal
+
+type bufferImpl struct {
 	*state
 }
 
@@ -31,35 +58,12 @@ type state struct {
 	blocks []*heap.Block
 }
 
-// New returns a new buffer.
-func New() *Buffer {
-	return newBufferSize(heap.Global, heap.MinBlockSize)
-}
-
-// NewSize returns a new buffer with a preallocated memory storage.
-func NewSize(size int) *Buffer {
-	return newBufferSize(heap.Global, size)
-}
-
-// Acquire returns a new buffer from the pool.
-//
-// The buffer must not be used or even referenced after Free.
-// Use these method only when buffers do not escape an isolated scope.
-//
-// Typical usage:
-//
-//	buf := alloc.AcquireBuffer()
-//	defer buf.Free() // free immediately
-func Acquire() *Buffer {
-	return acquireBuffer()
-}
-
-func newBuffer(h *heap.Heap) *Buffer {
+func newBuffer(h *heap.Heap) *bufferImpl {
 	return newBufferSize(h, heap.MinBlockSize)
 }
 
-func newBufferSize(heap *heap.Heap, size int) *Buffer {
-	b := &Buffer{acquireState()}
+func newBufferSize(heap *heap.Heap, size int) *bufferImpl {
+	b := &bufferImpl{acquireState()}
 	b.heap = heap
 	if size > 0 {
 		b.init = b.allocBlock(size).Cap()
@@ -68,7 +72,7 @@ func newBufferSize(heap *heap.Heap, size int) *Buffer {
 }
 
 // Free frees the buffer and releases its memory to the heap.
-func (b *Buffer) Free() {
+func (b *bufferImpl) Free() {
 	if b.pooled {
 		releaseBuffer(b)
 		return
@@ -83,13 +87,13 @@ func (b *Buffer) Free() {
 }
 
 // Len returns the number of bytes in the buffer; b.Len() == len(b.Bytes()).
-func (b *Buffer) Len() int {
+func (b *bufferImpl) Len() int {
 	return b.len
 }
 
 // Bytes returns a byte slice with the buffer bytes.
 // It is valid for use only until the next buffer mutation.
-func (b *Buffer) Bytes() []byte {
+func (b *bufferImpl) Bytes() []byte {
 	if len(b.blocks) == 0 {
 		return nil
 	}
@@ -99,7 +103,7 @@ func (b *Buffer) Bytes() []byte {
 }
 
 // Grow grows the buffer and returns an n-byte slice.
-func (b *Buffer) Grow(n int) []byte {
+func (b *bufferImpl) Grow(n int) []byte {
 	last := b.last()
 	if last == nil || last.Rem() < n {
 		last = b.allocBlock(n)
@@ -111,21 +115,21 @@ func (b *Buffer) Grow(n int) []byte {
 }
 
 // Write appends bytes from p to the buffer.
-func (b *Buffer) Write(p []byte) (n int, err error) {
+func (b *bufferImpl) Write(p []byte) (n int, err error) {
 	q := b.Grow(len(p))
 	n = copy(q, p)
 	return
 }
 
 // WriteByte writes a byte to the buffer.
-func (b *Buffer) WriteByte(c byte) error {
+func (b *bufferImpl) WriteByte(c byte) error {
 	q := b.Grow(1)
 	q[0] = c
 	return nil
 }
 
 // WriteRune writes a rune to the buffer.
-func (b *Buffer) WriteRune(r rune) (n int, err error) {
+func (b *bufferImpl) WriteRune(r rune) (n int, err error) {
 	p := [utf8.UTFMax]byte{}
 	n = utf8.EncodeRune(p[:], r)
 
@@ -135,21 +139,21 @@ func (b *Buffer) WriteRune(r rune) (n int, err error) {
 }
 
 // WriteString writes a string to the buffer.
-func (b *Buffer) WriteString(s string) (n int, err error) {
+func (b *bufferImpl) WriteString(s string) (n int, err error) {
 	q := b.Grow(len(s))
 	n = copy(q, s)
 	return
 }
 
 // Reset resets the buffer to be empty.
-func (b *Buffer) Reset() {
+func (b *bufferImpl) Reset() {
 	b.reset()
 }
 
 // private
 
 // last returns the last block or nil.
-func (b *Buffer) last() *heap.Block {
+func (b *bufferImpl) last() *heap.Block {
 	if len(b.blocks) == 0 {
 		return nil
 	}
@@ -157,7 +161,7 @@ func (b *Buffer) last() *heap.Block {
 }
 
 // merge merges multiple blocks into a single one.
-func (b *Buffer) merge() {
+func (b *bufferImpl) merge() {
 	if len(b.blocks) <= 1 {
 		return
 	}
@@ -174,7 +178,7 @@ func (b *Buffer) merge() {
 }
 
 // reset resets the buffer, frees the blocks except the first one.
-func (b *Buffer) reset() {
+func (b *bufferImpl) reset() {
 	b.len = 0
 	if len(b.blocks) == 0 {
 		return
@@ -200,7 +204,7 @@ func (b *Buffer) reset() {
 // blocks
 
 // allocBlock allocates the next block.
-func (b *Buffer) allocBlock(n int) *heap.Block {
+func (b *bufferImpl) allocBlock(n int) *heap.Block {
 	// Use initial size or double last block capacity
 	size := 0
 	if len(b.blocks) == 0 {
@@ -219,7 +223,7 @@ func (b *Buffer) allocBlock(n int) *heap.Block {
 }
 
 // freeBlocks clears and frees the blocks.
-func (b *Buffer) freeBlocks() {
+func (b *bufferImpl) freeBlocks() {
 	b.heap.FreeMany(b.blocks...)
 
 	slices.Zero(b.blocks) // for gc
@@ -229,18 +233,18 @@ func (b *Buffer) freeBlocks() {
 // pool
 
 var pool = pools.NewPoolFunc(
-	func() *Buffer {
+	func() *bufferImpl {
 		b := newBuffer(heap.Global)
 		b.pooled = true
 		return b
 	},
 )
 
-func acquireBuffer() *Buffer {
+func acquireBuffer() *bufferImpl {
 	return pool.New()
 }
 
-func releaseBuffer(b *Buffer) {
+func releaseBuffer(b *bufferImpl) {
 	b.reset()
 	pool.Put(b)
 }
