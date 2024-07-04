@@ -26,6 +26,7 @@ func Bytes(a Arena, len int) []byte {
 		return nil
 	}
 
+	// This is a bit faster than a.Bytes()
 	ptr := a.Alloc(len)
 	return unsafe.Slice((*byte)(ptr), len)
 }

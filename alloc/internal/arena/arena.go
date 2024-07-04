@@ -4,6 +4,7 @@ import (
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
+	"github.com/basecomplextech/baselibrary/buffer"
 	"github.com/basecomplextech/baselibrary/collect/sets"
 	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/basecomplextech/baselibrary/pools"
@@ -24,6 +25,12 @@ type Arena interface {
 
 	// Alloc allocates a memory block and returns a pointer to it.
 	Alloc(size int) unsafe.Pointer
+
+	// Bytes allocates a byte slice.
+	Bytes(size int) []byte
+
+	// Buffer allocates a buffer in the arena, the buffer cannot be freed.
+	Buffer() buffer.Buffer
 
 	// Pin pins an external object to the arena.
 	// The method is used to prevent the object from being collected by the garbage collector.
@@ -105,6 +112,23 @@ func (a *arena) Alloc(size int) unsafe.Pointer {
 
 	b := a.allocBlock(size)
 	return b.Alloc(size)
+}
+
+// Bytes allocates a byte slice.
+func (a *arena) Bytes(size int) []byte {
+	if size == 0 {
+		return nil
+	}
+
+	ptr := a.Alloc(size)
+	return unsafe.Slice((*byte)(ptr), size)
+}
+
+// Buffer allocates a buffer in the arena, the buffer cannot be freed.
+func (a *arena) Buffer() buffer.Buffer {
+	b := Alloc[arenaBuffer](a)
+	b.init(a)
+	return b
 }
 
 // Pin pins an external object to the arena.
