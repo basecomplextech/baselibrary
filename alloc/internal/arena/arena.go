@@ -6,7 +6,6 @@ import (
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 	"github.com/basecomplextech/baselibrary/buffer"
 	"github.com/basecomplextech/baselibrary/collect/sets"
-	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
@@ -192,7 +191,7 @@ func (s *state) reset() {
 
 	// Free other blocks
 	s.heap.FreeMany(s.blocks[n:]...)
-	slices.Zero(s.blocks[n:]) // for gc
+	clear(s.blocks[n:]) // for gc
 	s.blocks = s.blocks[:n]
 }
 

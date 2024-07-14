@@ -1,10 +1,11 @@
 package refmap
 
 import (
+	"slices"
 	"sort"
 	"testing"
 
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/basecomplextech/baselibrary/tests"
 	"github.com/stretchr/testify/assert"
@@ -91,7 +92,7 @@ func TestMap_Length__should_return_item_count(t *testing.T) {
 
 	btree := testBtree(t)
 	items := testItems()
-	slices.Shuffle(items)
+	slices2.Shuffle(items)
 
 	for i, item := range items {
 		btree.SetRetain(item.Key, item.Value)
@@ -186,7 +187,7 @@ func TestMap_Freeze__should_recursively_freeze_btree(t *testing.T) {
 func TestMap_Get__should_return_item_value(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
-	slices.Shuffle(items)
+	slices2.Shuffle(items)
 
 	for _, item := range items {
 		btree.SetRetain(item.Key, item.Value)
@@ -221,7 +222,7 @@ func TestMap_Get__should_not_retain_value(t *testing.T) {
 func TestMap_Put__should_insert_items_in_correct_order(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
-	slices.Shuffle(items)
+	slices2.Shuffle(items)
 
 	for _, item := range items {
 		btree.SetRetain(item.Key, item.Value)
@@ -273,7 +274,7 @@ func TestMap_Put__should_retain_release_item_on_replace(t *testing.T) {
 func TestMap_Delete__should_delete_items(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
-	slices.Shuffle(items)
+	slices2.Shuffle(items)
 	testPut(t, btree, items...)
 
 	for _, item := range items {
@@ -300,7 +301,7 @@ func TestMap_Delete__should_release_values(t *testing.T) {
 func TestMap_Contains__should_return_true_when_btree_contains_item(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
-	slices.Shuffle(items)
+	slices2.Shuffle(items)
 
 	for _, item := range items {
 		btree.SetRetain(item.Key, item.Value)
@@ -315,7 +316,7 @@ func TestMap_Contains__should_return_true_when_btree_contains_item(t *testing.T)
 func TestMap_items__should_returns_items_as_slice(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
-	slices.Shuffle(items)
+	slices2.Shuffle(items)
 	testPut(t, btree, items...)
 
 	sortItems(items)
@@ -345,14 +346,14 @@ func TestMap_keys__should_return_keys_as_slice(t *testing.T) {
 func TestMap_values__should_return_values_as_slice(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
-	slices.Shuffle(items)
+	slices2.Shuffle(items)
 	testPut(t, btree, items...)
 
 	values := make([]ref.R[*Value], 0, len(items))
 	for _, item := range items {
 		values = append(values, item.Value)
 	}
-	slices.SortCompare(values, func(a, b ref.R[*Value]) bool {
+	slices2.SortLess(values, func(a, b ref.R[*Value]) bool {
 		return a.Unwrap().val < b.Unwrap().val
 	})
 

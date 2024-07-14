@@ -1,9 +1,10 @@
 package async
 
 import (
+	"slices"
 	"testing"
 
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 )
 
 // Read
@@ -46,7 +47,7 @@ func BenchmarkConcurrentMap_Read_Parallel(b *testing.B) {
 
 	b.RunParallel(func(p *testing.PB) {
 		items1 := slices.Clone(items)
-		slices.Shuffle(items1)
+		slices2.Shuffle(items1)
 
 		var j int
 		for p.Next() {
@@ -103,7 +104,7 @@ func BenchmarkConcurrentMap_Write_Parallel(b *testing.B) {
 
 	b.RunParallel(func(p *testing.PB) {
 		items1 := slices.Clone(items)
-		slices.Shuffle(items1)
+		slices2.Shuffle(items1)
 		var j int
 
 		for p.Next() {

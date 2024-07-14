@@ -7,7 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -470,7 +470,7 @@ func (q *queue) freeBlocks() {
 		releaseBlock(b)
 	}
 
-	slices.Clear(q.more)
+	slices2.Truncate(q.more)
 	q.more = q.more[:0]
 }
 

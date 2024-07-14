@@ -1,9 +1,9 @@
 package memfs
 
 import (
+	"slices"
 	"testing"
 
-	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/stretchr/testify/assert"
 )
 

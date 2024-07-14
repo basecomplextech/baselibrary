@@ -1,9 +1,6 @@
 package orderedmap
 
-import (
-	"github.com/basecomplextech/baselibrary/collect/maps"
-	"github.com/basecomplextech/baselibrary/collect/slices"
-)
+import "github.com/basecomplextech/baselibrary/collect/slices2"
 
 // Map is an ordered map which maintains the order of insertion, even on updates.
 type Map[K comparable, V any] struct {
@@ -101,8 +98,8 @@ func (m *Map[K, V]) Delete(key K) {
 
 // Clear removes all items from the map.
 func (m *Map[K, V]) Clear() {
-	m.list = slices.Clear(m.list)
-	maps.Clear(m.map_)
+	m.list = slices2.Truncate(m.list)
+	clear(m.map_)
 }
 
 // Clone returns a clone of the map.

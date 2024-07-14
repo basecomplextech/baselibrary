@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 )
@@ -80,7 +80,7 @@ func nextBranchNode[K, V any](items []branchItem[K, V]) *branchNode[K, V] {
 // reset
 
 func (n *branchNode[K, V]) reset() {
-	n.items = slices.Clear(n.items)
+	n.items = slices2.Truncate(n.items)
 	*n = branchNode[K, V]{}
 }
 
@@ -106,7 +106,7 @@ func (n *branchNode[K, V]) release() {
 	for _, item := range n.items {
 		item.node.release()
 	}
-	n.items = slices.Clear(n.items)
+	n.items = slices2.Truncate(n.items)
 
 	// Release node
 	releaseBranch[K, V](n)

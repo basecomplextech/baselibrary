@@ -2,8 +2,7 @@ package priorityq
 
 import (
 	"container/heap"
-
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"slices"
 )
 
 // Queue is a priority queue that is implemented using a heap.

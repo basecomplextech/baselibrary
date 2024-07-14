@@ -1,11 +1,4 @@
-package maps
-
-// Clear removes all items from the map.
-func Clear[M ~map[K]V, K comparable, V any](m M) {
-	for k := range m {
-		delete(m, k)
-	}
-}
+package maps2
 
 // Clone returns a map clone, skips nil maps.
 func Clone[M ~map[K]V, K comparable, V any](m M) M {

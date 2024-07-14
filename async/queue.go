@@ -3,7 +3,7 @@ package async
 import (
 	"sync"
 
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 )
 
 // Queue is an unbounded FIFO queue.
@@ -59,7 +59,7 @@ func (q *queue[T]) Clear() {
 	defer q.mu.Unlock()
 	q.assertNotFreed()
 
-	q.list = slices.Clear(q.list)
+	q.list = slices2.Truncate(q.list)
 }
 
 // Len returns the number of elements in the queue.

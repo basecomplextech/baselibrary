@@ -1,9 +1,10 @@
 package priorityq
 
 import (
+	"slices"
 	"testing"
 
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +22,7 @@ func TestQueue_Init_Pop__should_init_queue_and_pop_items_in_order(t *testing.T) 
 	}
 
 	items1 := slices.Clone(items)
-	slices.Shuffle(items1)
+	slices2.Shuffle(items1)
 	compare := func(a, b int) int { return a - b }
 
 	q := New(compare, items1...)
@@ -53,7 +54,7 @@ func TestQueue_Push_Pop__should_push_and_pop_items_in_order(t *testing.T) {
 	}
 
 	items1 := slices.Clone(items)
-	slices.Shuffle(items1)
+	slices2.Shuffle(items1)
 	compare := func(a, b int) int { return a - b }
 
 	q := New[string, int](compare)

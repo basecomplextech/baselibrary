@@ -5,7 +5,7 @@ import (
 
 	"github.com/basecomplextech/baselibrary/alloc/internal/heap"
 	"github.com/basecomplextech/baselibrary/buffer"
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
@@ -197,7 +197,7 @@ func (b *bufferImpl) reset() {
 
 	// Free other blocks
 	b.heap.FreeMany(b.blocks[n:]...)
-	slices.Zero(b.blocks[n:]) // for gc
+	clear(b.blocks[n:]) // for gc
 	b.blocks = b.blocks[:n]
 }
 
@@ -226,8 +226,7 @@ func (b *bufferImpl) allocBlock(n int) *heap.Block {
 func (b *bufferImpl) freeBlocks() {
 	b.heap.FreeMany(b.blocks...)
 
-	slices.Zero(b.blocks) // for gc
-	b.blocks = b.blocks[:0]
+	b.blocks = slices2.Truncate(b.blocks) // for gc
 }
 
 // pool
@@ -267,7 +266,7 @@ func releaseState(s *state) {
 }
 
 func (s *state) reset() {
-	blocks := slices.Clear(s.blocks)
+	blocks := slices2.Truncate(s.blocks)
 
 	*s = state{}
 	s.blocks = blocks

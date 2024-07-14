@@ -1,7 +1,7 @@
 package refmap
 
 import (
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/basecomplextech/baselibrary/status"
@@ -101,7 +101,7 @@ func newIterator[K, V any](tree *btree[K, V]) *iterator[K, V] {
 // reset
 
 func (s *iterState[K, V]) reset() {
-	stack := slices.Clear(s.stack)
+	stack := slices2.Truncate(s.stack)
 
 	*s = iterState[K, V]{}
 	s.stack = stack

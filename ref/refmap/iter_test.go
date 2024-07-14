@@ -1,9 +1,9 @@
 package refmap
 
 import (
+	"slices"
 	"testing"
 
-	"github.com/basecomplextech/baselibrary/collect/slices"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

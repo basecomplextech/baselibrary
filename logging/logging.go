@@ -2,8 +2,7 @@ package logging
 
 import (
 	"os"
-
-	"github.com/basecomplextech/baselibrary/collect/slices"
+	"slices"
 )
 
 // Logging is a logging service.
