@@ -20,7 +20,7 @@ type RoutineDyn interface {
 	Stop() <-chan struct{}
 }
 
-// Constructors
+// Go
 
 // Go runs a function in a new routine, recovers on panics.
 func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
@@ -45,6 +45,31 @@ func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
 	return r
 }
 
+// GoPool runs a function in a pool, recovers on panics.
+func GoPool(pool Pool, fn func(ctx Context) status.Status) Routine[struct{}] {
+	r := newRoutine[struct{}]()
+
+	pool.Go(func() {
+		defer r.ctx.Free()
+		defer func() {
+			e := recover()
+			if e == nil {
+				return
+			}
+
+			st := status.Recover(e)
+			r.result.Complete(struct{}{}, st)
+		}()
+
+		st := fn(r.ctx)
+		r.result.Complete(struct{}{}, st)
+	})
+
+	return r
+}
+
+// Call
+
 // Call calls a function in a new routine, and returns its result, recovers on panics.
 func Call[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
@@ -68,6 +93,32 @@ func Call[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 
 	return r
 }
+
+// CallPool calls a function in a pool, and returns its result, recovers on panics.
+func CallPool[T any](pool Pool, fn func(ctx Context) (T, status.Status)) Routine[T] {
+	r := newRoutine[T]()
+
+	pool.Go(func() {
+		defer r.ctx.Free()
+		defer func() {
+			e := recover()
+			if e == nil {
+				return
+			}
+
+			var zero T
+			st := status.Recover(e)
+			r.result.Complete(zero, st)
+		}()
+
+		result, st := fn(r.ctx)
+		r.result.Complete(result, st)
+	})
+
+	return r
+}
+
+// Exited
 
 // Exited returns a routine which has exited with the given result and status.
 func Exited[T any](result T, st status.Status) Routine[T] {
