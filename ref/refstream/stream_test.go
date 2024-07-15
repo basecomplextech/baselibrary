@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/basecomplextech/baselibrary/ref"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zeebo/assert"
 )
 
 func TestStream__should_increment_refs(t *testing.T) {

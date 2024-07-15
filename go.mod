@@ -6,7 +6,6 @@ require (
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/mattn/go-isatty v0.0.17
 	github.com/stretchr/testify v1.7.0
-	github.com/zeebo/blake3 v0.2.3
 	github.com/zeebo/xxh3 v1.0.2
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
