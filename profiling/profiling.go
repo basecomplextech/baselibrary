@@ -28,9 +28,9 @@ func Init(config *Config) error {
 	return nil
 }
 
-// Load loads a profiling config from a json file if it exists and initializes the profiling service.
+// Load loads a profiling config from a json/yaml file if it exists and initializes the profiling service.
 func Load(path string) error {
-	config, err := LoadConfig(path)
+	config, err := ReadConfig(path)
 	switch {
 	case os.IsNotExist(err):
 		config = DefaultConfig()

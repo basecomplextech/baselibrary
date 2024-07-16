@@ -2,8 +2,11 @@ package profiling
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -91,13 +94,21 @@ func DefaultConfig() *Config {
 	}
 }
 
-// LoadConfig reads a profiling config from a json file.
-func LoadConfig(path string) (*Config, error) {
+// ReadConfig reads a profiling config from a JSON or YAML file.
+func ReadConfig(path string) (*Config, error) {
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".yaml", ".yml":
+		return readConfigYaml(path)
+	}
+	return readConfigJson(path)
+}
+
+// private
+
+func readConfigJson(path string) (*Config, error) {
 	// Init default
 	config := DefaultConfig()
-	if path == "" {
-		return config, nil
-	}
 
 	// Read file
 	data, err := os.ReadFile(path)
@@ -107,7 +118,25 @@ func LoadConfig(path string) (*Config, error) {
 
 	// Parse json
 	if err := json.Unmarshal(data, config); err != nil {
-		return nil, fmt.Errorf("profiling.ReadConfig: %w", err)
+		return nil, err
+	}
+	return config, nil
+}
+
+func readConfigYaml(path string) (*Config, error) {
+	// Init default
+	config := DefaultConfig()
+
+	// Open file
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	// Parse yaml
+	if err := yaml.NewDecoder(file).Decode(config); err != nil {
+		return nil, err
 	}
 	return config, nil
 }

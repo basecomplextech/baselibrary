@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Config specifies the logging configuration.
@@ -56,19 +56,19 @@ func DefaultConfig() *Config {
 	}
 }
 
-// LoadConfig reads a configuration from a JSON or YAML file.
-func LoadConfig(path string) (*Config, error) {
+// ReadConfig reads a configuration from a JSON or YAML file.
+func ReadConfig(path string) (*Config, error) {
 	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
 	case ".yaml", ".yml":
-		return loadConfigYAML(path)
+		return readConfigYaml(path)
 	}
-	return loadConfigJSON(path)
+	return readConfigJson(path)
 }
 
 // private
 
-func loadConfigJSON(path string) (*Config, error) {
+func readConfigJson(path string) (*Config, error) {
 	config := DefaultConfig()
 
 	data, err := os.ReadFile(path)
@@ -82,7 +82,7 @@ func loadConfigJSON(path string) (*Config, error) {
 	return config, nil
 }
 
-func loadConfigYAML(path string) (*Config, error) {
+func readConfigYaml(path string) (*Config, error) {
 	config := DefaultConfig()
 
 	file, err := os.Open(path)

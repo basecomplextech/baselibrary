@@ -30,7 +30,7 @@ func Init(config *Config) (Logging, error) {
 
 // Load loads a logging config from a JSON/YAML file if it exists and returns a new logging service.
 func Load(path string) (Logging, error) {
-	config, err := LoadConfig(path)
+	config, err := ReadConfig(path)
 	switch {
 	case os.IsNotExist(err):
 		config = DefaultConfig()
