@@ -221,18 +221,17 @@ func (x *context) get(typ reflect.Type) reflect.Value {
 	return obj
 }
 
-// stackString returns the stack in reverse order.
+// stackString returns the stack in direct order.
 //
-// Example: logging.Logger <- blobs.Blobs <- server.Server
+// Example: server.Server -> blobs.Blobs -> logging.Logger
 func (x *context) stackString() string {
 	sb := strings.Builder{}
 
-	for i := len(x.stack) - 1; i >= 0; i-- {
-		sb.WriteString(x.stack[i].String())
-
-		if i > 0 {
-			sb.WriteString(" <- ")
+	for i, s := range x.stack {
+		if i != 0 {
+			sb.WriteString(" -> ")
 		}
+		sb.WriteString(s.String())
 	}
 
 	return sb.String()
