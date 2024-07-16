@@ -12,8 +12,11 @@ import (
 )
 
 const (
-	maxLoggerLength  = 50
-	maxMessageLength = 50
+	loggerLength    = 25
+	loggerLengthMax = 50
+
+	messageLength    = 25
+	messageLengthMax = 50
 )
 
 type textFormatter struct {
@@ -30,8 +33,8 @@ func newTextFormatter(color bool) *textFormatter {
 		color: color,
 		theme: DefaultColorTheme(),
 
-		loggerLen:  10,
-		messageLen: 20,
+		loggerLen:  loggerLength,
+		messageLen: messageLength,
 	}
 }
 
@@ -70,7 +73,7 @@ func (f *textFormatter) writeLogger(w *terminal.Writer, rec *Record) {
 	w.WriteString(logger)
 	w.ResetColor()
 
-	f.maybePadding(w, len(logger), maxLoggerLength, &f.loggerLen)
+	f.maybePadding(w, len(logger), loggerLengthMax, &f.loggerLen)
 	w.WriteString(" ")
 	w.WriteString("\t")
 }
@@ -97,7 +100,7 @@ func (f *textFormatter) writeMessage(w *terminal.Writer, rec *Record) {
 	w.WriteString(rec.Message)
 	w.ResetColor()
 
-	f.maybePadding(w, len(rec.Message), maxMessageLength, &f.messageLen)
+	f.maybePadding(w, len(rec.Message), messageLengthMax, &f.messageLen)
 	w.WriteString("\t")
 }
 
