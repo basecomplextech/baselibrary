@@ -155,11 +155,11 @@ func (b Bin256) AppendHexTo(buf []byte) []byte {
 	buf = buf[:n1]
 	hex.Encode(buf[n:], b[:8])
 	buf[n+16] = '-'
-	hex.Encode(buf[n+17:], b[8:12])
+	hex.Encode(buf[n+17:], b[8:16])
 	buf[n+33] = '-'
-	hex.Encode(buf[n+34:], b[12:16])
+	hex.Encode(buf[n+34:], b[16:24])
 	buf[n+50] = '-'
-	hex.Encode(buf[n+51:], b[16:24])
+	hex.Encode(buf[n+51:], b[24:])
 	return buf
 }
 
