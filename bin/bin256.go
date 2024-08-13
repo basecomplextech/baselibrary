@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"regexp"
+
+	"github.com/basecomplextech/baselibrary/buffer"
 )
 
 const (
@@ -174,6 +176,13 @@ func (b Bin256) Marshal() ([]byte, error) {
 func (b Bin256) MarshalTo(buf []byte) (n int, err error) {
 	copy(buf, b[:])
 	return len(b), nil
+}
+
+// MarshalToBuffer marshals the value to a buffer.
+func (b Bin256) MarshalToBuffer(buf buffer.Buffer) []byte {
+	p := buf.Grow(ByteLen256)
+	copy(p, b[:])
+	return p
 }
 
 // Unmarshal parses a 32-byte array.
