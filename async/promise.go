@@ -28,7 +28,7 @@ var _ Promise[any] = (*promise[any])(nil)
 
 type promise[T any] struct {
 	mu   sync.Mutex
-	wait chan struct{} // lazily initialized
+	wait chan struct{}
 
 	st     status.Status
 	done   bool
@@ -36,7 +36,15 @@ type promise[T any] struct {
 }
 
 func newPromise[T any]() *promise[T] {
-	return &promise[T]{}
+	return &promise[T]{
+		wait: make(chan struct{}),
+	}
+}
+
+func newPromiseEmbedded[T any]() promise[T] {
+	return promise[T]{
+		wait: make(chan struct{}),
+	}
 }
 
 // Wait returns a channel which is closed when the result is available.
@@ -46,10 +54,6 @@ func (p *promise[T]) Wait() <-chan struct{} {
 
 	if p.done {
 		return closedChan
-	}
-
-	if p.wait == nil {
-		p.wait = make(chan struct{})
 	}
 	return p.wait
 }
@@ -66,10 +70,7 @@ func (p *promise[T]) Complete(result T, st status.Status) bool {
 	p.st = st
 	p.done = true
 	p.result = result
-
-	if p.wait != nil {
-		close(p.wait)
-	}
+	close(p.wait)
 	return true
 }
 

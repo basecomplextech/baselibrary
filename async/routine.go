@@ -139,7 +139,7 @@ type routine[T any] struct {
 func newRoutine[T any]() *routine[T] {
 	return &routine[T]{
 		ctx:    newContext(nil /* no parent */),
-		result: promise[T]{},
+		result: newPromiseEmbedded[T](),
 	}
 }
 
