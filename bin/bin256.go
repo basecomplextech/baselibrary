@@ -168,14 +168,13 @@ func (b Bin256) AppendHexTo(buf []byte) []byte {
 // Marshal
 
 // Marshal marshals the value to a 32-byte array.
-func (b Bin256) Marshal() ([]byte, error) {
-	return b[:], nil
+func (b Bin256) Marshal() []byte {
+	return b[:]
 }
 
 // MarshalTo marshals the value to a 32-byte array.
-func (b Bin256) MarshalTo(buf []byte) (n int, err error) {
+func (b Bin256) MarshalTo(buf []byte) {
 	copy(buf, b[:])
-	return len(b), nil
 }
 
 // MarshalToBuffer marshals the value to a buffer.
