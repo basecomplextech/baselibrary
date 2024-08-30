@@ -53,3 +53,12 @@ type FileSystem interface {
 func New() FileSystem {
 	return newFS()
 }
+
+// Default returns the default file system.
+func Default() FileSystem {
+	return defaultFS
+}
+
+// private
+
+var defaultFS = newFS()
