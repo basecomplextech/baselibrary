@@ -14,6 +14,9 @@ type Buffer interface {
 	buffer.Buffer
 	buffer.Writer
 
+	// Rem returns the remaining capacity of the buffer.
+	Rem() int
+
 	// Free releases the buffer and its internal resources.
 	// The buffer cannot be used after it has been freed.
 	Free()
@@ -89,6 +92,15 @@ func (b *bufferImpl) Free() {
 // Len returns the number of bytes in the buffer; b.Len() == len(b.Bytes()).
 func (b *bufferImpl) Len() int {
 	return b.len
+}
+
+// Rem returns the remaining capacity of the buffer.
+func (b *bufferImpl) Rem() int {
+	last := b.last()
+	if last == nil {
+		return 0
+	}
+	return last.Rem()
 }
 
 // Bytes returns a byte slice with the buffer bytes.
