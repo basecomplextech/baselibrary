@@ -38,3 +38,18 @@ func CopyBytes(a Arena, src []byte) []byte {
 	copy(dst, src)
 	return dst
 }
+
+// CopyBytesTo copies bytes from src into dst, growing dst if needed.
+func CopyBytesTo(a Arena, dst []byte, src []byte) []byte {
+	if dst == nil {
+		return CopyBytes(a, src)
+	}
+
+	if cap(dst) < len(src) {
+		return CopyBytes(a, src)
+	}
+
+	dst = dst[:len(src)]
+	copy(dst, src)
+	return dst
+}
