@@ -3,14 +3,14 @@ package opt
 
 // Opt is an optional value, an empty value is unset.
 type Opt[T any] struct {
-	Set   bool
+	Valid bool
 	Value T
 }
 
 // New returns a new set value.
 func New[T any](value T) Opt[T] {
 	return Opt[T]{
-		Set:   true,
+		Valid: true,
 		Value: value,
 	}
 }
@@ -23,7 +23,7 @@ func Maybe[T comparable](value T) Opt[T] {
 	}
 
 	return Opt[T]{
-		Set:   true,
+		Valid: true,
 		Value: value,
 	}
 }
@@ -33,19 +33,27 @@ func None[T any]() Opt[T] {
 	return Opt[T]{}
 }
 
-// Clear clears the value.
-func (o *Opt[T]) Clear() {
+// Set sets the value.
+func (o *Opt[T]) Set(value T) {
+	*o = Opt[T]{
+		Valid: true,
+		Value: value,
+	}
+}
+
+// Unset clears the value.
+func (o *Opt[T]) Unset() {
 	*o = Opt[T]{}
 }
 
 // Unwrap returns the value and true if set.
 func (o Opt[T]) Unwrap() (T, bool) {
-	return o.Value, o.Set
+	return o.Value, o.Valid
 }
 
 // MustUnwrap returns the value or panics if not set.
 func (o Opt[T]) MustUnwrap() T {
-	if !o.Set {
+	if !o.Valid {
 		panic("unset value")
 	}
 	return o.Value

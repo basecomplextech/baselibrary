@@ -196,7 +196,7 @@ func (c *context) Wait() <-chan struct{} {
 		return closedChan
 	}
 
-	if !s.channel.Set {
+	if !s.channel.Valid {
 		s.channel = opt.New(make(chan struct{}))
 	}
 	return s.channel.Value
@@ -334,7 +334,7 @@ func (c *context) doCancel(st status.Status) (*contextState, bool) {
 
 	// Mark as done, close
 	s.done = true
-	if s.channel.Set {
+	if s.channel.Valid {
 		close(s.channel.Value)
 	}
 
