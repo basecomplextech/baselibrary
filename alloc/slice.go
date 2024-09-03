@@ -1,6 +1,8 @@
 package alloc
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 // Append appends a new item to a slice, grows the slice if required, and returns the modified slice.
 func Append[S ~[]T, T any](a Arena, s []T, item T) S {
@@ -90,14 +92,15 @@ func growCapacity(oldCap int, capacity int) int {
 	if oldCap < 1024 {
 		newCap = oldCap + oldCap
 	} else {
+		// Grow by 25% after 1024
 		// Detect overflow and prevent an infinite loop.
-		for 0 < newCap && newCap < capacity {
+		newCap = oldCap
+		for newCap < capacity {
 			newCap += newCap / 4
-		}
-
-		// Handle overflow.
-		if newCap <= 0 {
-			newCap = capacity
+			if newCap <= 0 {
+				newCap = capacity
+				break
+			}
 		}
 	}
 
