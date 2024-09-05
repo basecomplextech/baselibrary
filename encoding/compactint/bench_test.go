@@ -24,6 +24,10 @@ func BenchmarkUint32(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 func BenchmarkUint64(b *testing.B) {
@@ -42,6 +46,10 @@ func BenchmarkUint64(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 // Decode reverse
@@ -63,6 +71,10 @@ func BenchmarkReverseInt32(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 func BenchmarkReverseInt64(b *testing.B) {
@@ -82,6 +94,10 @@ func BenchmarkReverseInt64(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 func BenchmarkReverseUint32(b *testing.B) {
@@ -101,6 +117,10 @@ func BenchmarkReverseUint32(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 func BenchmarkReverseUint64(b *testing.B) {
@@ -120,6 +140,10 @@ func BenchmarkReverseUint64(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 // Encode reverse
@@ -134,6 +158,10 @@ func BenchmarkPutReverseUint32(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 func BenchmarkPutReverseUint64(b *testing.B) {
@@ -146,6 +174,10 @@ func BenchmarkPutReverseUint64(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 // Encode
@@ -160,6 +192,10 @@ func BenchmarkPutUint32(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 func BenchmarkPutUint64(b *testing.B) {
@@ -172,6 +208,10 @@ func BenchmarkPutUint64(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 // Standard varint
@@ -190,6 +230,10 @@ func BenchmarkUvarint64(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 func BenchmarkPutUvarint64(b *testing.B) {
@@ -202,6 +246,10 @@ func BenchmarkPutUvarint64(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 // Standard big endian
@@ -217,6 +265,10 @@ func BenchmarkBigEndianUint64(b *testing.B) {
 			b.Fatal()
 		}
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
 
 func BenchmarkPutBigEndianUint64(b *testing.B) {
@@ -226,4 +278,8 @@ func BenchmarkPutBigEndianUint64(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		binary.BigEndian.PutUint64(buf, math.MaxUint64)
 	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(float64(ops)/1000_000, "mops")
 }
