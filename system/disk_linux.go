@@ -1,3 +1,5 @@
+// Copyright 2024 Ivan Korobkov. All rights reserved.
+
 //go:build linux && !s390x && !arm && !386
 // +build linux,!s390x,!arm,!386
 

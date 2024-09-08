@@ -1,3 +1,5 @@
+// Copyright 2023 Ivan Korobkov. All rights reserved.
+
 package maps2
 
 // Clone returns a map clone, skips nil maps.

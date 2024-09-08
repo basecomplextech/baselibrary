@@ -1,3 +1,5 @@
+// Copyright 2024 Ivan Korobkov. All rights reserved.
+
 package bin
 
 // Compare64 compares two bin64 values.

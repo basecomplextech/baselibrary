@@ -1,3 +1,5 @@
+// Copyright 2023 Ivan Korobkov. All rights reserved.
+
 // Package opt provides a generic optional value.
 package opt
 

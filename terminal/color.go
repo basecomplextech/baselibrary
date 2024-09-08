@@ -1,3 +1,5 @@
+// Copyright 2022 Ivan Korobkov. All rights reserved.
+
 package terminal
 
 // Color is a human-readable color.

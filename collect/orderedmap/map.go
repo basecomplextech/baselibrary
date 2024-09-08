@@ -1,3 +1,5 @@
+// Copyright 2023 Ivan Korobkov. All rights reserved.
+
 package orderedmap
 
 import "github.com/basecomplextech/baselibrary/collect/slices2"

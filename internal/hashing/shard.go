@@ -1,3 +1,5 @@
+// Copyright 2024 Ivan Korobkov. All rights reserved.
+
 package hashing
 
 // Shard returns a shard index for a key, panics if the key type is not supported.

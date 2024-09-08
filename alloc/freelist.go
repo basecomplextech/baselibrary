@@ -1,3 +1,5 @@
+// Copyright 2023 Ivan Korobkov. All rights reserved.
+
 package alloc
 
 import "github.com/basecomplextech/baselibrary/alloc/internal/freelist"

@@ -1,3 +1,5 @@
+// Copyright 2022 Ivan Korobkov. All rights reserved.
+
 package sets
 
 // Set is a collection of unique items implemented as a map[T]struct{}.

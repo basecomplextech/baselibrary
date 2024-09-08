@@ -1,3 +1,5 @@
+// Copyright 2024 Ivan Korobkov. All rights reserved.
+
 package streams
 
 import "github.com/basecomplextech/baselibrary/async"

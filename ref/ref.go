@@ -1,3 +1,5 @@
+// Copyright 2021 Ivan Korobkov. All rights reserved.
+
 package ref
 
 // Ref is a countable reference interface without generics, i.e. R[?].

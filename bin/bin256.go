@@ -1,3 +1,5 @@
+// Copyright 2023 Ivan Korobkov. All rights reserved.
+
 // Package bin256 provides a binary 256-bit value.
 package bin
 

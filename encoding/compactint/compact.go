@@ -1,3 +1,5 @@
+// Copyright 2022 Ivan Korobkov. All rights reserved.
+
 // package compactint provides a compact variable length integer encoding.
 //
 // Everything is big-endian.

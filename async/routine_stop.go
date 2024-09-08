@@ -1,3 +1,5 @@
+// Copyright 2024 Ivan Korobkov. All rights reserved.
+
 package async
 
 // StopAll stops all routines, but does not await their stop.

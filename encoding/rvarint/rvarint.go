@@ -1,3 +1,5 @@
+// Copyright 2022 Ivan Korobkov. All rights reserved.
+
 package rvarint
 
 // MaxLenN is the maximum length of a reverse varint-encoded N-bit integer.
