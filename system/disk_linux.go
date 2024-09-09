@@ -1,4 +1,6 @@
 // Copyright 2024 Ivan Korobkov. All rights reserved.
+// Use of this software is governed by the MIT License
+// that can be found in the LICENSE file.
 
 //go:build linux && !s390x && !arm && !386
 // +build linux,!s390x,!arm,!386
