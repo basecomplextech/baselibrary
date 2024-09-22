@@ -72,10 +72,10 @@ func GoPool(pool Pool, fn func(ctx Context) status.Status) Routine[struct{}] {
 	return r
 }
 
-// Call
+// Run
 
-// Call calls a function in a new routine, and returns its result, recovers on panics.
-func Call[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
+// Run runs a function in a new routine, and returns the result, recovers on panics.
+func Run[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
 
 	go func() {
@@ -98,8 +98,8 @@ func Call[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 	return r
 }
 
-// CallPool calls a function in a pool, and returns its result, recovers on panics.
-func CallPool[T any](pool Pool, fn func(ctx Context) (T, status.Status)) Routine[T] {
+// RunPool runs a function in a routine pool, and returns the result, recovers on panics.
+func RunPool[T any](pool Pool, fn func(ctx Context) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
 
 	pool.Go(func() {

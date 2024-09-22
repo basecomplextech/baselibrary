@@ -84,10 +84,10 @@ func TestGo__should_stop_on_request(t *testing.T) {
 	}
 }
 
-// Call
+// Run
 
-func TestCall__should_return_result_on_success(t *testing.T) {
-	p := Call(func(Context) (string, status.Status) {
+func TestRun__should_return_result_on_success(t *testing.T) {
+	p := Run(func(Context) (string, status.Status) {
 		return "hello, world", status.OK
 	})
 	p.Stop()
@@ -105,9 +105,9 @@ func TestCall__should_return_result_on_success(t *testing.T) {
 	}
 }
 
-func TestCall__should_return_status_on_error(t *testing.T) {
+func TestRun__should_return_status_on_error(t *testing.T) {
 	st := status.Test("test")
-	p := Call(func(Context) (string, status.Status) {
+	p := Run(func(Context) (string, status.Status) {
 		return "", st
 	})
 	p.Stop()
@@ -122,8 +122,8 @@ func TestCall__should_return_status_on_error(t *testing.T) {
 	}
 }
 
-func TestCall__should_return_recover_on_panic(t *testing.T) {
-	p := Call(func(Context) (string, status.Status) {
+func TestRun__should_return_recover_on_panic(t *testing.T) {
+	p := Run(func(Context) (string, status.Status) {
 		panic("test")
 	})
 	p.Stop()
@@ -139,8 +139,8 @@ func TestCall__should_return_recover_on_panic(t *testing.T) {
 	}
 }
 
-func TestCall__should_stop_on_request(t *testing.T) {
-	p := Call(func(ctx Context) (string, status.Status) {
+func TestRun__should_stop_on_request(t *testing.T) {
+	p := Run(func(ctx Context) (string, status.Status) {
 		<-ctx.Wait()
 		return "", ctx.Status()
 	})

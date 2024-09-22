@@ -13,10 +13,10 @@ import (
 )
 
 func TestAwaitAll__should_wait_for_all_futures(t *testing.T) {
-	r0 := Call(func(ctx Context) (int, status.Status) {
+	r0 := Run(func(ctx Context) (int, status.Status) {
 		return 1, status.OK
 	})
-	r1 := Call(func(ctx Context) (int, status.Status) {
+	r1 := Run(func(ctx Context) (int, status.Status) {
 		return 2, status.OK
 	})
 
@@ -30,10 +30,10 @@ func TestAwaitAll__should_wait_for_all_futures(t *testing.T) {
 }
 
 func TestAwaitAll__should_accept_slice_of_routines(t *testing.T) {
-	r0 := Call(func(ctx Context) (int, status.Status) {
+	r0 := Run(func(ctx Context) (int, status.Status) {
 		return 1, status.OK
 	})
-	r1 := Call(func(ctx Context) (int, status.Status) {
+	r1 := Run(func(ctx Context) (int, status.Status) {
 		return 2, status.OK
 	})
 
@@ -50,15 +50,15 @@ func TestAwaitAll__should_accept_slice_of_routines(t *testing.T) {
 // AwaitAny
 
 func TestAwaitAny__should_wait_for_any_future(t *testing.T) {
-	r0 := Call(func(ctx Context) (int, status.Status) {
+	r0 := Run(func(ctx Context) (int, status.Status) {
 		time.Sleep(time.Millisecond * 50)
 		return 1, status.OK
 	})
-	r1 := Call(func(ctx Context) (int, status.Status) {
+	r1 := Run(func(ctx Context) (int, status.Status) {
 		time.Sleep(time.Millisecond * 100)
 		return 2, status.OK
 	})
-	r2 := Call(func(ctx Context) (int, status.Status) {
+	r2 := Run(func(ctx Context) (int, status.Status) {
 		return 3, status.OK
 	})
 
@@ -74,14 +74,14 @@ func TestAwaitAny__should_wait_for_any_future(t *testing.T) {
 // AwaitError
 
 func TestAwaitError__should_wait_for_any_error_error(t *testing.T) {
-	r0 := Call(func(ctx Context) (int, status.Status) {
+	r0 := Run(func(ctx Context) (int, status.Status) {
 		return 1, status.OK
 	})
-	r1 := Call(func(ctx Context) (int, status.Status) {
+	r1 := Run(func(ctx Context) (int, status.Status) {
 		time.Sleep(time.Millisecond * 10)
 		return 2, status.Error("test error")
 	})
-	r2 := Call(func(ctx Context) (int, status.Status) {
+	r2 := Run(func(ctx Context) (int, status.Status) {
 		time.Sleep(time.Millisecond * 20)
 		return 3, status.OK
 	})
