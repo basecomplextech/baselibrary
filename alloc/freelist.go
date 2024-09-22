@@ -4,9 +4,10 @@
 
 package alloc
 
-import "github.com/basecomplextech/baselibrary/alloc/internal/freelist"
+import "github.com/basecomplextech/baselibrary/alloc/internal/arena"
 
-// FreeList keeps a linked list of free objects.
+// FreeList is a linked list of free objects allocated in the arena.
+// The list itself is allocated in the arena.
 type FreeList[T any] interface {
 	// Get returns a free object from the list, or allocates a new one.
 	Get() *T
@@ -16,6 +17,7 @@ type FreeList[T any] interface {
 }
 
 // NewFreeList returns a new free list which allocates objects in the given arena.
+// The list itself is allocated in the arena.
 func NewFreeList[T any](a Arena) FreeList[T] {
-	return freelist.New[T](a)
+	return arena.NewFreeList[T](a)
 }

@@ -1,23 +1,22 @@
-// Copyright 2022 Ivan Korobkov. All rights reserved.
-// Use of this software is governed by the MIT License
+// Copyright 2024 Ivan Korobkov. All rights reserved.
+// Use of this software is governed by the Business Source License (BSL 1.1)
 // that can be found in the LICENSE file.
 
-package freelist
+package arena
 
 import (
 	"math"
 	"testing"
 	"unsafe"
 
-	"github.com/basecomplextech/baselibrary/alloc/internal/arena"
 	"github.com/stretchr/testify/assert"
 )
 
-// New
+// NewFreeList
 
-func TestNew__should_allocate_free_list(t *testing.T) {
-	a := arena.Test()
-	list := New[int64](a)
+func TestNewFreeList__should_allocate_free_list(t *testing.T) {
+	a := Test()
+	list := NewFreeList[int64](a)
 
 	v0 := list.Get()
 	*v0 = math.MaxInt64
@@ -27,14 +26,14 @@ func TestNew__should_allocate_free_list(t *testing.T) {
 	assert.Zero(t, *v1)
 }
 
-func TestNew__should_return_different_lists_for_different_types_with_same_size(t *testing.T) {
+func TestNewFreeList__should_return_different_lists_for_different_types_with_same_size(t *testing.T) {
 	type Value struct {
 		V int64
 	}
 
-	a := arena.Test()
-	list0 := New[int64](a)
-	list1 := New[Value](a)
+	a := Test()
+	list0 := NewFreeList[int64](a)
+	list1 := NewFreeList[Value](a)
 
 	assert.NotSame(t, list0, list1)
 }
@@ -42,8 +41,8 @@ func TestNew__should_return_different_lists_for_different_types_with_same_size(t
 // Get
 
 func TestList_Get__should_allocate_new_object(t *testing.T) {
-	a := arena.Test()
-	list := newList[int64](a)
+	a := Test()
+	list := newFreeList[int64](a)
 
 	v := list.Get()
 	*v = math.MaxInt64
@@ -52,8 +51,8 @@ func TestList_Get__should_allocate_new_object(t *testing.T) {
 }
 
 func TestList_Get__should_return_free_object(t *testing.T) {
-	a := arena.Test()
-	list := newList[int64](a)
+	a := Test()
+	list := newFreeList[int64](a)
 
 	v0 := list.Get()
 	list.Put(v0)
@@ -63,8 +62,8 @@ func TestList_Get__should_return_free_object(t *testing.T) {
 }
 
 func TestList_Get__should_consume_free_item(t *testing.T) {
-	a := arena.Test()
-	list := newList[int64](a)
+	a := Test()
+	list := newFreeList[int64](a)
 
 	v0 := list.Get()
 	list.Put(v0)
@@ -74,8 +73,8 @@ func TestList_Get__should_consume_free_item(t *testing.T) {
 }
 
 func TestList_Get__should_swap_free_item_with_previous(t *testing.T) {
-	a := arena.Test()
-	list := newList[int64](a)
+	a := Test()
+	list := newFreeList[int64](a)
 
 	v0 := list.Get()
 	v1 := list.Get()
@@ -94,8 +93,8 @@ func TestList_Get__should_zero_object(t *testing.T) {
 		C int64
 	}
 
-	a := arena.Test()
-	list := newList[Value](a)
+	a := Test()
+	list := newFreeList[Value](a)
 
 	v := list.Get()
 	v.A = 1
@@ -111,8 +110,8 @@ func TestList_Get__should_zero_object(t *testing.T) {
 // Put
 
 func TestList_Put__should_swap_free_item_with_next(t *testing.T) {
-	a := arena.Test()
-	list := newList[int64](a)
+	a := Test()
+	list := newFreeList[int64](a)
 
 	v0 := list.Get()
 	v1 := list.Get()
