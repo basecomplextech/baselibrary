@@ -12,6 +12,16 @@ import (
 	"github.com/basecomplextech/baselibrary/buffer"
 )
 
+// MutexArena is a thread-safe arena which uses a mutex to synchronize access.
+type MutexArena = Arena
+
+// NewMutexArena returns a new thread-safe arena which uses a mutex to synchronize access.
+func NewMutexArena() Arena {
+	return newMutexArena(heap.Global)
+}
+
+// internal
+
 var _ Arena = (*mutexArena)(nil)
 
 type mutexArena struct {
@@ -20,9 +30,7 @@ type mutexArena struct {
 }
 
 func newMutexArena(h *heap.Heap) *mutexArena {
-	a := &mutexArena{
-		state: acquireState(),
-	}
+	a := &mutexArena{state: acquireState()}
 	a.heap = h
 	return a
 }
@@ -61,9 +69,6 @@ func (a *mutexArena) Bytes(size int) []byte {
 
 // Buffer allocates a buffer in the arena, the buffer cannot be freed.
 func (a *mutexArena) Buffer() buffer.Buffer {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	b := Alloc[arenaBuffer](a)
 	b.init(a)
 	return b
@@ -72,11 +77,17 @@ func (a *mutexArena) Buffer() buffer.Buffer {
 // Pin pins an external object to the arena.
 // The method is used to prevent the object from being collected by the garbage collector.
 func (a *mutexArena) Pin(obj any) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	a.pin(obj)
 }
 
 // Reset resets the arena.
 func (a *mutexArena) Reset() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	a.reset()
 }
 

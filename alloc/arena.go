@@ -13,7 +13,10 @@ import (
 
 // Arena is an arena memory allocator.
 // The arena must be freed after usage.
-type Arena = arena.Arena
+type (
+	Arena      = arena.Arena
+	MutexArena = arena.MutexArena
+)
 
 // NewArena returns a new non-thread-safe arena.
 func NewArena() Arena {

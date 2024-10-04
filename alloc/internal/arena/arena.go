@@ -52,11 +52,6 @@ func New() Arena {
 	return newArena(heap.Global)
 }
 
-// NewMutexArena returns a new thread-safe arena which uses a mutex to synchronize access.
-func NewMutexArena() Arena {
-	return newMutexArena(heap.Global)
-}
-
 // AcquireArena returns a pooled arena, which is released to the pool on Free.
 //
 // The arena must not be used or even referenced after Free.
