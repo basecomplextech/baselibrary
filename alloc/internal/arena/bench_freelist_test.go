@@ -7,8 +7,8 @@ package arena
 import "testing"
 
 func BenchmarkFreeList_GetPut(b *testing.B) {
-	arena := Test()
-	list := NewFreeList[int64](arena)
+	a := Test()
+	list := NewFreeList[int64](a)
 
 	b.ResetTimer()
 

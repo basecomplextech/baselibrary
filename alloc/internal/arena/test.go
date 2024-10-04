@@ -10,3 +10,8 @@ func Test() Arena {
 	h := heap.New()
 	return newArena(h)
 }
+
+func TestMutex() Arena {
+	h := heap.New()
+	return newMutexArena(h)
+}

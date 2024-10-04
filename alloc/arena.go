@@ -15,14 +15,19 @@ import (
 // The arena must be freed after usage.
 type Arena = arena.Arena
 
-// NewArena allocates an arena.
+// NewArena returns a new non-thread-safe arena.
 func NewArena() Arena {
 	return arena.New()
 }
 
-// NewArenaRef allocates an arena and returns a reference to it.
+// NewArenaRef returns a reference to a new non-thread-safe arena.
 func NewArenaRef() ref.R[Arena] {
 	return ref.New(NewArena())
+}
+
+// NewMutexArena returns a new thread-safe arena which uses a mutex to synchronize access.
+func NewMutexArena() Arena {
+	return arena.NewMutexArena()
 }
 
 // AcquireArena returns a pooled arena, which is released to the pool on Free.

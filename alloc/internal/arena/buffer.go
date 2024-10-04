@@ -9,11 +9,11 @@ import "github.com/basecomplextech/baselibrary/buffer"
 var _ buffer.Buffer = (*arenaBuffer)(nil)
 
 type arenaBuffer struct {
-	arena *arena
+	arena Arena
 	buf   []byte
 }
 
-func (b *arenaBuffer) init(a *arena) {
+func (b *arenaBuffer) init(a Arena) {
 	b.arena = a
 }
 
