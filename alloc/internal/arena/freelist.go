@@ -5,6 +5,7 @@
 package arena
 
 import (
+	"sync/atomic"
 	"unsafe"
 )
 
@@ -35,6 +36,11 @@ type freeItem struct {
 	next uintptr // next free item
 }
 
+const (
+	freeList_getAttempts = 3
+	freeList_putAttempts = 3
+)
+
 func newFreeList[T any](arena Arena) *freeList[T] {
 	var zero T
 	size := unsafe.Sizeof(zero)
@@ -56,36 +62,48 @@ func newFreeList[T any](arena Arena) *freeList[T] {
 func (l *freeList[T]) Get() *T {
 	var zero T
 
-	// Allocate new element if empty
-	free := l.free
-	if free == 0 {
-		return Alloc[T](l.arena)
+	for i := 0; i < freeList_getAttempts; i++ {
+		// Load current item
+		free := atomic.LoadUintptr(&l.free)
+		if free == 0 {
+			break
+		}
+		uptr := *(*unsafe.Pointer)(unsafe.Pointer(&free))
+
+		// Swap it with previous
+		item := (*freeItem)(uptr)
+		if !atomic.CompareAndSwapUintptr(&l.free, free, item.next) {
+			continue
+		}
+
+		// Reset and return object
+		result := (*T)(uptr)
+		*result = zero
+		return result
 	}
 
-	// Get free item
-	uptr := *(*unsafe.Pointer)(unsafe.Pointer(&free))
-
-	// Swap it with previous
-	item := (*freeItem)(uptr)
-	l.free = item.next
-
-	// Zero and return object
-	result := (*T)(uptr)
-	*result = zero
-	return result
+	// Allocate new element
+	return Alloc[T](l.arena)
 }
 
 // Put puts an object back into the free list.
 func (l *freeList[T]) Put(obj *T) {
-	// Zero object
+	// Reset object
 	var zero T
 	*obj = zero
 
 	// Cast it into item
 	item := (*freeItem)(unsafe.Pointer(obj))
-	item.next = l.free
 
-	// Swap current item with next
-	next := (uintptr)(unsafe.Pointer(obj))
-	l.free = next
+	for i := 0; i < freeList_putAttempts; i++ {
+		// Load current item
+		free := atomic.LoadUintptr(&l.free)
+		item.next = free
+
+		// Swap it with next
+		next := (uintptr)(unsafe.Pointer(obj))
+		if atomic.CompareAndSwapUintptr(&l.free, free, next) {
+			return
+		}
+	}
 }
