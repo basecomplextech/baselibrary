@@ -46,6 +46,13 @@ func (s Status) String() string {
 	return fmt.Sprintf("%s: %s", code, s.Message)
 }
 
+// To
+
+// ToError returns a new error from the status, or nil if OK.
+func (s Status) ToError() error {
+	return ToError(s)
+}
+
 // With
 
 // WithCode returns a status clone with a new code.

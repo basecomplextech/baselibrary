@@ -35,33 +35,12 @@ func Errorf(format string, a ...any) Status {
 
 // WrapError returns an internal error status.
 func WrapError(err error) Status {
-	msg := "Internal error"
-	if err != nil {
-		msg = err.Error()
-	}
-
-	return Status{
-		Code:    CodeError,
-		Message: msg,
-		Error:   err,
-	}
+	return wrapError(err, CodeError)
 }
 
 // WrapErrorf formats and returns an internal error status.
 func WrapErrorf(err error, format string, a ...any) Status {
-	msg := format
-	if len(a) > 0 {
-		msg = fmt.Sprintf(format, a...)
-	}
-	if err != nil {
-		msg += ": " + err.Error()
-	}
-
-	return Status{
-		Code:    CodeError,
-		Message: msg,
-		Error:   err,
-	}
+	return wrapErrorf(err, CodeError, format, a...)
 }
 
 // ExternalError
@@ -118,60 +97,6 @@ func WrapExternalErrorf(err error, format string, a ...any) Status {
 	}
 }
 
-// Corrupted
-
-// Corrupted returns a data corruption error status.
-func Corrupted(msg string) Status {
-	return Status{
-		Code:    CodeCorrupted,
-		Message: msg,
-	}
-}
-
-// Corruptedf formats and returns a data corruption error status.
-func Corruptedf(format string, a ...any) Status {
-	msg := format
-	if len(a) > 0 {
-		msg = fmt.Sprintf(format, a...)
-	}
-
-	return Status{
-		Code:    CodeCorrupted,
-		Message: msg,
-	}
-}
-
-// WrapCorrupted returns a data corruption error status.
-func WrapCorrupted(err error) Status {
-	msg := "Data corrupted"
-	if err != nil {
-		msg = err.Error()
-	}
-
-	return Status{
-		Code:    CodeCorrupted,
-		Message: msg,
-		Error:   err,
-	}
-}
-
-// WrapCorruptedf formats and returns a data corruption error status.
-func WrapCorruptedf(err error, format string, a ...any) Status {
-	msg := format
-	if len(a) > 0 {
-		msg = fmt.Sprintf(format, a...)
-	}
-	if err != nil {
-		msg += ": " + err.Error()
-	}
-
-	return Status{
-		Code:    CodeCorrupted,
-		Message: msg,
-		Error:   err,
-	}
-}
-
 // Recover
 
 // Recover recovers from a panic and returns an internal error status.
@@ -184,4 +109,46 @@ func Recover(e any) Status {
 func RecoverStack(e any) (Status, []byte) {
 	err, stack := panics.RecoverStack(e)
 	return WrapError(err), stack
+}
+
+// internal
+
+func wrapError(err error, code Code) Status {
+	switch e := err.(type) {
+	case nil:
+		return OK
+	case *Err:
+		return e.Status()
+	}
+
+	return Status{
+		Code:    code,
+		Message: err.Error(),
+		Error:   err,
+	}
+}
+
+func wrapErrorf(err error, code Code, format string, a ...any) Status {
+	msg := format
+	if len(a) > 0 {
+		msg = fmt.Sprintf(format, a...)
+	}
+	if err != nil {
+		msg += ": " + err.Error()
+	}
+
+	e, ok := err.(*Err)
+	if ok {
+		return Status{
+			Code:    e.Code,
+			Message: msg,
+			Error:   e.Cause,
+		}
+	}
+
+	return Status{
+		Code:    code,
+		Message: msg,
+		Error:   err,
+	}
 }

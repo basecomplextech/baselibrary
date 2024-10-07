@@ -23,9 +23,6 @@ const (
 	// CodeError indicates an internal general purpose error.
 	CodeError Code = "error"
 
-	// CodeCorrupted indicates any data corruption or loss.
-	CodeCorrupted Code = "corrupted"
-
 	// CodeExternalError indicates an external error, i.e. an invalid argument, validation error, etc.
 	CodeExternalError Code = "external_error"
 )
@@ -73,4 +70,13 @@ const (
 
 	// CodeWait indicates that the caller should wait for the next events/messages/etc.
 	CodeWait Code = "wait"
+)
+
+// Parsing/serializing class
+const (
+	// CodeParseError indicates that a data cannot be parsed.
+	CodeParseError Code = "parse_error"
+
+	// CodeChecksumError indicates that a checksum does not match the expected checksum.
+	CodeChecksumError Code = "checksum_error"
 )
