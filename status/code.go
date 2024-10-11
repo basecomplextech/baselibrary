@@ -50,9 +50,6 @@ const (
 	// CodeRedirect indicates that an operation was redirected.
 	CodeRedirect Code = "redirect"
 
-	// CodeRollback indicates that an operation was rolled backed.
-	CodeRollback Code = "rollback" // TODO: Maybe remove
-
 	// CodeTimeout indicates that an operation timed out.
 	CodeTimeout Code = "timeout"
 
@@ -79,4 +76,13 @@ const (
 
 	// CodeChecksumError indicates that a checksum does not match the expected checksum.
 	CodeChecksumError Code = "checksum_error"
+)
+
+// Database class
+const (
+	// CodeConcurrencyError indicates that a data read/write cannot be serialized.
+	CodeConcurrencyError Code = "concurrency_error"
+
+	// CodeRollback indicates that an operation was rolled backed.
+	CodeRollback Code = "rollback" // TODO: Maybe remove
 )

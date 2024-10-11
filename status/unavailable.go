@@ -41,19 +41,6 @@ func Redirectf(format string, a ...any) Status {
 	return Status{Code: CodeRedirect, Message: msg}
 }
 
-// Rollback
-
-// Rollback returns a rollback status.
-func Rollback(msg string) Status {
-	return Status{Code: CodeRollback, Message: msg}
-}
-
-// Rollbackf formats a message and returns a rollback status.
-func Rollbackf(format string, a ...any) Status {
-	msg := fmt.Sprintf(format, a...)
-	return Status{Code: CodeRollback, Message: msg}
-}
-
 // Timeout
 
 // Timeoutf returns a timeout status and formats its message.
