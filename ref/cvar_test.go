@@ -11,9 +11,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConcurrentVar__should_have_cache_line_size(t *testing.T) {
+func TestConcurrentVar__slot_should_have_cache_line_size(t *testing.T) {
 	s := concurrentSlot[int]{}
 	size := unsafe.Sizeof(s)
+
+	assert.Equal(t, 256, int(size))
+}
+
+func TestConcurrentVar__ref_should_have_cache_line_size(t *testing.T) {
+	r := concurrentRef[int]{}
+	size := unsafe.Sizeof(r)
 
 	assert.Equal(t, 256, int(size))
 }
@@ -32,7 +39,7 @@ func TestConcurrentVar_Acquire__should_acquire_chained_reference(t *testing.T) {
 		t.Fatal(ok)
 	}
 	assert.Equal(t, int64(2), r1.Refcount())
-	assert.Equal(t, int64(concurrentNum), r.Refcount())
+	assert.Equal(t, int64(1), r.Refcount())
 
 	v.Clear()
 	assert.Equal(t, int64(1), r1.Refcount())
@@ -50,9 +57,10 @@ func TestConcurrentVar_SwapRetain__should_retain_new_reference(t *testing.T) {
 
 	v := NewConcurrentVar[int]()
 	v.SwapRetain(r)
+	assert.Equal(t, int64(2), r.Refcount())
 
 	r.Release()
-	assert.Equal(t, int64(concurrentNum), r.Refcount())
+	assert.Equal(t, int64(1), r.Refcount())
 }
 
 func TestConcurrentVar_SwapRetain__should_release_previous_reference(t *testing.T) {
@@ -67,5 +75,5 @@ func TestConcurrentVar_SwapRetain__should_release_previous_reference(t *testing.
 	r1.Release()
 
 	assert.Equal(t, int64(0), r0.Refcount())
-	assert.Equal(t, int64(concurrentNum), r1.Refcount())
+	assert.Equal(t, int64(1), r1.Refcount())
 }

@@ -17,6 +17,9 @@ import (
 //
 // The variable is optimized for high contention scenarios.
 // Internally it uses multiple slots and chained references to reduce contention.
+//
+// Fastrand is used to select a slot on access. The scalability of this approach
+// is limited. But still it is faster than using a single mutex/atomic.
 type ConcurrentVar[T any] interface {
 	// Acquire acquires and returns a reference, or false if empty.
 	Acquire() (R[T], bool)
@@ -100,27 +103,20 @@ func (v *concurrentVar[T]) SwapRetain(r R[T]) {
 	v.wmu.Lock()
 	defer v.wmu.Unlock()
 
-	// Alloc refs as a single slice
-	// Even with false sharing, it's faster than reusing the same ref.
-	nexts := make([]concurrentRef[T], concurrentNum)
+	node := newConcurrentNode(r)
+	var prevs [concurrentNum]opt.Opt[R[T]]
 
 	// Swap slots
-	var prevs [concurrentNum]opt.Opt[R[T]]
 	for i := range v.slots {
-		next := &nexts[i]
-		next.init(r)
+		ref := &node.refs[i]
 
-		prev := v.slots[i].swap(next)
+		prev := v.slots[i].swap(ref)
 		prevs[i] = prev
 	}
 
 	// Swap current
 	v.cur.Set(r)
-
-	// Retain next
-	for i := 0; i < concurrentNum; i++ {
-		r.Retain()
-	}
+	r.Retain()
 
 	// Release previous
 	for _, prev := range prevs {
@@ -194,13 +190,51 @@ func (s *concurrentSlot[T]) swap(r R[T]) opt.Opt[R[T]] {
 	return prev
 }
 
+// node
+
+type concurrentNode[T any] struct {
+	rc   int64
+	ref  R[T]
+	refs [concurrentNum]concurrentRef[T]
+}
+
+func newConcurrentNode[T any](r R[T]) *concurrentNode[T] {
+	n := &concurrentNode[T]{}
+	n.rc = int64(len(n.refs))
+	n.ref = r
+
+	for i := range n.refs {
+		n.refs[i].init(r)
+		n.refs[i].node = n
+	}
+	return n
+}
+
+func (n *concurrentNode[T]) release() {
+	v := atomic.AddInt64(&n.rc, -1)
+	switch {
+	case v > 0:
+		return
+	case v < 0:
+		panic("release: concurrent node already released")
+	}
+
+	n.ref.Release()
+	n.ref = nil
+}
+
 // ref
 
 var _ R[int] = (*concurrentRef[int])(nil)
 
 type concurrentRef[T any] struct {
 	refs int64
+	node *concurrentNode[T]
 	ref  R[T]
+
+	// padding to avoid false sharing is useless here
+	// fastrand() approach does not scale that well.
+	// cpus still compete for the same cache lines.
 }
 
 func (r *concurrentRef[T]) init(ref R[T]) {
@@ -233,8 +267,10 @@ func (r *concurrentRef[T]) Release() {
 		panic(fmt.Sprintf("release: %T already released", zero))
 	}
 
-	r.ref.Release()
-	r.ref = nil
+	node := r.node
+	r.node = nil
+
+	node.release()
 }
 
 // Unwrap returns the object or panics if the refcount is 0.
