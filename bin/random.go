@@ -7,21 +7,60 @@ package bin
 import (
 	"crypto/rand"
 	"sync"
+
+	_ "unsafe"
 )
 
-var random = newRandomReader()
+var random = newRandomPool()
+
+const randomNum = 16
+
+type randomPool struct {
+	readers [randomNum]randomReader
+}
+
+func newRandomPool() *randomPool {
+	p := &randomPool{}
+	for i := range p.readers {
+		p.readers[i].init(4096)
+	}
+	return p
+}
+
+func (p *randomPool) read64() [8]byte {
+	i := fastrand() % randomNum
+	return p.readers[i].read64()
+}
+
+func (p *randomPool) read128() [16]byte {
+	i := fastrand() % randomNum
+	return p.readers[i].read128()
+}
+
+func (p *randomPool) read256() [32]byte {
+	i := fastrand() % randomNum
+	return p.readers[i].read256()
+}
+
+// reader
 
 type randomReader struct {
 	mu  sync.Mutex
 	buf []byte
 	pos int
+
+	_pad [216]byte // pad to cache line
 }
 
 func newRandomReader() *randomReader {
-	return &randomReader{
-		buf: make([]byte, 4096),
-		pos: 4096,
-	}
+	r := &randomReader{}
+	r.init(4096)
+	return r
+}
+
+func (r *randomReader) init(size int) {
+	r.buf = make([]byte, size)
+	r.pos = size
 }
 
 func (r *randomReader) read64() [8]byte {
@@ -71,3 +110,8 @@ func (r *randomReader) fill() {
 	rand.Read(r.buf)
 	r.pos = 0
 }
+
+// util
+
+//go:linkname fastrand runtime.fastrand
+func fastrand() uint32
