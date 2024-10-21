@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func BenchmarkLockMap(b *testing.B) {
+func BenchmarkLockMap_Lock(b *testing.B) {
 	m := NewLockMap[int]()
 	key := 123
 	ctx := NoContext()
@@ -30,7 +30,7 @@ func BenchmarkLockMap(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkLockMap_Parallel(b *testing.B) {
+func BenchmarkLockMap_Lock_Parallel(b *testing.B) {
 	m := NewLockMap[int]()
 	ctx := NoContext()
 	delta := int64(0)

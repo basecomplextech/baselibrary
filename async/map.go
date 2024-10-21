@@ -59,7 +59,7 @@ type shardedMap[K comparable, V any] struct {
 }
 
 func newShardedMap[K comparable, V any]() *shardedMap[K, V] {
-	num := runtime.NumCPU() * 2
+	num := runtime.NumCPU() * 4
 
 	shards := make([]mapShard[K, V], num)
 	for i := range shards {

@@ -38,7 +38,7 @@ func newCowMap[K comparable, V any]() *cowMap[K, V] {
 
 	shards := make([]cowMapShard[K, V], num)
 	for i := range shards {
-		shards[i] = newCowMapShard[K, V]()
+		shards[i].init()
 	}
 
 	return &cowMap[K, V]{shards: shards}
@@ -122,12 +122,9 @@ type cowMapShard[K comparable, V any] struct {
 	_ [240]byte // cache line padding
 }
 
-func newCowMapShard[K comparable, V any]() cowMapShard[K, V] {
+func (s *cowMapShard[K, V]) init() {
 	v := newCowVersion[K, V]()
-
-	s := cowMapShard[K, V]{}
 	s.current.Store(v)
-	return s
 }
 
 func (s *cowMapShard[K, V]) len() int {

@@ -116,7 +116,7 @@ type lockMap[K comparable] struct {
 }
 
 func newLockMap[K comparable]() *lockMap[K] {
-	num := runtime.NumCPU() * 2
+	num := runtime.NumCPU() * 4
 	shards := make([]lockShard[K], num)
 
 	for i := range shards {
