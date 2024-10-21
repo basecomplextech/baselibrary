@@ -20,6 +20,9 @@ type Map[K comparable, V any] interface {
 	// Len returns the number of keys.
 	Len() int
 
+	// Clear deletes all items.
+	Clear()
+
 	// Contains returns true if a key exists.
 	Contains(key K) bool
 
@@ -60,7 +63,7 @@ func newShardedMap[K comparable, V any]() *shardedMap[K, V] {
 
 	shards := make([]mapShard[K, V], num)
 	for i := range shards {
-		shards[i] = newAsyncMapShard[K, V]()
+		shards[i] = newMapShard[K, V]()
 	}
 
 	return &shardedMap[K, V]{shards: shards}
@@ -76,6 +79,14 @@ func (m *shardedMap[K, V]) Len() int {
 	}
 
 	return n
+}
+
+// Clear deletes all items.
+func (m *shardedMap[K, V]) Clear() {
+	for i := range m.shards {
+		s := &m.shards[i]
+		s.clear()
+	}
 }
 
 // Contains returns true if a key exists.
@@ -137,7 +148,7 @@ type mapShard[K comparable, V any] struct {
 	_     [224]byte // cache line padding
 }
 
-func newAsyncMapShard[K comparable, V any]() mapShard[K, V] {
+func newMapShard[K comparable, V any]() mapShard[K, V] {
 	return mapShard[K, V]{
 		items: make(map[K]V),
 	}
@@ -148,6 +159,13 @@ func (s *mapShard[K, V]) len() int {
 	defer s.mu.RUnlock()
 
 	return len(s.items)
+}
+
+func (s *mapShard[K, V]) clear() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	clear(s.items)
 }
 
 func (s *mapShard[K, V]) contains(key K) bool {
