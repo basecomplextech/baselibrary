@@ -109,7 +109,7 @@ func NewLockMap[K comparable]() LockMap[K] {
 
 // internal
 
-var _ LockMap[any] = &lockMap[any]{}
+var _ LockMap[any] = (*lockMap[any])(nil)
 
 type lockMap[K comparable] struct {
 	shards []lockShard[K]
@@ -154,9 +154,9 @@ func (m *lockMap[K]) Lock(ctx Context, key K) (LockedKey, status.Status) {
 	item := shard.get(key)
 
 	// Free if not locked
-	ok := false
+	done := false
 	defer func() {
-		if !ok {
+		if !done {
 			item.free()
 		}
 	}()
@@ -176,7 +176,7 @@ func (m *lockMap[K]) Lock(ctx Context, key K) (LockedKey, status.Status) {
 
 	// Return locked key
 	k := &lockedKey[K]{item}
-	ok = true
+	done = true
 	return k, status.OK
 }
 
@@ -205,7 +205,7 @@ func (m *lockMap[K]) shard(key K) *lockShard[K] {
 
 // LockedMap
 
-var _ LockedMap[any] = &lockedMap[any]{}
+var _ LockedMap[any] = (*lockedMap[any])(nil)
 
 type lockedMap[K comparable] struct {
 	m *lockMap[K]
@@ -282,16 +282,16 @@ func (l *lockedKey[K]) Free() {
 // shard
 
 type lockShard[K comparable] struct {
-	mu    sync.RWMutex
+	mu    sync.Mutex
 	items map[K]*lockItem[K]
 	pool  pools.Pool[*lockItem[K]]
-	_     [208]byte // cache line padding
+	_     [224]byte // cache line padding
 }
 
 func newLockShard[K comparable]() lockShard[K] {
 	return lockShard[K]{
 		items: make(map[K]*lockItem[K]),
-		pool:  pools.NewPool[*lockItem[K]](),
+		pool:  pools.NewPoolFunc[*lockItem[K]](newLockItem),
 	}
 }
 
@@ -300,28 +300,22 @@ func (s *lockShard[K]) get(key K) *lockItem[K] {
 	defer s.mu.Unlock()
 
 	// Try to get item
-	m, ok := s.items[key]
-	if ok {
+	if m, ok := s.items[key]; ok {
 		m.refs++
 		return m
 	}
 
-	// Make new item with 1 refs
-	m, ok = s.pool.Get()
-	if ok {
-		m.shard = s
-		m.key = key
-		m.refs = 1
-	} else {
-		m = newLockItem(s, key)
-	}
+	// Insert new item
+	m := s.pool.New()
+	m.shard = s
+	m.key = key
+	m.refs = 1
 
-	// Store item
 	s.items[key] = m
 	return m
 }
 
-func (s *lockShard[K]) free(m *lockItem[K]) {
+func (s *lockShard[K]) free(m *lockItem[K]) (deleted bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -331,20 +325,17 @@ func (s *lockShard[K]) free(m *lockItem[K]) {
 	}
 	m.refs--
 	if m.refs > 0 {
-		return
+		return false
 	}
 
 	// Delete item with 0 refs
 	delete(s.items, m.key)
-
-	// Release it to the pool
-	m.reset()
-	s.pool.Put(m)
+	return true
 }
 
 func (s *lockShard[K]) contains(key K) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	_, ok := s.items[key]
 	return ok
@@ -373,13 +364,10 @@ type lockItem[K comparable] struct {
 	key K
 }
 
-func newLockItem[K comparable](s *lockShard[K], key K) *lockItem[K] {
+func newLockItem[K comparable]() *lockItem[K] {
 	m := &lockItem[K]{
-		shard: s,
-		lock:  make(chan struct{}, 1),
-		refs:  1,
-
-		key: key,
+		lock: make(chan struct{}, 1),
+		refs: 1,
 	}
 	m.lock <- struct{}{}
 	return m
@@ -394,7 +382,10 @@ func (m *lockItem[K]) unlock() {
 }
 
 func (m *lockItem[K]) free() {
-	m.shard.free(m)
+	deleted := m.shard.free(m)
+	if deleted {
+		m.release()
+	}
 }
 
 func (m *lockItem[K]) reset() {
@@ -407,4 +398,10 @@ func (m *lockItem[K]) reset() {
 	case m.lock <- struct{}{}:
 	default:
 	}
+}
+
+func (m *lockItem[K]) release() {
+	s := m.shard
+	m.reset()
+	s.pool.Put(m)
 }
