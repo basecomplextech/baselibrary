@@ -80,6 +80,12 @@ func (m *cowMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
 	return s.getOrSet(key, value)
 }
 
+// Delete deletes a value by key.
+func (m *cowMap[K, V]) Delete(key K) {
+	s := m.shard(key)
+	s.delete(key)
+}
+
 // Pop deletes and returns a value by key, or false.
 func (m *cowMap[K, V]) Pop(key K) (V, bool) {
 	s := m.shard(key)
@@ -92,10 +98,10 @@ func (m *cowMap[K, V]) Set(key K, value V) {
 	s.set(key, value)
 }
 
-// Delete deletes a value by key.
-func (m *cowMap[K, V]) Delete(key K) {
+// Swap swaps a key value and returns the previous value.
+func (m *cowMap[K, V]) Swap(key K, value V) (V, bool) {
 	s := m.shard(key)
-	s.delete(key)
+	return s.swap(key, value)
 }
 
 // Range iterates over all key-value pairs, locks shards during iteration.
@@ -176,6 +182,20 @@ func (s *cowMapShard[K, V]) getOrSet(key K, value V) (V, bool) {
 	return value, true
 }
 
+func (s *cowMapShard[K, V]) delete(key K) {
+	s.wmu.Lock()
+	defer s.wmu.Unlock()
+
+	v := s.current.Load()
+	if _, ok := v.items[key]; !ok {
+		return
+	}
+
+	v1 := v.clone()
+	delete(v1.items, key)
+	s.current.Store(v1)
+}
+
 func (s *cowMapShard[K, V]) pop(key K) (V, bool) {
 	s.wmu.Lock()
 	defer s.wmu.Unlock()
@@ -202,18 +222,17 @@ func (s *cowMapShard[K, V]) set(key K, value V) {
 	s.current.Store(v1)
 }
 
-func (s *cowMapShard[K, V]) delete(key K) {
+func (s *cowMapShard[K, V]) swap(key K, value V) (V, bool) {
 	s.wmu.Lock()
 	defer s.wmu.Unlock()
 
 	v := s.current.Load()
-	if _, ok := v.items[key]; !ok {
-		return
-	}
+	value, ok := v.items[key]
 
 	v1 := v.clone()
-	delete(v1.items, key)
+	v1.items[key] = value
 	s.current.Store(v1)
+	return value, ok
 }
 
 func (s *cowMapShard[K, V]) range_(fn func(K, V)) {
