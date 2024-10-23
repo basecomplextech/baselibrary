@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package asyncmap
 
 import (
 	"testing"
@@ -53,10 +53,7 @@ func TestLockMap__should_retain_key_lock(t *testing.T) {
 	defer lock.Free()
 
 	shard := m.shard(key)
-	shard.mu.Lock() // pass race detector
-	defer shard.mu.Unlock()
-
-	item, ok := shard.items[key]
+	item, ok := shard.getNoRetain(key)
 	require.True(t, ok)
 	assert.Same(t, lock.item, item)
 	assert.Equal(t, int32(1), item.refs)
@@ -82,10 +79,8 @@ func TestLockMap__should_retain_key_lock_when_already_locked(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 	shard := m.shard(key)
-	shard.mu.Lock() // pass race detector
-	defer shard.mu.Unlock()
 
-	item, ok := shard.items[key]
+	item, ok := shard.getNoRetain(key)
 	require.True(t, ok)
 	assert.Equal(t, int32(2), item.refs)
 }
@@ -104,7 +99,7 @@ func TestLockMap_Lock__should_acquire_locked_key(t *testing.T) {
 	lock.Free()
 
 	shard := m.shard(key)
-	_, ok := shard.items[key]
+	_, ok := shard.getNoRetain(key)
 	assert.False(t, ok)
 }
 
@@ -118,10 +113,8 @@ func TestKeyLock_Free__should_release_delete_key_lock(t *testing.T) {
 	lock.Free()
 
 	shard := m.shard(key)
-	shard.mu.Lock() // pass race detector
-	defer shard.mu.Unlock()
 
-	_, ok := shard.items[key]
+	_, ok := shard.getNoRetain(key)
 	assert.False(t, ok)
 }
 

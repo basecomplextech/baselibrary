@@ -2,11 +2,10 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package asyncmap
 
 import (
 	"runtime"
-	"sync"
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/async"
@@ -86,24 +85,6 @@ type LockedMap[K comparable] interface {
 	Free()
 }
 
-// KeyLock is a single lock for a key, the lock must be freed after use.
-type KeyLock interface {
-	// Lock returns a channel receiving from which locks the key.
-	Lock() <-chan struct{}
-
-	// Unlock unlocks the key lock.
-	Unlock()
-
-	// Free frees the acquired key.
-	Free()
-}
-
-// LockedKey is a locked key which is unlocked when freed.
-type LockedKey interface {
-	// Free unlocks and freed the key.
-	Free()
-}
-
 // NewLockMap returns a new lock map.
 func NewLockMap[K comparable]() LockMap[K] {
 	return newLockMap[K]()
@@ -126,12 +107,10 @@ func newLockMap[K comparable]() *lockMap[K] {
 	total := cpus * cpuLines * lineSize
 	n := int(total / int(size))
 
-	// n := runtime.NumCPU() * 4
-
 	pool := pools.NewPoolFunc[*lockItem[K]](newLockItem)
 	shards := make([]lockShard[K], n)
 	for i := range shards {
-		shards[i] = newLockShard[K](pool)
+		shards[i] = newLockShard(pool)
 	}
 
 	return &lockMap[K]{
@@ -214,7 +193,7 @@ func (m *lockMap[K]) shard(key K) *lockShard[K] {
 	return &m.shards[index]
 }
 
-// LockedMap
+// locked
 
 var _ LockedMap[any] = (*lockedMap[any])(nil)
 
@@ -239,181 +218,4 @@ func (m *lockedMap[K]) Range(f func(key K) bool) {
 // Free unlocks the map itself, internally it unlocks all shards.
 func (m *lockedMap[K]) Free() {
 	m.m.unlockMap()
-}
-
-// KeyLock
-
-var _ KeyLock = &keyLock[any]{}
-
-type keyLock[K comparable] struct {
-	item *lockItem[K]
-}
-
-// Lock returns a channel receiving from which locks the key.
-func (l *keyLock[K]) Lock() <-chan struct{} {
-	return l.item.lock
-}
-
-// Unlock unlocks the key lock.
-func (l *keyLock[K]) Unlock() {
-	l.item.unlock()
-}
-
-// Free frees the acquired key.
-func (l *keyLock[K]) Free() {
-	if l.item == nil {
-		panic("free of freed key lock")
-	}
-
-	item := l.item
-	l.item = nil
-	item.free()
-}
-
-// LockedKey
-
-var _ LockedKey = &lockedKey[any]{}
-
-type lockedKey[K comparable] struct {
-	item *lockItem[K]
-}
-
-func (l *lockedKey[K]) Free() {
-	if l.item == nil {
-		panic("free of freed locked key")
-	}
-
-	item := l.item
-	l.item = nil
-
-	item.unlock()
-	item.free()
-}
-
-// shard
-
-type lockShard[K comparable] struct {
-	mu    sync.Mutex
-	items map[K]*lockItem[K]
-	pool  pools.Pool[*lockItem[K]]
-
-	// _     [224]byte // cache line padding
-}
-
-func newLockShard[K comparable](pool pools.Pool[*lockItem[K]]) lockShard[K] {
-	return lockShard[K]{
-		items: make(map[K]*lockItem[K]),
-		pool:  pool,
-	}
-}
-
-func (s *lockShard[K]) get(key K) *lockItem[K] {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Try to get item
-	if m, ok := s.items[key]; ok {
-		m.refs++
-		return m
-	}
-
-	// Insert new item
-	m := s.pool.New()
-	m.shard = s
-	m.key = key
-	m.refs = 1
-
-	s.items[key] = m
-	return m
-}
-
-func (s *lockShard[K]) free(m *lockItem[K]) (deleted bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Decrement refs
-	if m.refs <= 0 {
-		panic("free of freed key lock")
-	}
-	m.refs--
-	if m.refs > 0 {
-		return false
-	}
-
-	// Delete item with 0 refs
-	delete(s.items, m.key)
-	return true
-}
-
-func (s *lockShard[K]) contains(key K) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	_, ok := s.items[key]
-	return ok
-}
-
-func (s *lockShard[K]) containsLocked(key K) bool {
-	_, ok := s.items[key]
-	return ok
-}
-
-func (s *lockShard[K]) rangeLocked(f func(key K) bool) {
-	for key := range s.items {
-		if !f(key) {
-			break
-		}
-	}
-}
-
-// item
-
-type lockItem[K comparable] struct {
-	shard *lockShard[K]
-	lock  chan struct{}
-	refs  int32
-
-	key K
-}
-
-func newLockItem[K comparable]() *lockItem[K] {
-	m := &lockItem[K]{
-		lock: make(chan struct{}, 1),
-		refs: 1,
-	}
-	m.lock <- struct{}{}
-	return m
-}
-
-func (m *lockItem[K]) unlock() {
-	select {
-	case m.lock <- struct{}{}:
-	default:
-		panic("unlock of unlocked key lock")
-	}
-}
-
-func (m *lockItem[K]) free() {
-	deleted := m.shard.free(m)
-	if deleted {
-		m.release()
-	}
-}
-
-func (m *lockItem[K]) release() {
-	s := m.shard
-	m.reset()
-	s.pool.Put(m)
-}
-
-func (m *lockItem[K]) reset() {
-	var zero K
-	m.shard = nil
-	m.key = zero
-	m.refs = 0
-
-	select {
-	case m.lock <- struct{}{}:
-	default:
-	}
 }
