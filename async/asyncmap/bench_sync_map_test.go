@@ -11,8 +11,8 @@ import (
 
 // Read
 
-func BenchmarkConcurrentMap_Read(b *testing.B) {
-	m := NewConcurrentMap[int, int]()
+func BenchmarkSyncMap_Read(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	for i := 0; i < benchMapNum; i++ {
 		m.Store(i, i)
 	}
@@ -32,8 +32,8 @@ func BenchmarkConcurrentMap_Read(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkConcurrentMap_Read_Parallel(b *testing.B) {
-	m := NewConcurrentMap[int, int]()
+func BenchmarkSyncMap_Read_Parallel(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	for i := 0; i < benchMapNum; i++ {
 		m.Store(i, i)
 	}
@@ -57,8 +57,8 @@ func BenchmarkConcurrentMap_Read_Parallel(b *testing.B) {
 
 // Write
 
-func BenchmarkConcurrentMap_Write(b *testing.B) {
-	m := NewConcurrentMap[int, int]()
+func BenchmarkSyncMap_Write(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -74,8 +74,8 @@ func BenchmarkConcurrentMap_Write(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkConcurrentMap_Write_Parallel(b *testing.B) {
-	m := NewConcurrentMap[int, int]()
+func BenchmarkSyncMap_Write_Parallel(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
