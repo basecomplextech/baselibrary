@@ -6,6 +6,7 @@ package bin
 
 import (
 	"crypto/rand"
+	"runtime"
 	"sync"
 
 	_ "unsafe"
@@ -13,32 +14,39 @@ import (
 
 var random = newRandomPool()
 
-const randomNum = 16
+const (
+	randomBuffer = 8192
+	randomMulti  = 8
+)
 
 type randomPool struct {
-	readers [randomNum]randomReader
+	readers []randomReader
 }
 
 func newRandomPool() *randomPool {
-	p := &randomPool{}
+	n := runtime.NumCPU() * randomMulti
+
+	p := &randomPool{
+		readers: make([]randomReader, n),
+	}
 	for i := range p.readers {
-		p.readers[i].init(4096)
+		p.readers[i].init(randomBuffer)
 	}
 	return p
 }
 
 func (p *randomPool) read64() [8]byte {
-	i := fastrand() % randomNum
+	i := int(fastrand()) % len(p.readers)
 	return p.readers[i].read64()
 }
 
 func (p *randomPool) read128() [16]byte {
-	i := fastrand() % randomNum
+	i := int(fastrand()) % len(p.readers)
 	return p.readers[i].read128()
 }
 
 func (p *randomPool) read256() [32]byte {
-	i := fastrand() % randomNum
+	i := int(fastrand()) % len(p.readers)
 	return p.readers[i].read256()
 }
 
@@ -54,7 +62,7 @@ type randomReader struct {
 
 func newRandomReader() *randomReader {
 	r := &randomReader{}
-	r.init(4096)
+	r.init(randomBuffer)
 	return r
 }
 
