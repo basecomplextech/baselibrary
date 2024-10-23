@@ -7,7 +7,9 @@ package async
 import (
 	"runtime"
 	"sync"
+	"unsafe"
 
+	"github.com/basecomplextech/baselibrary/async"
 	"github.com/basecomplextech/baselibrary/internal/hashing"
 	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/status"
@@ -54,7 +56,7 @@ type LockMap[K comparable] interface {
 	//		return st
 	//	}
 	//	defer lock.Free()
-	Lock(ctx Context, key K) (LockedKey, status.Status)
+	Lock(ctx async.Context, key K) (LockedKey, status.Status)
 
 	// LockMap locks the map itself, internally it locks all shards.
 	//
@@ -116,11 +118,20 @@ type lockMap[K comparable] struct {
 }
 
 func newLockMap[K comparable]() *lockMap[K] {
-	num := runtime.NumCPU() * 4
-	shards := make([]lockShard[K], num)
+	cpus := runtime.NumCPU()
+	cpuLines := 16
+	lineSize := 256
 
+	size := unsafe.Sizeof(lockShard[K]{})
+	total := cpus * cpuLines * lineSize
+	n := int(total / int(size))
+
+	// n := runtime.NumCPU() * 4
+
+	pool := pools.NewPoolFunc[*lockItem[K]](newLockItem)
+	shards := make([]lockShard[K], n)
 	for i := range shards {
-		shards[i] = newLockShard[K]()
+		shards[i] = newLockShard[K](pool)
 	}
 
 	return &lockMap[K]{
@@ -148,7 +159,7 @@ func (m *lockMap[K]) Contains(key K) bool {
 }
 
 // Lock returns a locked key, the key must be freed after use.
-func (m *lockMap[K]) Lock(ctx Context, key K) (LockedKey, status.Status) {
+func (m *lockMap[K]) Lock(ctx async.Context, key K) (LockedKey, status.Status) {
 	// Get lock item
 	shard := m.shard(key)
 	item := shard.get(key)
@@ -285,13 +296,14 @@ type lockShard[K comparable] struct {
 	mu    sync.Mutex
 	items map[K]*lockItem[K]
 	pool  pools.Pool[*lockItem[K]]
-	_     [224]byte // cache line padding
+
+	// _     [224]byte // cache line padding
 }
 
-func newLockShard[K comparable]() lockShard[K] {
+func newLockShard[K comparable](pool pools.Pool[*lockItem[K]]) lockShard[K] {
 	return lockShard[K]{
 		items: make(map[K]*lockItem[K]),
-		pool:  pools.NewPoolFunc[*lockItem[K]](newLockItem),
+		pool:  pool,
 	}
 }
 
@@ -388,6 +400,12 @@ func (m *lockItem[K]) free() {
 	}
 }
 
+func (m *lockItem[K]) release() {
+	s := m.shard
+	m.reset()
+	s.pool.Put(m)
+}
+
 func (m *lockItem[K]) reset() {
 	var zero K
 	m.shard = nil
@@ -398,10 +416,4 @@ func (m *lockItem[K]) reset() {
 	case m.lock <- struct{}{}:
 	default:
 	}
-}
-
-func (m *lockItem[K]) release() {
-	s := m.shard
-	m.reset()
-	s.pool.Put(m)
 }

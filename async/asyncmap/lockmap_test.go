@@ -9,6 +9,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/basecomplextech/baselibrary/async"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -94,7 +95,7 @@ func TestLockMap__should_retain_key_lock_when_already_locked(t *testing.T) {
 func TestLockMap_Lock__should_acquire_locked_key(t *testing.T) {
 	m := newLockMap[int]()
 	key := 123
-	ctx := NoContext()
+	ctx := async.NoContext()
 
 	lock, st := m.Lock(ctx, key)
 	if !st.OK() {

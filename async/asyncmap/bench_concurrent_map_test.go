@@ -5,34 +5,25 @@
 package async
 
 import (
-	"slices"
+	"math/rand/v2"
 	"testing"
-
-	"github.com/basecomplextech/baselibrary/collect/slices2"
 )
 
 // Read
 
 func BenchmarkConcurrentMap_Read(b *testing.B) {
 	m := NewConcurrentMap[int, int]()
-	items := benchMapItems(1024)
-	for _, item := range items {
-		m.Store(item, item)
+	for i := 0; i < benchMapNum; i++ {
+		m.Store(i, i)
 	}
 	b.ResetTimer()
 
-	var j int
 	for i := 0; i < b.N; i++ {
-		item := items[j]
+		key := rand.IntN(benchMapNum)
 
-		_, ok := m.Load(item)
+		_, ok := m.Load(key)
 		if !ok {
 			b.Fatal("item not found")
-		}
-
-		j++
-		if j >= len(items) {
-			j = 0
 		}
 	}
 
@@ -43,28 +34,18 @@ func BenchmarkConcurrentMap_Read(b *testing.B) {
 
 func BenchmarkConcurrentMap_Read_Parallel(b *testing.B) {
 	m := NewConcurrentMap[int, int]()
-	items := benchMapItems(1024)
-	for _, item := range items {
-		m.Store(item, item)
+	for i := 0; i < benchMapNum; i++ {
+		m.Store(i, i)
 	}
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
-		items1 := slices.Clone(items)
-		slices2.Shuffle(items1)
-
-		var j int
 		for p.Next() {
-			item := items1[j]
+			key := rand.IntN(benchMapNum)
 
-			_, ok := m.Load(item)
+			_, ok := m.Load(key)
 			if !ok {
 				b.Fatal("item not found")
-			}
-
-			j++
-			if j >= len(items) {
-				j = 0
 			}
 		}
 	})
@@ -78,22 +59,14 @@ func BenchmarkConcurrentMap_Read_Parallel(b *testing.B) {
 
 func BenchmarkConcurrentMap_Write(b *testing.B) {
 	m := NewConcurrentMap[int, int]()
-	items := benchMapItems(1024)
-
 	b.ResetTimer()
 
-	var j int
 	for i := 0; i < b.N; i++ {
-		item := items[j]
+		key := rand.IntN(benchMapNum)
 
-		m.Store(item, item)
-		_, _ = m.Load(item)
-		m.Delete(item)
-
-		j++
-		if j >= len(items) {
-			j = 0
-		}
+		m.Store(key, key)
+		_, _ = m.Load(key)
+		m.Delete(key)
 	}
 
 	sec := b.Elapsed().Seconds()
@@ -103,25 +76,15 @@ func BenchmarkConcurrentMap_Write(b *testing.B) {
 
 func BenchmarkConcurrentMap_Write_Parallel(b *testing.B) {
 	m := NewConcurrentMap[int, int]()
-	items := benchMapItems(1024)
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
-		items1 := slices.Clone(items)
-		slices2.Shuffle(items1)
-		var j int
-
 		for p.Next() {
-			item := items[j]
+			key := rand.IntN(benchMapNum)
 
-			m.Store(item, item)
-			_, _ = m.Load(item)
-			m.Delete(item)
-
-			j++
-			if j >= len(items) {
-				j = 0
-			}
+			m.Store(key, key)
+			_, _ = m.Load(key)
+			m.Delete(key)
 		}
 	})
 

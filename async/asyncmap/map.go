@@ -7,6 +7,7 @@ package async
 import (
 	"runtime"
 	"sync"
+	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/internal/hashing"
 )
@@ -59,9 +60,16 @@ type shardedMap[K comparable, V any] struct {
 }
 
 func newShardedMap[K comparable, V any]() *shardedMap[K, V] {
-	num := runtime.NumCPU() * 4
+	cpus := runtime.NumCPU()
+	cpuLines := 16
+	lineSize := 256
 
-	shards := make([]mapShard[K, V], num)
+	size := unsafe.Sizeof(mapShard[K, V]{})
+	total := cpus * cpuLines * lineSize
+	n := int(total / int(size))
+
+	// n := runtime.NumCPU() * 4
+	shards := make([]mapShard[K, V], n)
 	for i := range shards {
 		shards[i] = newMapShard[K, V]()
 	}
@@ -145,7 +153,8 @@ func (m *shardedMap[K, V]) shard(key K) *mapShard[K, V] {
 type mapShard[K comparable, V any] struct {
 	mu    sync.RWMutex
 	items map[K]V
-	_     [224]byte // cache line padding
+
+	// _ [224]byte
 }
 
 func newMapShard[K comparable, V any]() mapShard[K, V] {

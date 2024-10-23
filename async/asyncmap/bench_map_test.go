@@ -5,27 +5,25 @@
 package async
 
 import (
-	"slices"
+	"math/rand/v2"
 	"testing"
-
-	"github.com/basecomplextech/baselibrary/collect/slices2"
 )
+
+const benchMapNum = 1024
 
 // Read
 
 func BenchmarkMap_Read(b *testing.B) {
 	m := NewMap[int, int]()
-	items := benchMapItems(1024)
-	for _, item := range items {
-		m.Set(item, item)
+	for i := 0; i < benchMapNum; i++ {
+		m.Set(i, i)
 	}
 	b.ResetTimer()
 
-	var j int
 	for i := 0; i < b.N; i++ {
-		item := items[j]
+		key := rand.IntN(benchMapNum)
 
-		_, ok := m.Get(item)
+		_, ok := m.Get(key)
 		if !ok {
 			b.Fatal("item not found")
 		}
@@ -38,28 +36,18 @@ func BenchmarkMap_Read(b *testing.B) {
 
 func BenchmarkMap_Read_Parallel(b *testing.B) {
 	m := NewMap[int, int]()
-	items := benchMapItems(1024)
-	for _, item := range items {
-		m.Set(item, item)
+	for i := 0; i < benchMapNum; i++ {
+		m.Set(i, i)
 	}
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
-		items1 := slices.Clone(items)
-		slices2.Shuffle(items1)
-
-		var j int
 		for p.Next() {
-			item := items1[j]
+			key := rand.IntN(benchMapNum)
 
-			_, ok := m.Get(item)
+			_, ok := m.Get(key)
 			if !ok {
 				b.Fatal("item not found")
-			}
-
-			j++
-			if j >= len(items) {
-				j = 0
 			}
 		}
 	})
@@ -73,21 +61,14 @@ func BenchmarkMap_Read_Parallel(b *testing.B) {
 
 func BenchmarkMap_Write(b *testing.B) {
 	m := NewMap[int, int]()
-	items := benchMapItems(1024)
 	b.ResetTimer()
 
-	var j int
 	for i := 0; i < b.N; i++ {
-		item := items[j]
+		key := rand.IntN(benchMapNum)
 
-		m.Set(item, item)
-		_, _ = m.Get(item)
-		m.Delete(item)
-
-		j++
-		if j >= len(items) {
-			j = 0
-		}
+		m.Set(key, key)
+		_, _ = m.Get(key)
+		m.Delete(key)
 	}
 
 	sec := b.Elapsed().Seconds()
@@ -97,39 +78,19 @@ func BenchmarkMap_Write(b *testing.B) {
 
 func BenchmarkMap_Write_Parallel(b *testing.B) {
 	m := NewMap[int, int]()
-	items := benchMapItems(1024)
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
-		items1 := slices.Clone(items)
-		slices2.Shuffle(items1)
-
-		var j int
 		for p.Next() {
-			item := items1[j]
+			key := rand.IntN(benchMapNum)
 
-			m.Set(item, item)
-			_, _ = m.Get(item)
-			m.Delete(item)
-
-			j++
-			if j >= len(items) {
-				j = 0
-			}
+			m.Set(key, key)
+			_, _ = m.Get(key)
+			m.Delete(key)
 		}
 	})
 
 	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
 	b.ReportMetric(ops/1000_000, "mops")
-}
-
-// private
-
-func benchMapItems(n int) []int {
-	items := make([]int, n)
-	for i := 0; i < n; i++ {
-		items[i] = i
-	}
-	return items
 }

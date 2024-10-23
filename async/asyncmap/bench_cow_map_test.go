@@ -5,25 +5,22 @@
 package async
 
 import (
-	"slices"
+	"math/rand/v2"
 	"testing"
-
-	"github.com/basecomplextech/baselibrary/collect/slices2"
 )
 
 func BenchmarkCowMap_Read(b *testing.B) {
 	m := NewCopyOnWriteMap[int, int]()
-	items := benchMapItems(1024)
-	for _, item := range items {
-		m.Set(item, item)
+
+	for i := 0; i < benchMapNum; i++ {
+		m.Set(i, i)
 	}
 	b.ResetTimer()
 
-	var j int
 	for i := 0; i < b.N; i++ {
-		item := items[j]
+		key := rand.IntN(benchMapNum)
 
-		_, ok := m.Get(item)
+		_, ok := m.Get(key)
 		if !ok {
 			b.Fatal("item not found")
 		}
@@ -36,28 +33,19 @@ func BenchmarkCowMap_Read(b *testing.B) {
 
 func BenchmarkCowMap_Read_Parallel(b *testing.B) {
 	m := NewCopyOnWriteMap[int, int]()
-	items := benchMapItems(1024)
-	for _, item := range items {
-		m.Set(item, item)
+
+	for i := 0; i < benchMapNum; i++ {
+		m.Set(i, i)
 	}
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
-		items1 := slices.Clone(items)
-		slices2.Shuffle(items1)
-
-		var j int
 		for p.Next() {
-			item := items1[j]
+			key := rand.IntN(benchMapNum)
 
-			_, ok := m.Get(item)
+			_, ok := m.Get(key)
 			if !ok {
 				b.Fatal("item not found")
-			}
-
-			j++
-			if j >= len(items) {
-				j = 0
 			}
 		}
 	})
