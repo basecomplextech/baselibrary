@@ -4,11 +4,7 @@
 
 package asyncmap
 
-// Map is a sharded hash map, which uses a lock per shard.
-// The number of shards is equal to the number of CPU cores.
-//
-// This map is optimized for read-write operations.
-// Maybe use ConcurrentMap if you need a map optimized mostly for read operations.
+// Map is an abstract interface for a concurrent map.
 type Map[K comparable, V any] interface {
 	// Len returns the number of keys.
 	Len() int
@@ -37,7 +33,7 @@ type Map[K comparable, V any] interface {
 	// Swap swaps a key value and returns the previous value.
 	Swap(key K, value V) (V, bool)
 
-	// Range iterates over all key-value pairs, locks shards during iteration.
+	// Range iterates over all key-value pairs.
 	// The iteration stops if the function returns false.
 	Range(fn func(K, V) bool)
 }

@@ -9,7 +9,7 @@ import "sync"
 // AtomicMap is a generic wrapper around the standard sync.Map.
 //
 // This map is optimized mostly for read operations.
-// Use async.Map if you need a map optimized for read-write operations.
+// Use ShardMap if you need a map optimized for read-write operations.
 type AtomicMap[K comparable, V any] interface {
 	Map[K, V]
 }
@@ -95,7 +95,7 @@ func (m *atomicMap[K, V]) Swap(key K, value V) (v V, _ bool) {
 	return val.(V), true
 }
 
-// Range iterates over all key-value pairs, locks shards during iteration.
+// Range iterates over all key-value pairs.
 // The iteration stops if the function returns false.
 func (m *atomicMap[K, V]) Range(fn func(K, V) bool) {
 	m.raw.Range(func(key, value any) bool {

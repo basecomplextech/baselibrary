@@ -13,8 +13,8 @@ const benchMapNum = 1024
 
 // Read
 
-func BenchmarkMap_Read(b *testing.B) {
-	m := NewMap[int, int]()
+func BenchmarkShardMap_Read(b *testing.B) {
+	m := NewShardMap[int, int]()
 	for i := 0; i < benchMapNum; i++ {
 		m.Set(i, i)
 	}
@@ -34,8 +34,8 @@ func BenchmarkMap_Read(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkMap_Read_Parallel(b *testing.B) {
-	m := NewMap[int, int]()
+func BenchmarkShardMap_Read_Parallel(b *testing.B) {
+	m := NewShardMap[int, int]()
 	for i := 0; i < benchMapNum; i++ {
 		m.Set(i, i)
 	}
@@ -59,8 +59,8 @@ func BenchmarkMap_Read_Parallel(b *testing.B) {
 
 // Write
 
-func BenchmarkMap_Write(b *testing.B) {
-	m := NewMap[int, int]()
+func BenchmarkShardMap_Write(b *testing.B) {
+	m := NewShardMap[int, int]()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -76,8 +76,8 @@ func BenchmarkMap_Write(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkMap_Write_Parallel(b *testing.B) {
-	m := NewMap[int, int]()
+func BenchmarkShardMap_Write_Parallel(b *testing.B) {
+	m := NewShardMap[int, int]()
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
