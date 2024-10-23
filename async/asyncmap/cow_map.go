@@ -105,10 +105,13 @@ func (m *cowMap[K, V]) Swap(key K, value V) (V, bool) {
 }
 
 // Range iterates over all key-value pairs, locks shards during iteration.
-func (m *cowMap[K, V]) Range(fn func(K, V)) {
+func (m *cowMap[K, V]) Range(fn func(K, V) bool) {
 	for i := range m.shards {
 		s := &m.shards[i]
-		s.range_(fn)
+		ok := s.range_(fn)
+		if !ok {
+			return
+		}
 	}
 }
 
@@ -235,12 +238,16 @@ func (s *cowMapShard[K, V]) swap(key K, value V) (V, bool) {
 	return value, ok
 }
 
-func (s *cowMapShard[K, V]) range_(fn func(K, V)) {
+func (s *cowMapShard[K, V]) range_(fn func(K, V) bool) bool {
 	v := s.current.Load()
 
 	for key, value := range v.items {
-		fn(key, value)
+		ok := fn(key, value)
+		if !ok {
+			return false
+		}
 	}
+	return true
 }
 
 // version

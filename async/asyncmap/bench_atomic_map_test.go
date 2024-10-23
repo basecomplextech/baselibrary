@@ -11,17 +11,17 @@ import (
 
 // Read
 
-func BenchmarkSyncMap_Read(b *testing.B) {
-	m := NewSyncMap[int, int]()
+func BenchmarkAtomicMap_Read(b *testing.B) {
+	m := NewAtomicMap[int, int]()
 	for i := 0; i < benchMapNum; i++ {
-		m.Store(i, i)
+		m.Set(i, i)
 	}
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		key := rand.IntN(benchMapNum)
 
-		_, ok := m.Load(key)
+		_, ok := m.Get(key)
 		if !ok {
 			b.Fatal("item not found")
 		}
@@ -32,10 +32,10 @@ func BenchmarkSyncMap_Read(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkSyncMap_Read_Parallel(b *testing.B) {
-	m := NewSyncMap[int, int]()
+func BenchmarkAtomicMap_Read_Parallel(b *testing.B) {
+	m := NewAtomicMap[int, int]()
 	for i := 0; i < benchMapNum; i++ {
-		m.Store(i, i)
+		m.Set(i, i)
 	}
 	b.ResetTimer()
 
@@ -43,7 +43,7 @@ func BenchmarkSyncMap_Read_Parallel(b *testing.B) {
 		for p.Next() {
 			key := rand.IntN(benchMapNum)
 
-			_, ok := m.Load(key)
+			_, ok := m.Get(key)
 			if !ok {
 				b.Fatal("item not found")
 			}
@@ -57,15 +57,15 @@ func BenchmarkSyncMap_Read_Parallel(b *testing.B) {
 
 // Write
 
-func BenchmarkSyncMap_Write(b *testing.B) {
-	m := NewSyncMap[int, int]()
+func BenchmarkAtomicMap_Write(b *testing.B) {
+	m := NewAtomicMap[int, int]()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		key := rand.IntN(benchMapNum)
 
-		m.Store(key, key)
-		_, _ = m.Load(key)
+		m.Set(key, key)
+		_, _ = m.Get(key)
 		m.Delete(key)
 	}
 
@@ -74,16 +74,16 @@ func BenchmarkSyncMap_Write(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkSyncMap_Write_Parallel(b *testing.B) {
-	m := NewSyncMap[int, int]()
+func BenchmarkAtomicMap_Write_Parallel(b *testing.B) {
+	m := NewAtomicMap[int, int]()
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {
 			key := rand.IntN(benchMapNum)
 
-			m.Store(key, key)
-			_, _ = m.Load(key)
+			m.Set(key, key)
+			_, _ = m.Get(key)
 			m.Delete(key)
 		}
 	})

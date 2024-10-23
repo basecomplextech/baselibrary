@@ -38,5 +38,6 @@ type Map[K comparable, V any] interface {
 	Swap(key K, value V) (V, bool)
 
 	// Range iterates over all key-value pairs, locks shards during iteration.
-	Range(fn func(K, V))
+	// The iteration stops if the function returns false.
+	Range(fn func(K, V) bool)
 }

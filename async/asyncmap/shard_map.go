@@ -106,10 +106,13 @@ func (m *shardedMap[K, V]) Swap(key K, value V) (V, bool) {
 }
 
 // Range iterates over all key-value pairs, locks shards during iteration.
-func (m *shardedMap[K, V]) Range(fn func(K, V)) {
+func (m *shardedMap[K, V]) Range(fn func(K, V) bool) {
 	for i := range m.shards {
 		s := &m.shards[i]
-		s.range_(fn)
+		ok := s.range_(fn)
+		if !ok {
+			return
+		}
 	}
 }
 
@@ -213,11 +216,15 @@ func (s *mapShard[K, V]) swap(key K, value V) (V, bool) {
 	return v, ok
 }
 
-func (s *mapShard[K, V]) range_(fn func(K, V)) {
+func (s *mapShard[K, V]) range_(fn func(K, V) bool) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	for key, value := range s.items {
-		fn(key, value)
+		ok := fn(key, value)
+		if !ok {
+			return false
+		}
 	}
+	return true
 }
