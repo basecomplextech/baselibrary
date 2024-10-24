@@ -5,33 +5,28 @@
 package ref
 
 import (
+	"runtime"
 	"testing"
 	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConcurrentVar__slot_should_have_cache_line_size(t *testing.T) {
-	s := concurrentSlot[int]{}
+func TestConcurrentVar__shard_should_have_cache_line_size(t *testing.T) {
+	s := cvarShard[int]{}
 	size := unsafe.Sizeof(s)
-
-	assert.Equal(t, 256, int(size))
-}
-
-func TestConcurrentVar__ref_should_have_cache_line_size(t *testing.T) {
-	r := concurrentRef[int]{}
-	size := unsafe.Sizeof(r)
 
 	assert.Equal(t, 256, int(size))
 }
 
 // Acquire
 
-func TestConcurrentVar_Acquire__should_acquire_chained_reference(t *testing.T) {
-	r := NewNoop(1)
+func TestConcurrentVar_Acquire__should_acquire_current_reference(t *testing.T) {
+	cpuNum := runtime.NumCPU()
 
+	r := NewNoop(1)
 	v := NewConcurrentVar[int]()
-	v.SwapRetain(r)
+	v.SetRetain(r)
 	r.Release()
 
 	r1, ok := v.Acquire()
@@ -39,9 +34,9 @@ func TestConcurrentVar_Acquire__should_acquire_chained_reference(t *testing.T) {
 		t.Fatal(ok)
 	}
 	assert.Equal(t, int64(2), r1.Refcount())
-	assert.Equal(t, int64(1), r.Refcount())
+	assert.Equal(t, int64(cpuNum), r.Refcount())
 
-	v.Clear()
+	v.Unset()
 	assert.Equal(t, int64(1), r1.Refcount())
 	assert.Equal(t, int64(1), r.Refcount())
 
@@ -50,30 +45,33 @@ func TestConcurrentVar_Acquire__should_acquire_chained_reference(t *testing.T) {
 	assert.Equal(t, int64(0), r.Refcount())
 }
 
-// SwapRetain
+// SetRetain
 
-func TestConcurrentVar_SwapRetain__should_retain_new_reference(t *testing.T) {
+func TestConcurrentVar_SetRetain__should_retain_new_reference(t *testing.T) {
+	cpuNum := runtime.NumCPU()
+
 	r := NewNoop(1)
-
 	v := NewConcurrentVar[int]()
-	v.SwapRetain(r)
-	assert.Equal(t, int64(2), r.Refcount())
+	v.SetRetain(r)
+	assert.Equal(t, int64(cpuNum+1), r.Refcount())
 
 	r.Release()
-	assert.Equal(t, int64(1), r.Refcount())
+	assert.Equal(t, int64(cpuNum), r.Refcount())
 }
 
-func TestConcurrentVar_SwapRetain__should_release_previous_reference(t *testing.T) {
+func TestConcurrentVar_SetRetain__should_release_previous_reference(t *testing.T) {
+	cpuNum := runtime.NumCPU()
+
 	r0 := NewNoop(1)
 	r1 := NewNoop(2)
 
 	v := NewConcurrentVar[int]()
-	v.SwapRetain(r0)
-	v.SwapRetain(r1)
+	v.SetRetain(r0)
+	v.SetRetain(r1)
 
 	r0.Release()
 	r1.Release()
 
 	assert.Equal(t, int64(0), r0.Refcount())
-	assert.Equal(t, int64(1), r1.Refcount())
+	assert.Equal(t, int64(cpuNum), r1.Refcount())
 }
