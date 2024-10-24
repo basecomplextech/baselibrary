@@ -19,7 +19,7 @@ func BenchmarkR(b *testing.B) {
 
 	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
-	b.ReportMetric(ops/1000_000, "mops/s")
+	b.ReportMetric(ops/1000_000, "mops")
 }
 
 func BenchmarkR_Parallel(b *testing.B) {
@@ -35,5 +35,5 @@ func BenchmarkR_Parallel(b *testing.B) {
 
 	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
-	b.ReportMetric(ops/1000_000, "mops/s")
+	b.ReportMetric(ops/1000_000, "mops")
 }

@@ -22,7 +22,7 @@ func BenchmarkConcurrentVar(b *testing.B) {
 
 	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
-	b.ReportMetric(ops/1000_000, "mops/s")
+	b.ReportMetric(ops/1000_000, "mops")
 }
 
 func BenchmarkConcurrentVar_Parallel(b *testing.B) {
@@ -46,7 +46,7 @@ func BenchmarkConcurrentVar_Parallel(b *testing.B) {
 
 	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
-	b.ReportMetric(ops/1000_000, "mops/s")
+	b.ReportMetric(ops/1000_000, "mops")
 }
 
 // Acquire
@@ -67,7 +67,7 @@ func BenchmarkConcurrentVar_Acquire(b *testing.B) {
 
 	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
-	b.ReportMetric(ops/1000_000, "mops/s")
+	b.ReportMetric(ops/1000_000, "mops")
 }
 
 func BenchmarkConcurrentVar_Acquire_Parallel(b *testing.B) {
@@ -91,5 +91,5 @@ func BenchmarkConcurrentVar_Acquire_Parallel(b *testing.B) {
 
 	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
-	b.ReportMetric(ops/1000_000, "mops/s")
+	b.ReportMetric(ops/1000_000, "mops")
 }

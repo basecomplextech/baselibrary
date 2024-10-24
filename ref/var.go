@@ -56,17 +56,6 @@ func newVar[T any]() *varImpl[T] {
 
 // Acquire acquires, retains and returns a value reference, or false.
 func (v *varImpl[T]) Acquire() (R[T], bool) {
-	// Special cases:
-	//
-	// 1) The current goroutine loads the reference.
-	//    Another goroutine swaps, unsets [and releases] it.
-	//    The acquire method checks the unset bit and returns false.
-	//
-	// 2) The current gorotine loads the reference.
-	//    Another goroutine swaps it (but not unsets/releases it).
-	//    The current goroutine retains and returns the reference.
-	//    The other goroutine sets the unset bit and releases the reference.
-	//    The reference is still completely valid, it just has the unset bit set.
 	for {
 		ref := v.cur.Load()
 		if ref == nil {

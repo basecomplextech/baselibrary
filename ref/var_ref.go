@@ -6,7 +6,6 @@ package ref
 
 import (
 	"fmt"
-	"sync"
 	"sync/atomic"
 )
 
@@ -16,15 +15,15 @@ var _ R[any] = (*varRef[any])(nil)
 
 type varRef[T any] struct {
 	refs atomic.Int64
-	ref  R[T]
-
-	mu    sync.Mutex
-	freed bool
+	ref  atomic.Pointer[R[T]]
+	_ref R[T]
 }
 
 func newVarRef[T any](ref R[T]) *varRef[T] {
-	r := &varRef[T]{ref: ref}
+	r := &varRef[T]{}
+	r._ref = ref
 	r.refs.Store(1)
+	r.ref.Store(&r._ref)
 	return r
 }
 
@@ -52,8 +51,12 @@ func (r *varRef[T]) Release() {
 }
 
 // Unwrap returns the object or panics if the refcount is 0.
-func (r *varRef[T]) Unwrap() T {
-	return r.ref.Unwrap()
+func (r *varRef[T]) Unwrap() (v T) {
+	ref := r.ref.Load()
+	if ref == nil {
+		return v
+	}
+	return (*ref).Unwrap()
 }
 
 // private
@@ -108,12 +111,10 @@ func (r *varRef[T]) free() {
 	// The method may be called multiple times because refcount may reach 0 multiple times.
 	// For example, when readers fail to acquire a detached reference.
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.freed {
+	ptr := r.ref.Swap(nil)
+	if ptr == nil {
 		return
 	}
-	r.freed = true
-	r.ref.Release()
+
+	(*ptr).Release()
 }
