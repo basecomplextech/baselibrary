@@ -32,23 +32,18 @@ func NewConcurrentVar[T any]() ConcurrentVar[T] {
 var _ ConcurrentVar[any] = (*cvar[any])(nil)
 
 type cvar[T any] struct {
-	shards []cvarShard[T]
+	shards []*varImpl[T] // no need to use cache-line padding, contention is on varRef
 	wmu    sync.RWMutex
-}
-
-type cvarShard[T any] struct {
-	*varImpl[T]
-	_ [256 - 8]byte
 }
 
 func newCVar[T any]() *cvar[T] {
 	cpus := runtime.NumCPU()
 	v := &cvar[T]{
-		shards: make([]cvarShard[T], cpus),
+		shards: make([]*varImpl[T], cpus),
 	}
 
 	for i := range v.shards {
-		v.shards[i].varImpl = newVar[T]()
+		v.shards[i] = newVar[T]()
 	}
 	return v
 }

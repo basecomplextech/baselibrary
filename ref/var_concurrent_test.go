@@ -7,17 +7,9 @@ package ref
 import (
 	"runtime"
 	"testing"
-	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestConcurrentVar__shard_should_have_cache_line_size(t *testing.T) {
-	s := cvarShard[int]{}
-	size := unsafe.Sizeof(s)
-
-	assert.Equal(t, 256, int(size))
-}
 
 // Acquire
 
