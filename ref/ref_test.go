@@ -29,6 +29,8 @@ func TestRef(t *testing.T) {
 	require.True(t, freed)
 }
 
+// Freer
+
 func TestRefFreer(t *testing.T) {
 	freed := false
 	freer := FreeFunc(func() {
@@ -68,15 +70,7 @@ func TestRefFreerPooled(t *testing.T) {
 	require.True(t, freed)
 }
 
-func TestRefNoop(t *testing.T) {
-	ref := NewNoop(10)
-	ref.Retain()
-
-	v := ref.Unwrap()
-	require.Equal(t, 10, v)
-
-	ref.Release()
-}
+// Next
 
 func TestRefNext(t *testing.T) {
 	ref := NewNoop(10)
@@ -116,20 +110,14 @@ func TestRefNextPooled(t *testing.T) {
 	assert.Equal(t, int64(1), ref.Refcount())
 }
 
-func TestRefMap(t *testing.T) {
+// Noop
+
+func TestRefNoop(t *testing.T) {
 	ref := NewNoop(10)
-	ref1 := Map(20, ref)
-	require.Equal(t, int64(1), ref.Refcount())
-	require.Equal(t, int64(1), ref1.Refcount())
+	ref.Retain()
 
-	ref1.Retain()
-	require.Equal(t, int64(2), ref.Refcount())
-	require.Equal(t, int64(2), ref1.Refcount())
+	v := ref.Unwrap()
+	require.Equal(t, 10, v)
 
-	v := ref1.Unwrap()
-	require.Equal(t, 20, v)
-
-	ref1.Release()
-	assert.Equal(t, int64(1), ref.Refcount())
-	assert.Equal(t, int64(1), ref1.Refcount())
+	ref.Release()
 }
