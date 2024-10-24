@@ -14,3 +14,6 @@ func unsafeByteString(s string) []byte {
 	d := unsafe.StringData(s)
 	return unsafe.Slice(d, len(s))
 }
+
+//go:linkname fastrand runtime.fastrand
+func fastrand() uint32

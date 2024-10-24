@@ -40,7 +40,7 @@ func BenchmarkCryptoRandom64_Parallel(b *testing.B) {
 
 // randomReader
 
-func BenchmarkReader_Random64(b *testing.B) {
+func BenchmarkRandom64(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
@@ -52,7 +52,7 @@ func BenchmarkReader_Random64(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkReader_Random64_Parallel(b *testing.B) {
+func BenchmarkRandom64_Parallel(b *testing.B) {
 	b.ReportAllocs()
 
 	b.RunParallel(func(pb *testing.PB) {

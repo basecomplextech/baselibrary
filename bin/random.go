@@ -1,4 +1,4 @@
-// Copyright 2023 Ivan Korobkov. All rights reserved.
+// Copyright 2024 Ivan Korobkov. All rights reserved.
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
@@ -8,27 +8,26 @@ import (
 	"crypto/rand"
 	"runtime"
 	"sync"
-
-	_ "unsafe"
+	"sync/atomic"
 )
-
-var random = newRandomPool()
 
 const (
-	randomBuffer = 8192
-	randomMulti  = 8
+	randomBuffer      = 8192
+	randomConcurrency = 8
 )
+
+var random = newRandomPool2()
+
+// pool
 
 type randomPool struct {
 	readers []randomReader
 }
 
-func newRandomPool() *randomPool {
-	n := runtime.NumCPU() * randomMulti
+func newRandomPool2() *randomPool {
+	n := runtime.NumCPU() * randomConcurrency
+	p := &randomPool{readers: make([]randomReader, n)}
 
-	p := &randomPool{
-		readers: make([]randomReader, n),
-	}
 	for i := range p.readers {
 		p.readers[i].init(randomBuffer)
 	}
@@ -53,14 +52,14 @@ func (p *randomPool) read256() [32]byte {
 // reader
 
 type randomReader struct {
+	pos atomic.Int32
 	mu  sync.Mutex
 	buf []byte
-	pos int
 
-	_pad [216]byte // pad to cache line
+	_ [216]byte // pad to cache line
 }
 
-func newRandomReader() *randomReader {
+func newRandomReader2() *randomReader {
 	r := &randomReader{}
 	r.init(randomBuffer)
 	return r
@@ -68,58 +67,86 @@ func newRandomReader() *randomReader {
 
 func (r *randomReader) init(size int) {
 	r.buf = make([]byte, size)
-	r.pos = size
+	r.pos.Store(int32(size))
 }
 
-func (r *randomReader) read64() [8]byte {
+func (r *randomReader) read64() (v [8]byte) {
+	// Fast path
+	end := int(r.pos.Add(8))
+	if end <= len(r.buf) {
+		copy(v[:], r.buf[end-8:end])
+		return v
+	}
+
+	// Slow path
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.pos+8 > len(r.buf) {
-		r.fill()
+	// Check again
+	end = int(r.pos.Add(8))
+	if end <= len(r.buf) {
+		copy(v[:], r.buf[end-8:end])
+		return v
 	}
 
-	var v [8]byte
-	copy(v[:], r.buf[r.pos:])
-	r.pos += 8
-	return v
-}
-
-func (r *randomReader) read128() [16]byte {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.pos+16 > len(r.buf) {
-		r.fill()
-	}
-
-	var v [16]byte
-	copy(v[:], r.buf[r.pos:])
-	r.pos += 16
-	return v
-}
-
-func (r *randomReader) read256() [32]byte {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.pos+32 > len(r.buf) {
-		r.fill()
-	}
-
-	var v [32]byte
-	copy(v[:], r.buf[r.pos:])
-	r.pos += 32
-	return v
-
-}
-
-func (r *randomReader) fill() {
+	// Refill buffer
 	rand.Read(r.buf)
-	r.pos = 0
+	r.pos.Store(8)
+
+	copy(v[:], r.buf[0:8])
+	return v
 }
 
-// util
+func (r *randomReader) read128() (v [16]byte) {
+	// Fast path
+	end := int(r.pos.Add(16))
+	if end <= len(r.buf) {
+		copy(v[:], r.buf[end-16:end])
+		return v
+	}
 
-//go:linkname fastrand runtime.fastrand
-func fastrand() uint32
+	// Slow path
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Check again
+	end = int(r.pos.Add(8))
+	if end <= len(r.buf) {
+		copy(v[:], r.buf[end-16:end])
+		return v
+	}
+
+	// Refill buffer
+	rand.Read(r.buf)
+	r.pos.Store(16)
+
+	copy(v[:], r.buf[0:16])
+	return v
+}
+
+func (r *randomReader) read256() (v [32]byte) {
+	// Fast path
+	end := int(r.pos.Add(32))
+	if end <= len(r.buf) {
+		copy(v[:], r.buf[end-32:end])
+		return v
+	}
+
+	// Slow path
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Check again
+	end = int(r.pos.Add(32))
+	if end <= len(r.buf) {
+		copy(v[:], r.buf[end-32:end])
+		return v
+	}
+
+	// Refill buffer
+	rand.Read(r.buf)
+	r.pos.Store(32)
+
+	copy(v[:], r.buf[0:32])
+	return v
+}
