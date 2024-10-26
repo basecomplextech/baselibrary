@@ -27,8 +27,9 @@ import (
 //		// ... handle request
 //	}
 type Flag interface {
-	// Get returns true if the flag is set.
-	Get() bool
+	// IsSet returns true if the flag is set.
+	// The method uses an atomic boolean internally and is non-blocking.
+	IsSet() bool
 
 	// Wait waits for the flag to be set.
 	Wait() <-chan struct{}
@@ -92,8 +93,9 @@ func newFlag() *flag {
 	}
 }
 
-// Get returns true if the flag is set.
-func (f *flag) Get() bool {
+// IsSet returns true if the flag is set.
+// The method uses an atomic boolean internally and is non-blocking.
+func (f *flag) IsSet() bool {
 	return f.set.Load()
 }
 
