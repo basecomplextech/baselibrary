@@ -10,6 +10,16 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
+// Await awaits a future completion, and returns the result.
+func Await[F Future[T], T any](ctx Context, f F) (v T, _ status.Status) {
+	select {
+	case <-ctx.Wait():
+		return v, ctx.Status()
+	case <-f.Wait():
+		return f.Result()
+	}
+}
+
 // AwaitAll awaits all futures completion in a group, and returns the results.
 //
 // The method returns nil and the context status if the context is canceled.
@@ -85,10 +95,10 @@ func AwaitAny[F Future[T], T any](ctx Context, futures ...F) (int, T, status.Sta
 	return j - 1, result, st
 }
 
-// AwaitError awaits and returns the first error in a group, or OK if all futures are successful.
+// AwaitAnyError awaits and returns the first error in a group, or OK if all futures are successful.
 //
 // The method returns -1 and the context status if the context is canceled.
-func AwaitError[F Future[T], T any](ctx Context, futures ...F) (int, status.Status) {
+func AwaitAnyError[F Future[T], T any](ctx Context, futures ...F) (int, status.Status) {
 	switch len(futures) {
 	case 0:
 		return -1, status.OK

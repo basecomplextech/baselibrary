@@ -71,9 +71,9 @@ func TestAwaitAny__should_wait_for_any_future(t *testing.T) {
 	assert.Equal(t, 3, result)
 }
 
-// AwaitError
+// AwaitAnyError
 
-func TestAwaitError__should_wait_for_any_error_error(t *testing.T) {
+func TestAwaitAnyError__should_wait_for_any_error_error(t *testing.T) {
 	r0 := Run(func(ctx Context) (int, status.Status) {
 		return 1, status.OK
 	})
@@ -87,7 +87,7 @@ func TestAwaitError__should_wait_for_any_error_error(t *testing.T) {
 	})
 
 	ctx := NoContext()
-	i, st := AwaitError(ctx, r0, r1, r2)
+	i, st := AwaitAnyError(ctx, r0, r1, r2)
 	assert.Equal(t, 1, i)
 	assert.Equal(t, status.Error("test error"), st)
 }
