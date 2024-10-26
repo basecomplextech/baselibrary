@@ -50,7 +50,7 @@ func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
 }
 
 // GoPool runs a function in a pool, recovers on panics.
-func GoPool(pool Pool, fn func(ctx Context) status.Status) Routine[struct{}] {
+func GoPool(pool RoutinePool, fn func(ctx Context) status.Status) Routine[struct{}] {
 	r := newRoutine[struct{}]()
 
 	pool.Go(func() {
@@ -99,7 +99,7 @@ func Run[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 }
 
 // RunPool runs a function in a routine pool, and returns the result, recovers on panics.
-func RunPool[T any](pool Pool, fn func(ctx Context) (T, status.Status)) Routine[T] {
+func RunPool[T any](pool RoutinePool, fn func(ctx Context) (T, status.Status)) Routine[T] {
 	r := newRoutine[T]()
 
 	pool.Go(func() {
