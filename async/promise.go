@@ -51,6 +51,14 @@ func newPromiseEmbedded[T any]() promise[T] {
 	}
 }
 
+// Done returns true if the future is complete.
+func (p *promise[T]) Done() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return p.done
+}
+
 // Wait returns a channel which is closed when the result is available.
 func (p *promise[T]) Wait() <-chan struct{} {
 	p.mu.Lock()

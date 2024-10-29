@@ -4,8 +4,16 @@
 
 package async
 
+type Stopper interface {
+	// Wait returns a channel which is closed when the future is complete.
+	Wait() <-chan struct{}
+
+	// Stop requests the routine to stop and returns a wait channel.
+	Stop() <-chan struct{}
+}
+
 // StopAll stops all routines, but does not await their stop.
-func StopAll[R RoutineDyn](routines ...R) {
+func StopAll[R Stopper](routines ...R) {
 	for _, r := range routines {
 		r.Stop()
 	}
@@ -17,7 +25,7 @@ func StopAll[R RoutineDyn](routines ...R) {
 //
 //	w := runWorker()
 //	defer StopWait(w)
-func StopWait[R RoutineDyn](r R) {
+func StopWait[R Stopper](r R) {
 	<-r.Stop()
 }
 
@@ -28,7 +36,7 @@ func StopWait[R RoutineDyn](r R) {
 //	w0 := runWorker()
 //	w1 := runWorker()
 //	defer StopWaitAll(w0, w1)
-func StopWaitAll[R RoutineDyn](routines ...R) {
+func StopWaitAll[R Stopper](routines ...R) {
 	for _, r := range routines {
 		r.Stop()
 	}

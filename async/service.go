@@ -12,7 +12,11 @@ import (
 
 // Service is a service which can be started and stopped.
 type Service interface {
-	Future[struct{}]
+	// Wait returns a channel which is closed when the service is stopped.
+	Wait() <-chan struct{}
+
+	// Status returns the exit status or none.
+	Status() status.Status
 
 	// Flags
 
@@ -58,6 +62,28 @@ func newService(fn func(ctx Context) status.Status) *service {
 	}
 }
 
+// Wait returns a channel which is closed when the service is stopped.
+func (s *service) Wait() <-chan struct{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.routine == nil {
+		return closedChan
+	}
+	return s.routine.Wait()
+}
+
+// Status returns the exit status or none.
+func (s *service) Status() status.Status {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.routine == nil {
+		return status.None
+	}
+	return s.routine.Status()
+}
+
 // Flags
 
 // Running indicates that the service is running.
@@ -68,41 +94,6 @@ func (s *service) Running() Flag {
 // Stopped indicates that the service is stopped.
 func (s *service) Stopped() Flag {
 	return s.stopped
-}
-
-// Future
-
-// Wait returns a channel which is closed when the future is complete.
-func (s *service) Wait() <-chan struct{} {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.routine == nil {
-		return stoppedRoutine.Wait()
-	}
-	return s.routine.Wait()
-}
-
-// Result returns a value and a status.
-func (s *service) Result() (struct{}, status.Status) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.routine == nil {
-		return struct{}{}, status.None
-	}
-	return s.routine.Result()
-}
-
-// Status returns a status or none.
-func (s *service) Status() status.Status {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.routine == nil {
-		return status.None
-	}
-	return s.routine.Status()
 }
 
 // Methods

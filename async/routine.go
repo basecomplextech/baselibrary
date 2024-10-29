@@ -147,7 +147,12 @@ func newRoutine[T any]() *routine[T] {
 	}
 }
 
-// Stop requests the future to stop and returns a wait channel.
+// Done returns true if the routine is complete.
+func (r *routine[T]) Done() bool {
+	return r.result.Done()
+}
+
+// Stop requests the routine to stop and returns a wait channel.
 func (r *routine[T]) Stop() <-chan struct{} {
 	r.ctx.Cancel()
 	return r.result.Wait()

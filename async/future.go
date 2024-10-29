@@ -10,6 +10,9 @@ import (
 
 // Future represents a result available in the future.
 type Future[T any] interface {
+	// Done returns true if the future is complete.
+	Done() bool
+
 	// Wait returns a channel which is closed when the future is complete.
 	Wait() <-chan struct{}
 
