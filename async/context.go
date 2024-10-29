@@ -5,6 +5,7 @@
 package async
 
 import (
+	context_ "context"
 	"sync"
 	"time"
 
@@ -98,6 +99,13 @@ func NextTimeoutContext(parent Context, timeout time.Duration) Context {
 func NextDeadlineContext(parent Context, deadline time.Time) Context {
 	timeout := time.Until(deadline)
 	return newContextTimeout(parent, timeout)
+}
+
+// Standard
+
+// StdContext returns a standard library context from an async one.
+func StdContext(ctx Context) context_.Context {
+	return newStdContext(ctx)
 }
 
 // internal
@@ -381,6 +389,46 @@ func (*noContext) Status() status.Status          { return status.OK }
 func (*noContext) AddCallback(ContextCallback)    {}
 func (*noContext) RemoveCallback(ContextCallback) {}
 func (*noContext) Free()                          {}
+
+// std context
+
+var _ context_.Context = (*stdContext)(nil)
+
+type stdContext struct {
+	ctx Context
+}
+
+func newStdContext(ctx Context) *stdContext {
+	return &stdContext{ctx: ctx}
+}
+
+// Deadline returns the time when work done on behalf of this context should be canceled.
+func (x *stdContext) Deadline() (deadline time.Time, ok bool) {
+	return
+}
+
+// Done returns a channel that's closed when work done on behalf of this context should be canceled.
+func (x *stdContext) Done() <-chan struct{} {
+	return x.ctx.Wait()
+}
+
+// If Done is not yet closed, Err returns nil.
+func (x *stdContext) Err() error {
+	st := x.ctx.Status()
+	switch st.Code {
+	case status.CodeCancelled:
+		return context_.Canceled
+	case status.CodeTimeout:
+		return context_.DeadlineExceeded
+	}
+	return status.ToError(st)
+}
+
+// Value returns the value associated with this context for key, or nil
+// if no value is associated with key.
+func (x *stdContext) Value(key any) any {
+	return nil
+}
 
 // state pool
 
