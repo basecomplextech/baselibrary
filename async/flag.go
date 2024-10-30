@@ -5,6 +5,7 @@
 package async
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -79,12 +80,26 @@ func UnsetFlag() MutFlag {
 	return newFlag()
 }
 
+// ReverseFlag returns a new flag which reverses the original one.
+func ReverseFlag(f Flag) Flag {
+	switch f := f.(type) {
+	case *flag:
+		return newReverseFlag(f)
+	case *reverseFlag:
+		return f.src
+	}
+
+	panic(fmt.Sprintf("unsupported flag type %T", f))
+}
+
 // internal
 
 type flag struct {
 	mu      sync.Mutex
 	set     atomic.Bool
 	setChan chan struct{} // closed when set
+
+	reverse []*reverseFlag
 }
 
 func newFlag() *flag {
@@ -110,6 +125,10 @@ func (f *flag) Set() {
 
 	f.set.Store(true)
 	close(f.setChan)
+
+	for _, rf := range f.reverse {
+		rf.srcSet()
+	}
 }
 
 // Unset unsets the flag and replaces its wait channel with an open one.
@@ -123,6 +142,10 @@ func (f *flag) Unset() {
 
 	f.set.Store(false)
 	f.setChan = make(chan struct{})
+
+	for _, rf := range f.reverse {
+		rf.srcUnset()
+	}
 }
 
 // Wait waits for the flag to be set.
@@ -131,4 +154,62 @@ func (f *flag) Wait() <-chan struct{} {
 	defer f.mu.Unlock()
 
 	return f.setChan
+}
+
+// reverse
+
+var _ Flag = (*reverseFlag)(nil)
+
+type reverseFlag struct {
+	src *flag
+
+	mu    sync.Mutex
+	unset chan struct{} // closed (set) when source unset
+}
+
+func newReverseFlag(src *flag) *reverseFlag {
+	f := &reverseFlag{
+		src:   src,
+		unset: make(chan struct{}),
+	}
+
+	src.mu.Lock()
+	defer src.mu.Unlock()
+
+	src.reverse = append(src.reverse, f)
+
+	if !src.set.Load() {
+		close(f.unset)
+	}
+	return f
+}
+
+// IsSet returns true if the flag is set.
+// The method uses an atomic boolean internally and is non-blocking.
+func (f *reverseFlag) IsSet() bool {
+	return !f.src.IsSet()
+}
+
+// Wait waits for the flag to be set.
+func (f *reverseFlag) Wait() <-chan struct{} {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return f.unset
+}
+
+// srcSet unsets the reverse flag.
+func (f *reverseFlag) srcSet() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.unset = make(chan struct{})
+}
+
+// srcUnset sets the reverse flag.
+func (f *reverseFlag) srcUnset() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	close(f.unset)
 }

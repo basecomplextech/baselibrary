@@ -35,3 +35,37 @@ func TestFlag__should_set_and_reset_flag(t *testing.T) {
 		t.Fatal("flag should be set")
 	}
 }
+
+// Reverse
+
+func TestReverseFlag__should_reverse_source_flag(t *testing.T) {
+	f := UnsetFlag()
+	r := ReverseFlag(f)
+
+	select {
+	case <-r.Wait():
+	default:
+		t.Fatal("reverse flag should be set")
+	}
+
+	f.Set()
+	select {
+	case <-r.Wait():
+		t.Fatal("reverse flag should be unset")
+	default:
+	}
+
+	f.Unset()
+	select {
+	case <-r.Wait():
+	default:
+		t.Fatal("reverse flag should be set")
+	}
+
+	f.Set()
+	select {
+	case <-r.Wait():
+		t.Fatal("reverse flag should be unset")
+	default:
+	}
+}
