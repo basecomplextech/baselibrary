@@ -202,16 +202,21 @@ func (c *context) Done() bool {
 // Wait returns a channel which is closed when the context is cancelled.
 func (c *context) Wait() <-chan struct{} {
 	s, ok := c.lockState()
+	if !ok {
+		return closedChan
+	}
 	defer c.smu.Unlock()
 
-	if !ok || s.done {
+	if s.done {
 		return closedChan
 	}
 
-	if !s.channel.Valid {
-		s.channel = opt.New(make(chan struct{}))
+	ch, ok := s.channel.Unwrap()
+	if !ok {
+		ch = make(chan struct{})
+		s.channel.Set(ch)
 	}
-	return s.channel.Value
+	return ch
 }
 
 // Status returns a cancellation status or OK.
@@ -273,8 +278,10 @@ func (c *context) OnCancelled(st status.Status) {
 
 // Free cancels and releases the context.
 func (c *context) Free() {
+	// First, cancel
 	c.cancel(status.None /* default */)
 
+	// Then, release
 	c.cmu.Lock()
 	defer c.cmu.Unlock()
 
@@ -300,8 +307,8 @@ func (c *context) cancel(st status.Status) {
 		return
 	}
 
-	// State is immutable here. Notify callbacks,
-	// parent outside of the state lock.
+	// State is immutable here
+	// Notify callbacks, parent outside of the state lock.
 
 	// Notify callbacks
 	if len(s.callbacks) > 0 {
@@ -346,8 +353,8 @@ func (c *context) doCancel(st status.Status) (*contextState, bool) {
 
 	// Mark as done, close
 	s.done = true
-	if s.channel.Valid {
-		close(s.channel.Value)
+	if ch, ok := s.channel.Unwrap(); ok {
+		close(ch)
 	}
 
 	// Maybe set cause
