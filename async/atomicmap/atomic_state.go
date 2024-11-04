@@ -112,13 +112,14 @@ func (s *atomicState[K, V]) swap(key K, value V) (v V, _ bool) {
 	return v, ok
 }
 
-func (s *atomicState[K, V]) range_(fn func(K, V) bool) {
+func (s *atomicState[K, V]) range_(fn func(K, V) bool) bool {
 	for i := range s.buckets {
 		ok := s.buckets[i].range_(fn, s.pool)
 		if !ok {
-			return
+			return false
 		}
 	}
+	return true
 }
 
 func (s *atomicState[K, V]) rangeLocked(fn func(K, V) bool) {

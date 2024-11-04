@@ -36,7 +36,7 @@ func (e *atomicEntry[K, V]) init(prev *atomicEntry[K, V]) {
 	e.prev.Store(prev)
 	e.item = prev.item
 
-	if len(e.more) > 0 {
+	if len(prev.more) > 0 {
 		e.more = append(e.more, prev.more...)
 	}
 }
