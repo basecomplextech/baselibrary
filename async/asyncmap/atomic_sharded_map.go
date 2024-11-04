@@ -31,6 +31,11 @@ type AtomicShardedMap[K comparable, V any] interface {
 	Map[K, V]
 }
 
+// NewAtomicShardedMap returns a new atomic sharded map.
+func NewAtomicShardedMap[K comparable, V any]() AtomicShardedMap[K, V] {
+	return newAtomicShardedMap[K, V](0)
+}
+
 // internal
 
 var _ Map[int, int] = (*atomicShardedMap[int, int])(nil)

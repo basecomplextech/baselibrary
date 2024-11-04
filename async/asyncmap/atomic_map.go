@@ -44,6 +44,11 @@ type AtomicMap[K comparable, V any] interface {
 	Map[K, V]
 }
 
+// NewAtomicMap returns a new atomic map.
+func NewAtomicMap[K comparable, V any]() AtomicMap[K, V] {
+	return newAtomicMap[K, V](0)
+}
+
 // internal
 
 const (
