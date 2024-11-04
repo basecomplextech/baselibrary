@@ -25,19 +25,19 @@ type atomicItem[K comparable, V any] struct {
 	value V
 }
 
-// init inits a new entry, copies the last items if any.
-func (e *atomicEntry[K, V]) init(last *atomicEntry[K, V]) {
+// init inits a new entry, copies the previous items if any.
+func (e *atomicEntry[K, V]) init(prev *atomicEntry[K, V]) {
 	e.id = 1
-	if last == nil {
+	if prev == nil {
 		return
 	}
 
-	e.id = last.id + 1
-	e.prev.Store(last)
+	e.id = prev.id + 1
+	e.prev.Store(prev)
+	e.item = prev.item
 
-	e.item = e.item
 	if len(e.more) > 0 {
-		e.more = append(e.more, e.more...)
+		e.more = append(e.more, prev.more...)
 	}
 }
 

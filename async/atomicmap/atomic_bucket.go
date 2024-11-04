@@ -44,9 +44,11 @@ func (b *atomicBucket[K, V]) getOrSet(key K, value V, pool pools.Pool[*atomicEnt
 	entry := b.entry.Load()
 
 	// Try to get value
-	v, ok := entry.get(key)
-	if ok {
-		return v, true
+	if entry != nil {
+		v, ok := entry.get(key)
+		if ok {
+			return v, true
+		}
 	}
 
 	// Make next entry
@@ -56,7 +58,7 @@ func (b *atomicBucket[K, V]) getOrSet(key K, value V, pool pools.Pool[*atomicEnt
 
 	// Swap entry
 	b.swapEntry(next, entry, pool)
-	return v, false
+	return value, false
 }
 
 func (b *atomicBucket[K, V]) set(key K, value V, pool pools.Pool[*atomicEntry[K, V]]) bool {
@@ -82,7 +84,11 @@ func (b *atomicBucket[K, V]) swap(key K, value V, pool pools.Pool[*atomicEntry[K
 
 	// Load current entry
 	entry := b.entry.Load()
-	v, ok = entry.get(key)
+
+	// Try to get value
+	if entry != nil {
+		v, ok = entry.get(key)
+	}
 
 	// Make next entry
 	next := pool.New()
@@ -100,6 +106,9 @@ func (b *atomicBucket[K, V]) delete(key K, pool pools.Pool[*atomicEntry[K, V]]) 
 
 	// Load current entry
 	entry := b.entry.Load()
+	if entry == nil {
+		return v, false
+	}
 
 	// Make next entry
 	next := pool.New()
@@ -133,7 +142,6 @@ func (b *atomicBucket[K, V]) rangeLocked(fn func(K, V) bool) (continue_ bool) {
 	if entry == nil {
 		return true
 	}
-
 	return entry.range_(fn)
 }
 
