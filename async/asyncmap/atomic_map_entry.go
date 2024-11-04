@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/collect/slices2"
+	"github.com/basecomplextech/baselibrary/pools"
 )
 
 type atomicMapEntry[K comparable, V any] struct {
@@ -25,17 +26,13 @@ type atomicMapItem[K comparable, V any] struct {
 	value V
 }
 
-// ref
-
-func packAtomicMapEntryRef(id int32, refcount int32) int64 {
-	return int64(id)<<32 | int64(refcount)
+func newAtomicMapEntry[K comparable, V any](pool pools.Pool[*atomicMapEntry[K, V]]) *atomicMapEntry[K, V] {
+	e, ok := pool.Get()
+	if ok {
+		return e
+	}
+	return &atomicMapEntry[K, V]{}
 }
-
-func unpackAtomicMapEntryRef(r int64) (id int32, refcount int32) {
-	return int32(r >> 32), int32(r & 0xffffffff)
-}
-
-// init
 
 // init inits a new entry, copies the previous items if any.
 func (e *atomicMapEntry[K, V]) init(prev *atomicMapEntry[K, V]) {

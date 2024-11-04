@@ -64,7 +64,7 @@ type atomicMap[K comparable, V any] struct {
 }
 
 func newAtomicMap[K comparable, V any](size int) *atomicMap[K, V] {
-	pool := newAtomicPool[K, V]()
+	pool := newAtomicMapPool[K, V]()
 
 	num := int(float64(size) / atomicMapThreshold)
 	num = max(num, atomicMapMinSize)
@@ -75,12 +75,8 @@ func newAtomicMap[K comparable, V any](size int) *atomicMap[K, V] {
 	return m
 }
 
-func newAtomicPool[K comparable, V any]() pools.Pool[*atomicMapEntry[K, V]] {
-	return pools.NewPoolFunc(
-		func() *atomicMapEntry[K, V] {
-			return &atomicMapEntry[K, V]{}
-		},
-	)
+func newAtomicMapPool[K comparable, V any]() pools.Pool[*atomicMapEntry[K, V]] {
+	return pools.GetPool[*atomicMapEntry[K, V]](atomicMapEntryPools)
 }
 
 // Len returns the number of keys.
@@ -235,3 +231,7 @@ func (m *atomicMap[K, V]) resize() {
 	// Replace state
 	m.state.Store(next)
 }
+
+// pools
+
+var atomicMapEntryPools = pools.NewPools()

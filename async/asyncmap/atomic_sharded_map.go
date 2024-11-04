@@ -43,7 +43,7 @@ type atomicShardedMap[K comparable, V any] struct {
 }
 
 func newAtomicShardedMap[K comparable, V any](size int) *atomicShardedMap[K, V] {
-	pool := newAtomicPool[K, V]()
+	pool := newAtomicMapPool[K, V]()
 
 	// Calculate shard number, round to power of two
 	cpus := runtime.NumCPU()

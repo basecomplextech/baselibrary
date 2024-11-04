@@ -54,7 +54,7 @@ func (b *atomicMapBucket[K, V]) getOrSet(key K, value V, pool pools.Pool[*atomic
 	}
 
 	// Make next entry
-	next := pool.New()
+	next := newAtomicMapEntry(pool)
 	next.init(entry)
 	next.set(key, value)
 
@@ -71,7 +71,7 @@ func (b *atomicMapBucket[K, V]) set(key K, value V, pool pools.Pool[*atomicMapEn
 	entry := b.entry.Load()
 
 	// Make next entry
-	next := pool.New()
+	next := newAtomicMapEntry(pool)
 	next.init(entry)
 	ok := next.set(key, value)
 
@@ -95,7 +95,7 @@ func (b *atomicMapBucket[K, V]) swap(key K, value V, pool pools.Pool[*atomicMapE
 	}
 
 	// Make next entry
-	next := pool.New()
+	next := newAtomicMapEntry(pool)
 	next.init(entry)
 	next.set(key, value)
 
@@ -115,7 +115,7 @@ func (b *atomicMapBucket[K, V]) delete(key K, pool pools.Pool[*atomicMapEntry[K,
 	}
 
 	// Make next entry
-	next := pool.New()
+	next := newAtomicMapEntry(pool)
 	next.init(entry)
 	v, ok = next.delete(key)
 
