@@ -14,8 +14,20 @@ import (
 )
 
 // AtomicMap is a goroutine-safe hash map based on atomic operations.
-//
 // Readers are non-blocking, writers use a mutex per bucket, and a single resize mutex.
+//
+// The map uses a variant of reference counting with two reference counts
+// described in "C++ Concurrency in Action" by Anthony Williams.
+// Each entry has an external reference count and an internal reference count.
+//
+// Readers increment the external reference count when acquire an entry,
+// and *decrement* the internal reference count when release an entry.
+//
+// Writes atomically swap the reference with a new one, and increment
+// the internal reference count by the (external reference count - 1).
+//
+// When the internal reference count reaches zero, the entry is freed
+// and returned to the pool.
 //
 // Benchmarks:
 //
@@ -43,10 +55,10 @@ const (
 var _ asyncmap.Map[int, int] = (*atomicMap[int, int])(nil)
 
 type atomicMap[K comparable, V any] struct {
-	pool pools.Pool[*atomicEntry[K, V]]
+	pool pools.Pool[*atomicMapEntry[K, V]]
 
-	wmu   sync.RWMutex                      // resize mutex
-	state atomic.Pointer[atomicState[K, V]] // current state
+	wmu   sync.RWMutex                         // resize mutex
+	state atomic.Pointer[atomicMapState[K, V]] // current state
 }
 
 func newAtomicMap[K comparable, V any](size int) *atomicMap[K, V] {
@@ -55,16 +67,16 @@ func newAtomicMap[K comparable, V any](size int) *atomicMap[K, V] {
 	num := int(float64(size) / atomicMapThreshold)
 	num = max(num, atomicMapMinSize)
 
-	s := newAtomicState(num, pool)
+	s := newAtomicMapState(num, pool)
 	m := &atomicMap[K, V]{pool: pool}
 	m.state.Store(s)
 	return m
 }
 
-func newAtomicPool[K comparable, V any]() pools.Pool[*atomicEntry[K, V]] {
+func newAtomicPool[K comparable, V any]() pools.Pool[*atomicMapEntry[K, V]] {
 	return pools.NewPoolFunc(
-		func() *atomicEntry[K, V] {
-			return &atomicEntry[K, V]{}
+		func() *atomicMapEntry[K, V] {
+			return &atomicMapEntry[K, V]{}
 		},
 	)
 }
@@ -81,7 +93,7 @@ func (m *atomicMap[K, V]) Clear() {
 	defer m.wmu.Unlock()
 
 	s := m.state.Load()
-	next := clearAtomicState(s)
+	next := emptyAtomicMapState(s)
 
 	m.state.Store(next)
 }
@@ -209,7 +221,7 @@ func (m *atomicMap[K, V]) resize() {
 
 	// Double buckets
 	size := len(s.buckets) * 2
-	next := newAtomicState(size, s.pool)
+	next := newAtomicMapState(size, s.pool)
 
 	// Copy all items
 	s.rangeLocked(func(k K, v V) bool {

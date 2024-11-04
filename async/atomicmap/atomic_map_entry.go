@@ -10,23 +10,35 @@ import (
 	"github.com/basecomplextech/baselibrary/collect/slices2"
 )
 
-type atomicEntry[K comparable, V any] struct {
+type atomicMapEntry[K comparable, V any] struct {
 	id   int32
 	refs atomic.Int32 // internal refcount, 0 by default, external is 1
-	prev atomic.Pointer[atomicEntry[K, V]]
+	prev atomic.Pointer[atomicMapEntry[K, V]]
 
-	item atomicItem[K, V]
-	more []atomicItem[K, V]
+	item atomicMapItem[K, V]
+	more []atomicMapItem[K, V]
 }
 
-type atomicItem[K comparable, V any] struct {
+type atomicMapItem[K comparable, V any] struct {
 	set   bool
 	key   K
 	value V
 }
 
+// ref
+
+func packAtomicMapEntryRef(id int32, refcount int32) int64 {
+	return int64(id)<<32 | int64(refcount)
+}
+
+func unpackAtomicMapEntryRef(r int64) (id int32, refcount int32) {
+	return int32(r >> 32), int32(r & 0xffffffff)
+}
+
+// init
+
 // init inits a new entry, copies the previous items if any.
-func (e *atomicEntry[K, V]) init(prev *atomicEntry[K, V]) {
+func (e *atomicMapEntry[K, V]) init(prev *atomicMapEntry[K, V]) {
 	e.id = 1
 	if prev == nil {
 		return
@@ -43,7 +55,7 @@ func (e *atomicEntry[K, V]) init(prev *atomicEntry[K, V]) {
 
 // items
 
-func (e *atomicEntry[K, V]) get(key K) (v V, ok bool) {
+func (e *atomicMapEntry[K, V]) get(key K) (v V, ok bool) {
 	if e.item.set {
 		if e.item.key == key {
 			return e.item.value, true
@@ -60,9 +72,9 @@ func (e *atomicEntry[K, V]) get(key K) (v V, ok bool) {
 	return v, false
 }
 
-func (e *atomicEntry[K, V]) set(key K, value V) bool {
+func (e *atomicMapEntry[K, V]) set(key K, value V) bool {
 	if !e.item.set {
-		e.item = atomicItem[K, V]{true, key, value}
+		e.item = atomicMapItem[K, V]{true, key, value}
 		return true
 	}
 
@@ -79,15 +91,15 @@ func (e *atomicEntry[K, V]) set(key K, value V) bool {
 		}
 	}
 
-	item := atomicItem[K, V]{true, key, value}
+	item := atomicMapItem[K, V]{true, key, value}
 	e.more = append(e.more, item)
 	return true
 }
 
-func (e *atomicEntry[K, V]) delete(key K) (v V, ok bool) {
+func (e *atomicMapEntry[K, V]) delete(key K) (v V, ok bool) {
 	if e.item.set && e.item.key == key {
 		v = e.item.value
-		e.item = atomicItem[K, V]{}
+		e.item = atomicMapItem[K, V]{}
 		return v, true
 	}
 
@@ -103,7 +115,7 @@ func (e *atomicEntry[K, V]) delete(key K) (v V, ok bool) {
 	return v, false
 }
 
-func (e *atomicEntry[K, V]) range_(fn func(K, V) bool) (continue_ bool) {
+func (e *atomicMapEntry[K, V]) range_(fn func(K, V) bool) (continue_ bool) {
 	if e.item.set {
 		if !fn(e.item.key, e.item.value) {
 			return false
@@ -122,19 +134,9 @@ func (e *atomicEntry[K, V]) range_(fn func(K, V) bool) (continue_ bool) {
 
 // reset
 
-func (e *atomicEntry[K, V]) reset() {
+func (e *atomicMapEntry[K, V]) reset() {
 	more := e.more
 
-	*e = atomicEntry[K, V]{}
+	*e = atomicMapEntry[K, V]{}
 	e.more = slices2.Truncate(more)
-}
-
-// ref
-
-func packAtomicEntryRef(id int32, refcount int32) int64 {
-	return int64(id)<<32 | int64(refcount)
-}
-
-func unpackAtomicEntryRef(r int64) (id int32, refcount int32) {
-	return int32(r >> 32), int32(r & 0xffffffff)
 }

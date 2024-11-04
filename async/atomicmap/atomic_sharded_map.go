@@ -13,10 +13,11 @@ import (
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
-// AtomicShardedMap is a goroutine-safe hash map based on atomic operations and multiple shards
-// to reduce contention.
+// AtomicShardedMap is a goroutine-safe hash map based on atomic operations,
+// multiple shards to reduce contention, and hierarchical hashing.
 //
 // Readers are non-blocking, writers use a mutex per bucket, and a resize mutex per shard.
+// See [AtomicMap] for the implementation details.
 //
 // Benchmarks:
 //
@@ -36,8 +37,8 @@ type AtomicShardedMap[K comparable, V any] interface {
 var _ asyncmap.Map[int, int] = (*atomicShardedMap[int, int])(nil)
 
 type atomicShardedMap[K comparable, V any] struct {
-	pool   pools.Pool[*atomicEntry[K, V]]
-	shards []atomicShard[K, V] // always power of two
+	pool   pools.Pool[*atomicMapEntry[K, V]]
+	shards []atomicMapShard[K, V] // always power of two
 
 	bitWidth int // shard hash bit width
 }
@@ -53,7 +54,7 @@ func newAtomicShardedMap[K comparable, V any](size int) *atomicShardedMap[K, V] 
 	// Make map
 	m := &atomicShardedMap[K, V]{
 		pool:     pool,
-		shards:   make([]atomicShard[K, V], shardNum),
+		shards:   make([]atomicMapShard[K, V], shardNum),
 		bitWidth: bitWidth,
 	}
 
@@ -151,7 +152,7 @@ func (m *atomicShardedMap[K, V]) hashes(key K) (uint32, uint32) {
 	return h, h1
 }
 
-func (m *atomicShardedMap[K, V]) shard(key K) (_ *atomicShard[K, V], h1 uint32) {
+func (m *atomicShardedMap[K, V]) shard(key K) (_ *atomicMapShard[K, V], h1 uint32) {
 	h, h1 := m.hashes(key)
 	i := h % uint32(len(m.shards))
 	return &m.shards[i], h1

@@ -14,7 +14,7 @@ import (
 )
 
 func TestAtomicShardedMap__should_should_have_cache_line_size(t *testing.T) {
-	s := unsafe.Sizeof(atomicShard[int, int]{})
+	s := unsafe.Sizeof(atomicMapShard[int, int]{})
 	if s != 256 {
 		t.Fatal("shard size is not equal to cache line", s, 256-s)
 	}

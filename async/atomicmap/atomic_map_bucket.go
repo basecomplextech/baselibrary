@@ -11,17 +11,17 @@ import (
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
-type atomicBucket[K comparable, V any] struct {
-	wmu   sync.Mutex                        // write mutex
-	ref   atomic.Int64                      // entry id and external refs packed into int64
-	entry atomic.Pointer[atomicEntry[K, V]] // linked list of entries
+type atomicMapBucket[K comparable, V any] struct {
+	wmu   sync.Mutex                           // write mutex
+	ref   atomic.Int64                         // entry id and external refs packed into int64
+	entry atomic.Pointer[atomicMapEntry[K, V]] // linked list of entries
 }
 
-func newAtomicBucket[K comparable, V any]() *atomicBucket[K, V] {
-	return &atomicBucket[K, V]{}
+func newAtomicMapBucket[K comparable, V any]() *atomicMapBucket[K, V] {
+	return &atomicMapBucket[K, V]{}
 }
 
-func (b *atomicBucket[K, V]) get(key K, pool pools.Pool[*atomicEntry[K, V]]) (v V, _ bool) {
+func (b *atomicMapBucket[K, V]) get(key K, pool pools.Pool[*atomicMapEntry[K, V]]) (v V, _ bool) {
 	// Acquire entry, increment external refs
 	entry, prev, ok := b.acquireEntry()
 	if !ok {
@@ -36,7 +36,9 @@ func (b *atomicBucket[K, V]) get(key K, pool pools.Pool[*atomicEntry[K, V]]) (v 
 	return v, ok
 }
 
-func (b *atomicBucket[K, V]) getOrSet(key K, value V, pool pools.Pool[*atomicEntry[K, V]]) (v V, _ bool) {
+func (b *atomicMapBucket[K, V]) getOrSet(key K, value V, pool pools.Pool[*atomicMapEntry[K, V]]) (
+	v V, _ bool) {
+
 	b.wmu.Lock()
 	defer b.wmu.Unlock()
 
@@ -61,7 +63,7 @@ func (b *atomicBucket[K, V]) getOrSet(key K, value V, pool pools.Pool[*atomicEnt
 	return value, false
 }
 
-func (b *atomicBucket[K, V]) set(key K, value V, pool pools.Pool[*atomicEntry[K, V]]) bool {
+func (b *atomicMapBucket[K, V]) set(key K, value V, pool pools.Pool[*atomicMapEntry[K, V]]) bool {
 	b.wmu.Lock()
 	defer b.wmu.Unlock()
 
@@ -78,7 +80,9 @@ func (b *atomicBucket[K, V]) set(key K, value V, pool pools.Pool[*atomicEntry[K,
 	return ok
 }
 
-func (b *atomicBucket[K, V]) swap(key K, value V, pool pools.Pool[*atomicEntry[K, V]]) (v V, ok bool) {
+func (b *atomicMapBucket[K, V]) swap(key K, value V, pool pools.Pool[*atomicMapEntry[K, V]]) (
+	v V, ok bool) {
+
 	b.wmu.Lock()
 	defer b.wmu.Unlock()
 
@@ -100,7 +104,7 @@ func (b *atomicBucket[K, V]) swap(key K, value V, pool pools.Pool[*atomicEntry[K
 	return v, ok
 }
 
-func (b *atomicBucket[K, V]) delete(key K, pool pools.Pool[*atomicEntry[K, V]]) (v V, ok bool) {
+func (b *atomicMapBucket[K, V]) delete(key K, pool pools.Pool[*atomicMapEntry[K, V]]) (v V, ok bool) {
 	b.wmu.Lock()
 	defer b.wmu.Unlock()
 
@@ -120,7 +124,7 @@ func (b *atomicBucket[K, V]) delete(key K, pool pools.Pool[*atomicEntry[K, V]]) 
 	return v, ok
 }
 
-func (b *atomicBucket[K, V]) range_(fn func(K, V) bool, pool pools.Pool[*atomicEntry[K, V]]) (
+func (b *atomicMapBucket[K, V]) range_(fn func(K, V) bool, pool pools.Pool[*atomicMapEntry[K, V]]) (
 	continue_ bool) {
 
 	// Acquire entry, increment external refs
@@ -137,7 +141,7 @@ func (b *atomicBucket[K, V]) range_(fn func(K, V) bool, pool pools.Pool[*atomicE
 	return continue_
 }
 
-func (b *atomicBucket[K, V]) rangeLocked(fn func(K, V) bool) (continue_ bool) {
+func (b *atomicMapBucket[K, V]) rangeLocked(fn func(K, V) bool) (continue_ bool) {
 	entry := b.entry.Load()
 	if entry == nil {
 		return true
@@ -147,14 +151,14 @@ func (b *atomicBucket[K, V]) rangeLocked(fn func(K, V) bool) (continue_ bool) {
 
 // private
 
-func (b *atomicBucket[K, V]) acquireEntry() (
-	entry *atomicEntry[K, V],
-	prev *atomicEntry[K, V],
+func (b *atomicMapBucket[K, V]) acquireEntry() (
+	entry *atomicMapEntry[K, V],
+	prev *atomicMapEntry[K, V],
 	ok bool,
 ) {
 	// Increment external refs
 	ref := b.ref.Add(1)
-	id, _ := unpackAtomicEntryRef(ref)
+	id, _ := unpackAtomicMapEntryRef(ref)
 	if id == 0 {
 		return nil, nil, false
 	}
@@ -178,10 +182,10 @@ func (b *atomicBucket[K, V]) acquireEntry() (
 	return entry, prev, true
 }
 
-func (b *atomicBucket[K, V]) releaseEntry(
-	entry *atomicEntry[K, V],
-	prev *atomicEntry[K, V],
-	pool pools.Pool[*atomicEntry[K, V]],
+func (b *atomicMapBucket[K, V]) releaseEntry(
+	entry *atomicMapEntry[K, V],
+	prev *atomicMapEntry[K, V],
+	pool pools.Pool[*atomicMapEntry[K, V]],
 ) {
 	// Decrement internal refs
 	int_ := entry.refs.Add(-1)
@@ -198,16 +202,16 @@ func (b *atomicBucket[K, V]) releaseEntry(
 	pool.Put(entry)
 }
 
-func (b *atomicBucket[K, V]) swapEntry(
-	next *atomicEntry[K, V],
-	prev *atomicEntry[K, V],
-	pool pools.Pool[*atomicEntry[K, V]],
+func (b *atomicMapBucket[K, V]) swapEntry(
+	next *atomicMapEntry[K, V],
+	prev *atomicMapEntry[K, V],
+	pool pools.Pool[*atomicMapEntry[K, V]],
 ) {
 	// Store entry
 	b.entry.Store(next)
 
 	// Swap reference
-	nextRef := packAtomicEntryRef(next.id, 1)
+	nextRef := packAtomicMapEntryRef(next.id, 1)
 	lastRef := b.ref.Swap(nextRef)
 
 	// Return if no previous
@@ -216,7 +220,7 @@ func (b *atomicBucket[K, V]) swapEntry(
 	}
 
 	// Increment previous internal refs by (external-1)
-	_, ext := unpackAtomicEntryRef(lastRef)
+	_, ext := unpackAtomicMapEntryRef(lastRef)
 	int_ := prev.refs.Add(ext - 1)
 	if int_ != 0 {
 		return
