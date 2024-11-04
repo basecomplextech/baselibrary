@@ -85,13 +85,17 @@ func Shuffle[S ~[]T, T any](s S) {
 	})
 }
 
-// Truncate clears and truncates the slice.
+// Truncate clears and truncates the slice, returns nil if the slice is nil.
 //
 // Usage:
 //
 //	s := []int{1, 2, 3}
 //	s = slices2.Truncate(s)
 func Truncate[S ~[]T, T any](s S) S {
+	if s == nil {
+		return nil
+	}
+
 	clear(s)
 	return s[:0]
 }
