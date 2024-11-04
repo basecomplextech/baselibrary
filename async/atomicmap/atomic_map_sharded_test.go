@@ -7,10 +7,20 @@ package atomics
 import (
 	"slices"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestAtomicShardedMap__should_should_have_cache_line_size(t *testing.T) {
+	s := unsafe.Sizeof(atomicShard[int, int]{})
+	if s != 256 {
+		t.Fatal("shard size is not equal to cache line", s, 256-s)
+	}
+}
+
+// Len
 
 func TestAtomicShardedMap_Len__should_return_number_of_items(t *testing.T) {
 	m := newAtomicShardedMap[int, int](0)

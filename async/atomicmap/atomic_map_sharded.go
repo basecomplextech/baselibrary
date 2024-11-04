@@ -7,7 +7,6 @@ package atomics
 import (
 	"math/bits"
 	"runtime"
-	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/async/asyncmap"
 	"github.com/basecomplextech/baselibrary/internal/hashing"
@@ -26,31 +25,24 @@ type atomicShardedMap[K comparable, V any] struct {
 func newAtomicShardedMap[K comparable, V any](size int) *atomicShardedMap[K, V] {
 	pool := newAtomicPool[K, V]()
 
-	// CPUs and cache line size
+	// Calculate shard number, round to power of two
 	cpus := runtime.NumCPU()
-	cacheLineSize := 256
-
-	// Calculate number of shards, round to power of two
-	shardSize := unsafe.Sizeof(atomicShard[K, V]{})
-	shardNum := (cpus * cacheLineSize) / int(shardSize)
-	shardNum = roundToPowerOfTwo(shardNum)
-
-	// Make shards
-	shards := make([]atomicShard[K, V], shardNum)
-	for i := range shards {
-		size1 := size / shardNum
-		shards[i].init(size1, pool)
-	}
-
-	// Calculate shard hash bit width
+	shardNum := roundToPowerOfTwo(cpus)
 	bitWidth := bitWidth(shardNum - 1)
 
-	// Return map
-	return &atomicShardedMap[K, V]{
+	// Make map
+	m := &atomicShardedMap[K, V]{
 		pool:     pool,
-		shards:   shards,
+		shards:   make([]atomicShard[K, V], shardNum),
 		bitWidth: bitWidth,
 	}
+
+	// Init shards
+	for i := range m.shards {
+		size1 := size / shardNum
+		m.shards[i].init(m, size1)
+	}
+	return m
 }
 
 // Len returns the number of keys.
@@ -71,44 +63,44 @@ func (m *atomicShardedMap[K, V]) Clear() {
 
 // Contains returns true if a key exists.
 func (m *atomicShardedMap[K, V]) Contains(key K) bool {
-	s, _ := m.shard(key)
-	return s.contains(key)
+	s, h := m.shard(key)
+	return s.contains(h, key)
 }
 
 // Get returns a value by key, or false.
 func (m *atomicShardedMap[K, V]) Get(key K) (v V, _ bool) {
-	s, _ := m.shard(key)
-	return s.get(key)
+	s, h := m.shard(key)
+	return s.get(h, key)
 }
 
 // GetOrSet returns a value by key, or sets a value if it does not exist.
 func (m *atomicShardedMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
-	s, _ := m.shard(key)
-	return s.getOrSet(key, value)
+	s, h := m.shard(key)
+	return s.getOrSet(h, key, value)
 }
 
 // Delete deletes a value by key.
 func (m *atomicShardedMap[K, V]) Delete(key K) {
-	s, _ := m.shard(key)
-	s.delete(key)
+	s, h := m.shard(key)
+	s.delete(h, key)
 }
 
 // Pop deletes and returns a value by key, or false.
 func (m *atomicShardedMap[K, V]) Pop(key K) (v V, _ bool) {
-	s, _ := m.shard(key)
-	return s.pop(key)
+	s, h := m.shard(key)
+	return s.pop(h, key)
 }
 
 // Set sets a value for a key.
 func (m *atomicShardedMap[K, V]) Set(key K, value V) {
-	s, _ := m.shard(key)
-	s.set(key, value)
+	s, h := m.shard(key)
+	s.set(h, key, value)
 }
 
 // Swap swaps a key value and returns the previous value.
 func (m *atomicShardedMap[K, V]) Swap(key K, value V) (v V, _ bool) {
-	s, _ := m.shard(key)
-	return s.swap(key, value)
+	s, h := m.shard(key)
+	return s.swap(h, key, value)
 }
 
 // Range iterates over all key-value pairs.
@@ -124,19 +116,25 @@ func (m *atomicShardedMap[K, V]) Range(fn func(K, V) bool) {
 
 // private
 
-func (m *atomicShardedMap[K, V]) shard(key K) (_ *atomicShard[K, V], h1 uint32) {
+// hashes returns two hierarchical key hashes, one for map and one for shard.
+func (m *atomicShardedMap[K, V]) hashes(key K) (uint32, uint32) {
 	h := hashing.Hash(key)
-	h1 = m.shardHash(h)
+	h1 := h
 
-	i := h % uint32(len(m.shards))
-	return &m.shards[i], h1
+	// Right shift to get shard hash
+	//
+	// For example, 16 is 10000, 4 bits required to store shard index [0-15].
+	// If hash is >= 16, then we can use higher bits for shard hash.
+	if int(h1) >= len(m.shards) {
+		h1 = h1 >> m.bitWidth
+	}
+	return h, h1
 }
 
-func (m *atomicShardedMap[K, V]) shardHash(h uint32) uint32 {
-	if int(h) < len(m.shards) {
-		return h
-	}
-	return h >> m.bitWidth
+func (m *atomicShardedMap[K, V]) shard(key K) (_ *atomicShard[K, V], h1 uint32) {
+	h, h1 := m.hashes(key)
+	i := h % uint32(len(m.shards))
+	return &m.shards[i], h1
 }
 
 // util

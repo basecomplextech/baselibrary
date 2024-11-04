@@ -7,19 +7,21 @@ package atomics
 import (
 	"sync"
 	"sync/atomic"
-
-	"github.com/basecomplextech/baselibrary/pools"
 )
 
 type atomicShard[K comparable, V any] struct {
-	pool pools.Pool[*atomicEntry[K, V]]
+	m *atomicShardedMap[K, V]
 
 	wmu   sync.RWMutex
 	state atomic.Pointer[atomicState[K, V]]
+
+	_ [216]byte
 }
 
-func (s *atomicShard[K, V]) init(size int, pool pools.Pool[*atomicEntry[K, V]]) {
-	state := newAtomicState(size, pool)
+func (s *atomicShard[K, V]) init(m *atomicShardedMap[K, V], size int) {
+	state := newAtomicState(size, m.pool)
+
+	s.m = m
 	s.state.Store(state)
 }
 
@@ -38,19 +40,19 @@ func (s *atomicShard[K, V]) clear() {
 	s.state.Store(next)
 }
 
-func (s *atomicShard[K, V]) contains(key K) bool {
+func (s *atomicShard[K, V]) contains(h uint32, key K) bool {
 	state := s.state.Load()
-	return state.contains(key)
+	return state.contains(h, key)
 }
 
-func (s *atomicShard[K, V]) get(key K) (V, bool) {
+func (s *atomicShard[K, V]) get(h uint32, key K) (V, bool) {
 	state := s.state.Load()
-	return state.get(key)
+	return state.get(h, key)
 }
 
-func (s *atomicShard[K, V]) getOrSet(key K, value V) (V, bool) {
+func (s *atomicShard[K, V]) getOrSet(h uint32, key K, value V) (V, bool) {
 	resize := false
-	v, ok := s._getOrSet(key, value, &resize)
+	v, ok := s._getOrSet(h, key, value, &resize)
 
 	if resize {
 		s._resize()
@@ -58,34 +60,34 @@ func (s *atomicShard[K, V]) getOrSet(key K, value V) (V, bool) {
 	return v, ok
 }
 
-func (s *atomicShard[K, V]) delete(key K) {
+func (s *atomicShard[K, V]) delete(h uint32, key K) {
 	s.wmu.RLock()
 	defer s.wmu.RUnlock()
 
 	state := s.state.Load()
-	state.delete(key)
+	state.delete(h, key)
 }
 
-func (s *atomicShard[K, V]) pop(key K) (V, bool) {
+func (s *atomicShard[K, V]) pop(h uint32, key K) (V, bool) {
 	s.wmu.RLock()
 	defer s.wmu.RUnlock()
 
 	state := s.state.Load()
-	return state.pop(key)
+	return state.pop(h, key)
 }
 
-func (s *atomicShard[K, V]) set(key K, value V) {
+func (s *atomicShard[K, V]) set(h uint32, key K, value V) {
 	resize := false
-	s._set(key, value, &resize)
+	s._set(h, key, value, &resize)
 
 	if resize {
 		s._resize()
 	}
 }
 
-func (s *atomicShard[K, V]) swap(key K, value V) (V, bool) {
+func (s *atomicShard[K, V]) swap(h uint32, key K, value V) (V, bool) {
 	resize := false
-	v, ok := s._swap(key, value, &resize)
+	v, ok := s._swap(h, key, value, &resize)
 
 	if resize {
 		s._resize()
@@ -100,33 +102,33 @@ func (s *atomicShard[K, V]) range_(fn func(K, V) bool) bool {
 
 // private
 
-func (s *atomicShard[K, V]) _getOrSet(key K, value V, resize *bool) (V, bool) {
+func (s *atomicShard[K, V]) _getOrSet(h uint32, key K, value V, resize *bool) (V, bool) {
 	s.wmu.RLock()
 	defer s.wmu.RUnlock()
 
 	state := s.state.Load()
-	v, ok := state.getOrSet(key, value)
+	v, ok := state.getOrSet(h, key, value)
 
 	*resize = state.count >= int64(state.threshold)
 	return v, ok
 }
 
-func (s *atomicShard[K, V]) _set(key K, value V, resize *bool) {
+func (s *atomicShard[K, V]) _set(h uint32, key K, value V, resize *bool) {
 	s.wmu.RLock()
 	defer s.wmu.RUnlock()
 
 	state := s.state.Load()
-	state.set(key, value)
+	state.set(h, key, value)
 
 	*resize = state.count >= int64(state.threshold)
 }
 
-func (s *atomicShard[K, V]) _swap(key K, value V, resize *bool) (V, bool) {
+func (s *atomicShard[K, V]) _swap(h uint32, key K, value V, resize *bool) (V, bool) {
 	s.wmu.RLock()
 	defer s.wmu.RUnlock()
 
 	state := s.state.Load()
-	v, ok := state.swap(key, value)
+	v, ok := state.swap(h, key, value)
 
 	*resize = state.count >= int64(state.threshold)
 	return v, ok
@@ -143,6 +145,17 @@ func (s *atomicShard[K, V]) _resize() {
 		return
 	}
 
-	next := resizeAtomicState(state)
+	// Double buckets
+	size := len(state.buckets) * 2
+	next := newAtomicState(size, s.m.pool)
+
+	// Copy all items
+	state.rangeLocked(func(k K, v V) bool {
+		_, h1 := s.m.hashes(k)
+		next.set(h1, k, v)
+		return true
+	})
+
+	// Replace state
 	s.state.Store(next)
 }

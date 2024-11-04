@@ -139,6 +139,7 @@ func BenchmarkAtomicShardedMap_Read_Write_Parallel(b *testing.B) {
 func BenchmarkAtomicShardedMap_Read_Parallel_Write_Parallel(b *testing.B) {
 	m := newAtomicShardedMap[int, int](benchMapNum)
 	b.ResetTimer()
+	b.SetParallelism(10)
 
 	cpus := runtime.NumCPU()
 	stop := &atomic.Bool{}

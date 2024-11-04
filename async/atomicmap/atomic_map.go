@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/async/asyncmap"
+	"github.com/basecomplextech/baselibrary/internal/hashing"
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
@@ -68,14 +69,16 @@ func (m *atomicMap[K, V]) Clear() {
 
 // Contains returns true if a key exists.
 func (m *atomicMap[K, V]) Contains(key K) bool {
+	h := hashing.Hash(key)
 	s := m.state.Load()
-	return s.contains(key)
+	return s.contains(h, key)
 }
 
 // Get returns a value by key, or false.
 func (m *atomicMap[K, V]) Get(key K) (V, bool) {
+	h := hashing.Hash(key)
 	s := m.state.Load()
-	return s.get(key)
+	return s.get(h, key)
 }
 
 // GetOrSet returns a value by key and true, or sets a value and false.
@@ -94,8 +97,9 @@ func (m *atomicMap[K, V]) Delete(key K) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
+	h := hashing.Hash(key)
 	s := m.state.Load()
-	s.delete(key)
+	s.delete(h, key)
 }
 
 // Pop deletes and returns a value by key, or false.
@@ -103,8 +107,9 @@ func (m *atomicMap[K, V]) Pop(key K) (V, bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
+	h := hashing.Hash(key)
 	s := m.state.Load()
-	return s.pop(key)
+	return s.pop(h, key)
 }
 
 // Set sets a value for a key.
@@ -141,8 +146,9 @@ func (m *atomicMap[K, V]) getOrSet(key K, value V, resize *bool) (V, bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
+	h := hashing.Hash(key)
 	s := m.state.Load()
-	v, ok := s.getOrSet(key, value)
+	v, ok := s.getOrSet(h, key, value)
 
 	*resize = s.count >= int64(s.threshold)
 	return v, ok
@@ -152,8 +158,9 @@ func (m *atomicMap[K, V]) set(key K, value V, resize *bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
+	h := hashing.Hash(key)
 	s := m.state.Load()
-	s.set(key, value)
+	s.set(h, key, value)
 
 	*resize = s.count >= int64(s.threshold)
 }
@@ -162,8 +169,9 @@ func (m *atomicMap[K, V]) swap(key K, value V, resize *bool) (V, bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
+	h := hashing.Hash(key)
 	s := m.state.Load()
-	v, ok := s.swap(key, value)
+	v, ok := s.swap(h, key, value)
 
 	*resize = s.count >= int64(s.threshold)
 	return v, ok
@@ -180,6 +188,17 @@ func (m *atomicMap[K, V]) resize() {
 		return
 	}
 
-	next := resizeAtomicState(s)
+	// Double buckets
+	size := len(s.buckets) * 2
+	next := newAtomicState(size, s.pool)
+
+	// Copy all items
+	s.rangeLocked(func(k K, v V) bool {
+		h := hashing.Hash(k)
+		next.set(h, k, v)
+		return true
+	})
+
+	// Replace state
 	m.state.Store(next)
 }
