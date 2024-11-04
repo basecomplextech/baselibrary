@@ -12,15 +12,12 @@ import (
 	"testing"
 )
 
-const (
-	benchMapNum  = 1024
-	benchMapSize = benchMapNum * 2
-)
+const benchMapNum = 1024
 
 // Read
 
 func BenchmarkAtomicMap_Read(b *testing.B) {
-	m := newAtomicMap[int, int](benchMapSize)
+	m := newAtomicMap[int, int](0)
 	for i := 0; i < benchMapNum; i++ {
 		m.Set(i, i)
 	}
@@ -44,7 +41,7 @@ func BenchmarkAtomicMap_Read(b *testing.B) {
 }
 
 func BenchmarkAtomicMap_Read_Parallel(b *testing.B) {
-	m := newAtomicMap[int, int](benchMapSize)
+	m := newAtomicMap[int, int](0)
 	for i := 0; i < benchMapNum; i++ {
 		m.Set(i, i)
 	}
@@ -72,7 +69,7 @@ func BenchmarkAtomicMap_Read_Parallel(b *testing.B) {
 // Write
 
 func BenchmarkAtomicMap_Write(b *testing.B) {
-	m := newAtomicMap[int, int](benchMapSize)
+	m := newAtomicMap[int, int](benchMapNum)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -86,7 +83,7 @@ func BenchmarkAtomicMap_Write(b *testing.B) {
 }
 
 func BenchmarkAtomicMap_Write_Parallel(b *testing.B) {
-	m := newAtomicMap[int, int](benchMapSize)
+	m := newAtomicMap[int, int](benchMapNum)
 	b.ResetTimer()
 
 	b.RunParallel(func(p *testing.PB) {
@@ -105,7 +102,7 @@ func BenchmarkAtomicMap_Write_Parallel(b *testing.B) {
 // Read/Write
 
 func BenchmarkAtomicMap_Read_Write_Parallel(b *testing.B) {
-	m := newAtomicMap[int, int](benchMapSize)
+	m := newAtomicMap[int, int](benchMapNum)
 	b.ResetTimer()
 	b.SetParallelism(10)
 

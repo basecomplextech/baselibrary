@@ -24,14 +24,15 @@ func newAtomicState[K comparable, V any](
 	size int,
 	pool pools.Pool[*atomicEntry[K, V]],
 ) *atomicState[K, V] {
-	num := int(float64(size) / atomicMapResizeThreshold)
-	threshold := min(size+1, num) // hold at least size items without resizing
+
+	size = max(size, atomicMapMinSize)
+	threshold := int(float64(size) * atomicMapThreshold)
 
 	return &atomicState[K, V]{
 		pool:      pool,
 		threshold: threshold,
 
-		buckets: make([]atomicBucket[K, V], num),
+		buckets: make([]atomicBucket[K, V], size),
 	}
 }
 
@@ -42,6 +43,17 @@ func clearAtomicState[K comparable, V any](s *atomicState[K, V]) *atomicState[K,
 
 		buckets: make([]atomicBucket[K, V], len(s.buckets)),
 	}
+}
+
+func resizeAtomicState[K comparable, V any](s *atomicState[K, V]) *atomicState[K, V] {
+	size := len(s.buckets) * 2
+	next := newAtomicState(size, s.pool)
+
+	s.rangeLocked(func(k K, v V) bool {
+		next.set(k, v)
+		return true
+	})
+	return next
 }
 
 // methods
@@ -103,6 +115,15 @@ func (s *atomicState[K, V]) swap(key K, value V) (v V, _ bool) {
 func (s *atomicState[K, V]) range_(fn func(K, V) bool) {
 	for i := range s.buckets {
 		ok := s.buckets[i].range_(fn, s.pool)
+		if !ok {
+			return
+		}
+	}
+}
+
+func (s *atomicState[K, V]) rangeLocked(fn func(K, V) bool) {
+	for i := range s.buckets {
+		ok := s.buckets[i].rangeLocked(fn)
 		if !ok {
 			return
 		}

@@ -12,7 +12,13 @@ import (
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
-const atomicMapResizeThreshold = 0.75
+const (
+	// atomicMapThreshold is the load factor for resizing the map.
+	atomicMapThreshold = 0.75
+
+	// atomicMapMinSize is the minimum number of buckets.
+	atomicMapMinSize = 16
+)
 
 var _ asyncmap.Map[int, int] = (*atomicMap[int, int])(nil)
 
@@ -29,8 +35,11 @@ func newAtomicMap[K comparable, V any](size int) *atomicMap[K, V] {
 			return &atomicEntry[K, V]{}
 		},
 	)
-	s := newAtomicState(size, pool)
 
+	num := int(float64(size) / atomicMapThreshold)
+	num = max(num, atomicMapMinSize)
+
+	s := newAtomicState(num, pool)
 	m := &atomicMap[K, V]{pool: pool}
 	m.state.Store(s)
 	return m
@@ -67,11 +76,13 @@ func (m *atomicMap[K, V]) Get(key K) (V, bool) {
 
 // GetOrSet returns a value by key and true, or sets a value and false.
 func (m *atomicMap[K, V]) GetOrSet(key K, value V) (V, bool) {
-	m.wmu.RLock()
-	defer m.wmu.RUnlock()
+	resize := false
+	v, ok := m.getOrSet(key, value, &resize)
 
-	s := m.state.Load()
-	return s.getOrSet(key, value)
+	if resize {
+		m.resize()
+	}
+	return v, ok
 }
 
 // Delete deletes a value by key.
@@ -94,20 +105,23 @@ func (m *atomicMap[K, V]) Pop(key K) (V, bool) {
 
 // Set sets a value for a key.
 func (m *atomicMap[K, V]) Set(key K, value V) {
-	m.wmu.RLock()
-	defer m.wmu.RUnlock()
+	resize := false
+	m.set(key, value, &resize)
 
-	s := m.state.Load()
-	s.set(key, value)
+	if resize {
+		m.resize()
+	}
 }
 
 // Swap swaps a key value and returns the previous value.
-func (m *atomicMap[K, V]) Swap(key K, value V) (v V, _ bool) {
-	m.wmu.RLock()
-	defer m.wmu.RUnlock()
+func (m *atomicMap[K, V]) Swap(key K, value V) (V, bool) {
+	resize := false
+	v, ok := m.swap(key, value, &resize)
 
-	s := m.state.Load()
-	return s.swap(key, value)
+	if resize {
+		m.resize()
+	}
+	return v, ok
 }
 
 // Range iterates over all key-value pairs.
@@ -115,4 +129,53 @@ func (m *atomicMap[K, V]) Swap(key K, value V) (v V, _ bool) {
 func (m *atomicMap[K, V]) Range(fn func(K, V) bool) {
 	s := m.state.Load()
 	s.range_(fn)
+}
+
+// private
+
+func (m *atomicMap[K, V]) getOrSet(key K, value V, resize *bool) (V, bool) {
+	m.wmu.RLock()
+	defer m.wmu.RUnlock()
+
+	s := m.state.Load()
+	v, ok := s.getOrSet(key, value)
+
+	*resize = s.count >= int64(s.threshold)
+	return v, ok
+}
+
+func (m *atomicMap[K, V]) set(key K, value V, resize *bool) {
+	m.wmu.RLock()
+	defer m.wmu.RUnlock()
+
+	s := m.state.Load()
+	s.set(key, value)
+
+	*resize = s.count >= int64(s.threshold)
+}
+
+func (m *atomicMap[K, V]) swap(key K, value V, resize *bool) (V, bool) {
+	m.wmu.RLock()
+	defer m.wmu.RUnlock()
+
+	s := m.state.Load()
+	v, ok := s.swap(key, value)
+
+	*resize = s.count >= int64(s.threshold)
+	return v, ok
+}
+
+// resize
+
+func (m *atomicMap[K, V]) resize() {
+	m.wmu.Lock()
+	defer m.wmu.Unlock()
+
+	s := m.state.Load()
+	if s.count < int64(s.threshold) {
+		return
+	}
+
+	next := resizeAtomicState(s)
+	m.state.Store(next)
 }

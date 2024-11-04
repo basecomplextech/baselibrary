@@ -128,6 +128,15 @@ func (b *atomicBucket[K, V]) range_(fn func(K, V) bool, pool pools.Pool[*atomicE
 	return continue_
 }
 
+func (b *atomicBucket[K, V]) rangeLocked(fn func(K, V) bool) (continue_ bool) {
+	entry := b.entry.Load()
+	if entry == nil {
+		return true
+	}
+
+	return entry.range_(fn)
+}
+
 // private
 
 func (b *atomicBucket[K, V]) acquireEntry() (
