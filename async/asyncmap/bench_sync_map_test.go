@@ -12,12 +12,10 @@ import (
 	"testing"
 )
 
-const benchMapNum = 1024
-
 // Read
 
-func BenchmarkShardMap_Read(b *testing.B) {
-	m := NewShardMap[int, int]()
+func BenchmarkSyncMap_Read(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	for i := 0; i < benchMapNum; i++ {
 		m.Set(i, i)
 	}
@@ -37,8 +35,8 @@ func BenchmarkShardMap_Read(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkShardMap_Read_Parallel(b *testing.B) {
-	m := NewShardMap[int, int]()
+func BenchmarkSyncMap_Read_Parallel(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	for i := 0; i < benchMapNum; i++ {
 		m.Set(i, i)
 	}
@@ -62,12 +60,13 @@ func BenchmarkShardMap_Read_Parallel(b *testing.B) {
 
 // Write
 
-func BenchmarkShardMap_Write(b *testing.B) {
-	m := NewShardMap[int, int]()
+func BenchmarkSyncMap_Write(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		key := rand.IntN(benchMapNum)
+
 		m.Set(key, key)
 	}
 
@@ -76,14 +75,14 @@ func BenchmarkShardMap_Write(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkShardMap_Write_Parallel(b *testing.B) {
-	m := NewShardMap[int, int]()
+func BenchmarkSyncMap_Write_Parallel(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	b.ResetTimer()
-	b.SetParallelism(10)
 
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {
 			key := rand.IntN(benchMapNum)
+
 			m.Set(key, key)
 		}
 	})
@@ -95,23 +94,22 @@ func BenchmarkShardMap_Write_Parallel(b *testing.B) {
 
 // Read/Write
 
-func BenchmarkShardMap_Read_Write_Parallel(b *testing.B) {
-	m := NewShardMap[int, int]()
+func BenchmarkSyncMap_Read_Write_Parallel(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	b.ResetTimer()
 	b.SetParallelism(10)
 
 	done := make(chan struct{})
 	stop := &atomic.Bool{}
+	reads := 0
 
-	n := 0
 	go func() {
 		defer close(done)
 
 		for !stop.Load() {
 			key := rand.IntN(benchMapNum)
-
 			_, _ = m.Get(key)
-			n++
+			reads++
 		}
 	}()
 
@@ -126,14 +124,15 @@ func BenchmarkShardMap_Read_Write_Parallel(b *testing.B) {
 	<-done
 
 	sec := b.Elapsed().Seconds()
-	ops := float64(b.N) / sec
-	rops := float64(n) / sec
-	b.ReportMetric(ops/1000_000, "wmops")
+	rops := float64(reads) / sec
+	wops := float64(b.N) / sec
+
 	b.ReportMetric(rops/1000_000, "rmops")
+	b.ReportMetric(wops/1000_000, "wmops")
 }
 
-func BenchmarkShardMap_Read_Parallel_Write_Parallel(b *testing.B) {
-	m := NewShardMap[int, int]()
+func BenchmarkSyncMap_Read_Parallel_Write_Parallel(b *testing.B) {
+	m := NewSyncMap[int, int]()
 	b.ResetTimer()
 
 	cpus := runtime.NumCPU()

@@ -18,8 +18,8 @@ type Map[K comparable, V any] interface {
 	// Get returns a value by key, or false.
 	Get(key K) (V, bool)
 
-	// GetOrSet returns a value by key, or sets a value if it does not exist.
-	GetOrSet(key K, value V) (_ V, set bool)
+	// GetOrSet returns a value by key and true, or sets a value and false.
+	GetOrSet(key K, value V) (V, bool)
 
 	// Delete deletes a value by key.
 	Delete(key K)

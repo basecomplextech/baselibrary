@@ -6,22 +6,34 @@ package asyncmap
 
 import "sync"
 
-// AtomicMap is a generic wrapper around the standard sync.Map.
+// SyncMap is a generic wrapper around the standard sync.Map.
 //
 // This map is optimized mostly for read operations.
-// Use ShardMap if you need a map optimized for read-write operations.
-type AtomicMap[K comparable, V any] interface {
+// Writes operations are slower and allocate memory.
+//
+// Use [AtomicMap] or [AtomicShardedMap] if you need a map optimized for read-write operations.
+//
+// # Benchmarks
+//
+//	cpu: Apple M1 Pro
+//	BenchmarkSyncMap_Read-10                            	38069961	        30.49 ns/op	        32.79 mops	       0 B/op	       0 allocs/op
+//	BenchmarkSyncMap_Read_Parallel-10                   	274098883	         4.34 ns/op	       230.10 mops	       0 B/op	       0 allocs/op
+//	BenchmarkSyncMap_Write-10                           	15118998	        79.18 ns/op	        12.63 mops	      28 B/op	       2 allocs/op
+//	BenchmarkSyncMap_Write_Parallel-10                  	 4176376	       290.10 ns/op	         3.44 mops	      28 B/op	       2 allocs/op
+//	BenchmarkSyncMap_Read_Write_Parallel-10             	31551691	        37.75 ns/op	        11.16 rmops	      26.49 wmops	      28 B/op	       2 allocs/op
+//	BenchmarkSyncMap_Read_Parallel_Write_Parallel-10    	11116138	       126.10 ns/op	       174.20 rmops	       7.93 wmops	      28 B/op	       2 allocs/op
+type SyncMap[K comparable, V any] interface {
 	Map[K, V]
 }
 
-// NewAtomicMap returns a new atomic map backed by a sync.Map.
-func NewAtomicMap[K comparable, V any]() AtomicMap[K, V] {
+// NewSyncMap returns a new generic wrapper around a standard [sync.Map].
+func NewSyncMap[K comparable, V any]() SyncMap[K, V] {
 	return newAtomicMap[K, V]()
 }
 
 // internal
 
-var _ AtomicMap[int, int] = (*atomicMap[int, int])(nil)
+var _ SyncMap[int, int] = (*atomicMap[int, int])(nil)
 
 type atomicMap[K comparable, V any] struct {
 	raw sync.Map

@@ -34,11 +34,11 @@ type shardMap[K comparable, V any] struct {
 
 func newShardMap[K comparable, V any]() *shardMap[K, V] {
 	cpus := runtime.NumCPU()
-	cpuLines := 16
 	lineSize := 256
+	linesPerCPU := 16
 
 	size := unsafe.Sizeof(mapShard[K, V]{})
-	total := cpus * cpuLines * lineSize
+	total := cpus * linesPerCPU * lineSize
 	n := int(total / int(size))
 
 	// n := runtime.NumCPU() * 4
