@@ -2,7 +2,7 @@
 // Use of this software is governed by the Business Source License (BSL 1.1)
 // that can be found in the LICENSE file.
 
-package atomics
+package asyncmap
 
 import (
 	"slices"

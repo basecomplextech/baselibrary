@@ -2,19 +2,21 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package atomics
+package asyncmap
 
 import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/basecomplextech/baselibrary/async/asyncmap"
 	"github.com/basecomplextech/baselibrary/internal/hashing"
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
 // AtomicMap is a goroutine-safe hash map based on atomic operations.
 // Readers are non-blocking, writers use a mutex per bucket, and a single resize mutex.
+// The map is optimized for read/write operations and uses a pool for memory allocation.
+//
+// # Implementation
 //
 // The map uses a variant of reference counting with two reference counts
 // described in "C++ Concurrency in Action" by Anthony Williams.
@@ -29,7 +31,7 @@ import (
 // When the internal reference count reaches zero, the entry is freed
 // and returned to the pool.
 //
-// Benchmarks:
+// # Benchmarks
 //
 //	cpu: Apple M1 Pro
 //	BenchmarkAtomicMap_Read-10                            	74086842	        14.26 ns/op	        70.15 mops	       0 B/op	       0 allocs/op
@@ -39,7 +41,7 @@ import (
 //	BenchmarkAtomicMap_Read_Write_Parallel-10             	 7588120	       163.60 ns/op	         2.57 rmops	         6.111 wmops	       0 B/op	       0 allocs/op
 //	BenchmarkAtomicMap_Read_Parallel_Write_Parallel-10    	 3187329	       360.30 ns/op	        43.66 rmops	         2.775 wmops	       0 B/op	       0 allocs/op
 type AtomicMap[K comparable, V any] interface {
-	asyncmap.Map[K, V]
+	Map[K, V]
 }
 
 // internal
@@ -52,7 +54,7 @@ const (
 	atomicMapMinSize = 16
 )
 
-var _ asyncmap.Map[int, int] = (*atomicMap[int, int])(nil)
+var _ Map[int, int] = (*atomicMap[int, int])(nil)
 
 type atomicMap[K comparable, V any] struct {
 	pool pools.Pool[*atomicMapEntry[K, V]]

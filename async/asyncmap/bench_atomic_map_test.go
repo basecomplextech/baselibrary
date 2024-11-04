@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package atomics
+package asyncmap
 
 import (
 	"math/rand/v2"
@@ -14,8 +14,8 @@ import (
 
 // Read
 
-func BenchmarkAtomicShardedMap_Read(b *testing.B) {
-	m := newAtomicShardedMap[int, int](benchMapNum)
+func BenchmarkAtomicMap_Read(b *testing.B) {
+	m := newAtomicMap[int, int](0)
 	for i := 0; i < benchMapNum; i++ {
 		m.Set(i, i)
 	}
@@ -38,8 +38,8 @@ func BenchmarkAtomicShardedMap_Read(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkAtomicShardedMap_Read_Parallel(b *testing.B) {
-	m := newAtomicShardedMap[int, int](benchMapNum)
+func BenchmarkAtomicMap_Read_Parallel(b *testing.B) {
+	m := newAtomicMap[int, int](0)
 	for i := 0; i < benchMapNum; i++ {
 		m.Set(i, i)
 	}
@@ -66,8 +66,8 @@ func BenchmarkAtomicShardedMap_Read_Parallel(b *testing.B) {
 
 // Write
 
-func BenchmarkAtomicShardedMap_Write(b *testing.B) {
-	m := newAtomicShardedMap[int, int](benchMapNum)
+func BenchmarkAtomicMap_Write(b *testing.B) {
+	m := newAtomicMap[int, int](benchMapNum)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -80,14 +80,14 @@ func BenchmarkAtomicShardedMap_Write(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkAtomicShardedMap_Write_Parallel(b *testing.B) {
-	m := newAtomicShardedMap[int, int](benchMapNum)
+func BenchmarkAtomicMap_Write_Parallel(b *testing.B) {
+	m := newAtomicMap[int, int](benchMapNum)
 	b.ResetTimer()
-	b.SetParallelism(10)
 
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {
 			key := rand.IntN(benchMapNum)
+
 			m.Set(key, key)
 		}
 	})
@@ -99,8 +99,8 @@ func BenchmarkAtomicShardedMap_Write_Parallel(b *testing.B) {
 
 // Read/Write
 
-func BenchmarkAtomicShardedMap_Read_Write_Parallel(b *testing.B) {
-	m := newAtomicShardedMap[int, int](benchMapNum)
+func BenchmarkAtomicMap_Read_Write_Parallel(b *testing.B) {
+	m := newAtomicMap[int, int](benchMapNum)
 	b.ResetTimer()
 	b.SetParallelism(10)
 
@@ -136,10 +136,9 @@ func BenchmarkAtomicShardedMap_Read_Write_Parallel(b *testing.B) {
 	b.ReportMetric(wops/1000_000, "wmops")
 }
 
-func BenchmarkAtomicShardedMap_Read_Parallel_Write_Parallel(b *testing.B) {
-	m := newAtomicShardedMap[int, int](benchMapNum)
+func BenchmarkAtomicMap_Read_Parallel_Write_Parallel(b *testing.B) {
+	m := newAtomicMap[int, int](benchMapNum)
 	b.ResetTimer()
-	b.SetParallelism(10)
 
 	cpus := runtime.NumCPU()
 	stop := &atomic.Bool{}

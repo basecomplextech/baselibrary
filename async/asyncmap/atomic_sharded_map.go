@@ -2,13 +2,12 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package atomics
+package asyncmap
 
 import (
 	"math/bits"
 	"runtime"
 
-	"github.com/basecomplextech/baselibrary/async/asyncmap"
 	"github.com/basecomplextech/baselibrary/internal/hashing"
 	"github.com/basecomplextech/baselibrary/pools"
 )
@@ -29,12 +28,12 @@ import (
 //	BenchmarkAtomicShardedMap_Read_Write_Parallel-10             	24252631	        49.88 ns/op	         5.58 rmops	       20.05 wmops	       0 B/op	       0 allocs/op
 //	BenchmarkAtomicShardedMap_Read_Parallel_Write_Parallel-10    	 5750632	       237.40 ns/op	        43.42 rmops	        4.21 wmops	       0 B/op	       0 allocs/op
 type AtomicShardedMap[K comparable, V any] interface {
-	asyncmap.Map[K, V]
+	Map[K, V]
 }
 
 // internal
 
-var _ asyncmap.Map[int, int] = (*atomicShardedMap[int, int])(nil)
+var _ Map[int, int] = (*atomicShardedMap[int, int])(nil)
 
 type atomicShardedMap[K comparable, V any] struct {
 	pool   pools.Pool[*atomicMapEntry[K, V]]
