@@ -13,6 +13,25 @@ import (
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
+// AtomicMap is a goroutine-safe hash map based on atomic operations.
+//
+// Readers are non-blocking, writers use a mutex per bucket, and a single resize mutex.
+//
+// Benchmarks:
+//
+//	cpu: Apple M1 Pro
+//	BenchmarkAtomicMap_Read-10                            	74086842	        14.26 ns/op	        70.15 mops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicMap_Read_Parallel-10                   	61127808	        18.12 ns/op	        55.20 mops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicMap_Write-10                           	27489913	        43.14 ns/op	        23.18 mops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicMap_Write_Parallel-10                  	 7670359	       161.00 ns/op	         6.21 mops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicMap_Read_Write_Parallel-10             	 7588120	       163.60 ns/op	         2.57 rmops	         6.111 wmops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicMap_Read_Parallel_Write_Parallel-10    	 3187329	       360.30 ns/op	        43.66 rmops	         2.775 wmops	       0 B/op	       0 allocs/op
+type AtomicMap[K comparable, V any] interface {
+	asyncmap.Map[K, V]
+}
+
+// internal
+
 const (
 	// atomicMapThreshold is the load factor for resizing the map.
 	atomicMapThreshold = 0.75

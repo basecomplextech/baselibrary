@@ -13,6 +13,26 @@ import (
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
+// AtomicShardedMap is a goroutine-safe hash map based on atomic operations and multiple shards
+// to reduce contention.
+//
+// Readers are non-blocking, writers use a mutex per bucket, and a resize mutex per shard.
+//
+// Benchmarks:
+//
+//	cpu: Apple M1 Pro
+//	BenchmarkAtomicShardedMap_Read-10                            	67143218	        17.81 ns/op	        56.15 mops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicShardedMap_Read_Parallel-10                   	66365866	        19.75 ns/op	        50.63 mops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicShardedMap_Write-10                           	26752994	        44.23 ns/op	        22.61 mops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicShardedMap_Write_Parallel-10                  	24188610	        43.98 ns/op	        22.74 mops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicShardedMap_Read_Write_Parallel-10             	24252631	        49.88 ns/op	         5.58 rmops	       20.05 wmops	       0 B/op	       0 allocs/op
+//	BenchmarkAtomicShardedMap_Read_Parallel_Write_Parallel-10    	 5750632	       237.40 ns/op	        43.42 rmops	        4.21 wmops	       0 B/op	       0 allocs/op
+type AtomicShardedMap[K comparable, V any] interface {
+	asyncmap.Map[K, V]
+}
+
+// internal
+
 var _ asyncmap.Map[int, int] = (*atomicShardedMap[int, int])(nil)
 
 type atomicShardedMap[K comparable, V any] struct {
