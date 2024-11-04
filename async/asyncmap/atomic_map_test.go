@@ -78,6 +78,30 @@ func TestAtomicMap_Get__should_return_value_by_key(t *testing.T) {
 	assert.False(t, ok)
 }
 
+func TestAtomicMap_Get__should_reduce_entry_refs_when_they_reach_1000_000_000(t *testing.T) {
+	m := newAtomicMap[int, int](0)
+	m.Set(1, 1)
+
+	state := m.state.Load()
+	b := &state.buckets[1]
+	b.ref.Add(1000_000_000 - 2)
+
+	_, ext := unpackAtomicMapEntryRef(b.ref.Load())
+	require.Equal(t, 999_999_999, int(ext))
+
+	e := b.entry.Load()
+	int0 := e.refs.Add(-1000_000_000 + 2)
+	require.Equal(t, -999_999_998, int(int0))
+
+	m.Get(1)
+
+	_, ext1 := unpackAtomicMapEntryRef(b.ref.Load())
+	require.Equal(t, 1000_000, int(ext1))
+
+	int1 := e.refs.Load()
+	require.Equal(t, -999_999, int(int1))
+}
+
 // GetOrSet
 
 func TestAtomicMap_GetOrSet__should_return_value(t *testing.T) {
