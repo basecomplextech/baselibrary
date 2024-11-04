@@ -10,24 +10,27 @@ import (
 	"github.com/basecomplextech/baselibrary/opt"
 )
 
-type mapShard[K comparable, V any] struct {
-	mu    sync.Mutex
-	entry opt.Opt[mapEntry[K, V]]
+type shardedMapShard[K comparable, V any] struct {
+	mu sync.RWMutex
+
+	entry opt.Opt[shardedMapEntry[K, V]]
 	more  opt.Opt[map[K]V]
+
+	_ [192]byte // cache line padding
 }
 
-type mapEntry[K comparable, V any] struct {
+type shardedMapEntry[K comparable, V any] struct {
 	key   K
 	value V
 }
 
-func newMapShard[K comparable, V any]() mapShard[K, V] {
-	return mapShard[K, V]{}
+func newShardedMapShard[K comparable, V any]() shardedMapShard[K, V] {
+	return shardedMapShard[K, V]{}
 }
 
-func (s *mapShard[K, V]) len() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *shardedMapShard[K, V]) len() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	n := 0
 	if s.entry.Valid {
@@ -39,7 +42,7 @@ func (s *mapShard[K, V]) len() int {
 	return n
 }
 
-func (s *mapShard[K, V]) clear() {
+func (s *shardedMapShard[K, V]) clear() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -50,9 +53,9 @@ func (s *mapShard[K, V]) clear() {
 	}
 }
 
-func (s *mapShard[K, V]) contains(key K) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *shardedMapShard[K, V]) contains(key K) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	if m, ok := s.entry.Unwrap(); ok {
 		if m.key == key {
@@ -66,9 +69,9 @@ func (s *mapShard[K, V]) contains(key K) bool {
 	return false
 }
 
-func (s *mapShard[K, V]) get(key K) (v V, _ bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *shardedMapShard[K, V]) get(key K) (v V, _ bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	if m, ok := s.entry.Unwrap(); ok {
 		if m.key == key {
@@ -82,7 +85,7 @@ func (s *mapShard[K, V]) get(key K) (v V, _ bool) {
 	return v, false
 }
 
-func (s *mapShard[K, V]) getOrSet(key K, value V) (v V, set bool) {
+func (s *shardedMapShard[K, V]) getOrSet(key K, value V) (v V, set bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -98,7 +101,7 @@ func (s *mapShard[K, V]) getOrSet(key K, value V) (v V, set bool) {
 	}
 
 	if !s.entry.Valid {
-		e := mapEntry[K, V]{key: key, value: value}
+		e := shardedMapEntry[K, V]{key: key, value: value}
 		s.entry.Set(e)
 		return v, true
 	}
@@ -112,7 +115,7 @@ func (s *mapShard[K, V]) getOrSet(key K, value V) (v V, set bool) {
 	return value, true
 }
 
-func (s *mapShard[K, V]) delete(key K) {
+func (s *shardedMapShard[K, V]) delete(key K) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -127,7 +130,7 @@ func (s *mapShard[K, V]) delete(key K) {
 	}
 }
 
-func (s *mapShard[K, V]) pop(key K) (v V, _ bool) {
+func (s *shardedMapShard[K, V]) pop(key K) (v V, _ bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -147,12 +150,12 @@ func (s *mapShard[K, V]) pop(key K) (v V, _ bool) {
 	return v, false
 }
 
-func (s *mapShard[K, V]) set(key K, value V) {
+func (s *shardedMapShard[K, V]) set(key K, value V) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if !s.entry.Valid {
-		e := mapEntry[K, V]{key: key, value: value}
+		e := shardedMapEntry[K, V]{key: key, value: value}
 		s.entry.Set(e)
 		return
 	}
@@ -165,7 +168,7 @@ func (s *mapShard[K, V]) set(key K, value V) {
 	more[key] = value
 }
 
-func (s *mapShard[K, V]) swap(key K, value V) (v V, _ bool) {
+func (s *shardedMapShard[K, V]) swap(key K, value V) (v V, _ bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -185,9 +188,9 @@ func (s *mapShard[K, V]) swap(key K, value V) (v V, _ bool) {
 	return v, false
 }
 
-func (s *mapShard[K, V]) range_(fn func(K, V) bool) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *shardedMapShard[K, V]) range_(fn func(K, V) bool) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	if m, ok := s.entry.Unwrap(); ok {
 		if !fn(m.key, m.value) {

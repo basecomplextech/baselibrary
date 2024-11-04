@@ -7,11 +7,11 @@ package asyncmap
 import (
 	"testing"
 	"unsafe"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func TestMapShard__size_must_be_256(t *testing.T) {
-	size := unsafe.Sizeof(mapShard[int, int]{})
-	assert.Equal(t, 256, int(size))
+func TestShardedMap__shard_size_should_equal_cache_line(t *testing.T) {
+	s := unsafe.Sizeof(shardedMapShard[int, int]{})
+	if s != 256 {
+		t.Fatal(s, 256-s)
+	}
 }
