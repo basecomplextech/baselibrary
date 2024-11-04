@@ -85,25 +85,25 @@ func (s *shardedMapShard[K, V]) get(key K) (v V, _ bool) {
 	return v, false
 }
 
-func (s *shardedMapShard[K, V]) getOrSet(key K, value V) (v V, set bool) {
+func (s *shardedMapShard[K, V]) getOrSet(key K, value V) (v V, ok bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if m, ok := s.entry.Unwrap(); ok {
 		if m.key == key {
-			return m.value, false
+			return m.value, true
 		}
 	}
 	if more, ok := s.more.Unwrap(); ok {
 		if v, ok := more[key]; ok {
-			return v, false
+			return v, true
 		}
 	}
 
 	if !s.entry.Valid {
 		e := shardedMapEntry[K, V]{key: key, value: value}
 		s.entry.Set(e)
-		return v, true
+		return v, false
 	}
 
 	more, ok := s.more.Unwrap()
@@ -112,7 +112,7 @@ func (s *shardedMapShard[K, V]) getOrSet(key K, value V) (v V, set bool) {
 		s.more.Set(more)
 	}
 	more[key] = value
-	return value, true
+	return value, false
 }
 
 func (s *shardedMapShard[K, V]) delete(key K) {

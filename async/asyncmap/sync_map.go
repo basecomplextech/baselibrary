@@ -73,10 +73,10 @@ func (m *syncMap[K, V]) Get(key K) (v V, _ bool) {
 	return val.(V), true
 }
 
-// GetOrSet returns a value by key, or sets a value if it does not exist.
+// GetOrSet returns a value by key and true, or sets a value and false.
 func (m *syncMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
-	val, loaded := m.raw.LoadOrStore(key, value)
-	return val.(V), !loaded
+	val, ok := m.raw.LoadOrStore(key, value)
+	return val.(V), ok
 }
 
 // Delete deletes a value by key.

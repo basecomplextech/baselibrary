@@ -86,8 +86,8 @@ func (m *shardedMap[K, V]) Get(key K) (V, bool) {
 	return s.get(key)
 }
 
-// GetOrSet returns a value by key, or sets a value if it does not exist.
-func (m *shardedMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
+// GetOrSet returns a value by key and true, or sets a value and false.
+func (m *shardedMap[K, V]) GetOrSet(key K, value V) (V, bool) {
 	s := m.shard(key)
 	return s.getOrSet(key, value)
 }
