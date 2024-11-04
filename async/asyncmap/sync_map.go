@@ -28,23 +28,23 @@ type SyncMap[K comparable, V any] interface {
 
 // NewSyncMap returns a new generic wrapper around a standard [sync.Map].
 func NewSyncMap[K comparable, V any]() SyncMap[K, V] {
-	return newAtomicMap[K, V]()
+	return newSyncMap[K, V]()
 }
 
 // internal
 
-var _ SyncMap[int, int] = (*atomicMap[int, int])(nil)
+var _ SyncMap[int, int] = (*syncMap[int, int])(nil)
 
-type atomicMap[K comparable, V any] struct {
+type syncMap[K comparable, V any] struct {
 	raw sync.Map
 }
 
-func newAtomicMap[K comparable, V any]() *atomicMap[K, V] {
-	return &atomicMap[K, V]{}
+func newSyncMap[K comparable, V any]() *syncMap[K, V] {
+	return &syncMap[K, V]{}
 }
 
 // Len iterates the map, counts the number of keys, and returns the result.
-func (m *atomicMap[K, V]) Len() int {
+func (m *syncMap[K, V]) Len() int {
 	var n int
 	m.raw.Range(func(_, _ any) bool {
 		n++
@@ -54,18 +54,18 @@ func (m *atomicMap[K, V]) Len() int {
 }
 
 // Clear deletes all items.
-func (m *atomicMap[K, V]) Clear() {
+func (m *syncMap[K, V]) Clear() {
 	m.raw.Clear()
 }
 
 // Contains returns true if a key exists.
-func (m *atomicMap[K, V]) Contains(key K) bool {
+func (m *syncMap[K, V]) Contains(key K) bool {
 	_, ok := m.raw.Load(key)
 	return ok
 }
 
 // Get returns a value by key, or false.
-func (m *atomicMap[K, V]) Get(key K) (v V, _ bool) {
+func (m *syncMap[K, V]) Get(key K) (v V, _ bool) {
 	val, ok := m.raw.Load(key)
 	if !ok {
 		return v, false
@@ -74,18 +74,18 @@ func (m *atomicMap[K, V]) Get(key K) (v V, _ bool) {
 }
 
 // GetOrSet returns a value by key, or sets a value if it does not exist.
-func (m *atomicMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
+func (m *syncMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
 	val, loaded := m.raw.LoadOrStore(key, value)
 	return val.(V), !loaded
 }
 
 // Delete deletes a value by key.
-func (m *atomicMap[K, V]) Delete(key K) {
+func (m *syncMap[K, V]) Delete(key K) {
 	m.raw.Delete(key)
 }
 
 // Pop deletes and returns a value by key, or false.
-func (m *atomicMap[K, V]) Pop(key K) (v V, _ bool) {
+func (m *syncMap[K, V]) Pop(key K) (v V, _ bool) {
 	val, ok := m.raw.LoadAndDelete(key)
 	if !ok {
 		return v, false
@@ -94,12 +94,12 @@ func (m *atomicMap[K, V]) Pop(key K) (v V, _ bool) {
 }
 
 // Set sets a value for a key.
-func (m *atomicMap[K, V]) Set(key K, value V) {
+func (m *syncMap[K, V]) Set(key K, value V) {
 	m.raw.Store(key, value)
 }
 
 // Swap swaps a key value and returns the previous value.
-func (m *atomicMap[K, V]) Swap(key K, value V) (v V, _ bool) {
+func (m *syncMap[K, V]) Swap(key K, value V) (v V, _ bool) {
 	val, ok := m.raw.Swap(key, value)
 	if !ok {
 		return v, false
@@ -109,7 +109,7 @@ func (m *atomicMap[K, V]) Swap(key K, value V) (v V, _ bool) {
 
 // Range iterates over all key-value pairs.
 // The iteration stops if the function returns false.
-func (m *atomicMap[K, V]) Range(fn func(K, V) bool) {
+func (m *syncMap[K, V]) Range(fn func(K, V) bool) {
 	m.raw.Range(func(key, value any) bool {
 		return fn(key.(K), value.(V))
 	})
