@@ -10,6 +10,7 @@ import "sync"
 //
 // This map is optimized mostly for read operations.
 // Writes operations are slower and allocate memory.
+// Write performance degrades heavily if the keys are deleted from the map.
 //
 // Use [AtomicMap] or [AtomicShardedMap] if you need a map optimized for read-write operations.
 //
