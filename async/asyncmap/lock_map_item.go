@@ -4,6 +4,8 @@
 
 package asyncmap
 
+import "github.com/basecomplextech/baselibrary/pools"
+
 type lockMapItem[K comparable] struct {
 	b *lockMapBucket[K]
 
@@ -14,7 +16,11 @@ type lockMapItem[K comparable] struct {
 }
 
 func newLockMapItem[K comparable](b *lockMapBucket[K], key K) *lockMapItem[K] {
-	m := b.m.pool.New()
+	m, ok := b.m.pool.Get()
+	if !ok {
+		m = makeLockMapItem[K]()
+	}
+
 	m.b = b
 	m.key = key
 	m.refs = 1
@@ -58,4 +64,12 @@ func (m *lockMapItem[K]) reset() {
 
 	*m = lockMapItem[K]{}
 	m.lock = lock
+}
+
+// pools
+
+var lockMapItemPools = pools.NewPools()
+
+func newLockMapPool[K comparable]() pools.Pool[*lockMapItem[K]] {
+	return pools.GetPool[*lockMapItem[K]](lockMapItemPools)
 }

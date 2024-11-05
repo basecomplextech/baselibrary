@@ -112,10 +112,6 @@ func newLockMap[K comparable]() *lockMap[K] {
 	return m
 }
 
-func newLockMapPool[K comparable]() pools.Pool[*lockMapItem[K]] {
-	return pools.NewPoolFunc[*lockMapItem[K]](makeLockMapItem)
-}
-
 // Get returns a key key, the lock must be freed after use.
 func (m *lockMap[K]) Get(key K) KeyLock {
 	// Get lock item
