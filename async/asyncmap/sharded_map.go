@@ -46,12 +46,9 @@ type shardedMap[K comparable, V any] struct {
 func newShardedMap[K comparable, V any]() *shardedMap[K, V] {
 	cpus := runtime.NumCPU() * 4
 
-	shards := make([]shardedMapShard[K, V], cpus)
-	for i := range shards {
-		shards[i] = newShardedMapShard[K, V]()
+	return &shardedMap[K, V]{
+		shards: make([]shardedMapShard[K, V], cpus),
 	}
-
-	return &shardedMap[K, V]{shards: shards}
 }
 
 // Len returns the number of keys.

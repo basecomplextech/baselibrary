@@ -24,10 +24,6 @@ type shardedMapEntry[K comparable, V any] struct {
 	value V
 }
 
-func newShardedMapShard[K comparable, V any]() shardedMapShard[K, V] {
-	return shardedMapShard[K, V]{}
-}
-
 func (s *shardedMapShard[K, V]) len() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

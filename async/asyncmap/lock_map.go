@@ -16,8 +16,9 @@ import (
 
 // LockMap holds locks for different keys.
 //
-// The map is a sharded map, which uses a lock per shard.
-// The number of shards is equal to the number of CPU cores.
+// The map uses multiple buckets (shards) each with its own mutex.
+// Buckets are stored in multiple cache lines to try to avoid false sharing.
+// The number of cache lines is equal to the number of CPUs.
 type LockMap[K comparable] interface {
 	// Get returns a key lock, the lock must be freed after use.
 	//
@@ -57,7 +58,7 @@ type LockMap[K comparable] interface {
 	//	defer lock.Free()
 	Lock(ctx async.Context, key K) (LockedKey, status.Status)
 
-	// LockMap locks the map itself, internally it locks all shards.
+	// LockMap locks the map itself, internally it locks all buckets.
 	//
 	// Usage:
 	//
@@ -73,18 +74,6 @@ type LockMap[K comparable] interface {
 	LockMap() LockedMap[K]
 }
 
-// LockedMap is an interface to interact with a map locked in exclusive mode.
-type LockedMap[K comparable] interface {
-	// Contains returns true if the key is present.
-	Contains(key K) bool
-
-	// Range ranges over all keys.
-	Range(f func(key K) bool)
-
-	// Free unlocks the map itself, internally it unlocks all shards.
-	Free()
-}
-
 // NewLockMap returns a new lock map.
 func NewLockMap[K comparable]() LockMap[K] {
 	return newLockMap[K]()
@@ -95,37 +84,46 @@ func NewLockMap[K comparable]() LockMap[K] {
 var _ LockMap[any] = (*lockMap[any])(nil)
 
 type lockMap[K comparable] struct {
-	shards []lockShard[K]
+	pool    pools.Pool[*lockMapItem[K]]
+	buckets []lockMapBucket[K]
 }
 
 func newLockMap[K comparable]() *lockMap[K] {
+	pool := newLockMapPool[K]()
+
+	// CPUs
 	cpus := runtime.NumCPU()
-	cpuLines := 16
-	lineSize := 256
+	cacheLine := 256
 
-	size := unsafe.Sizeof(lockShard[K]{})
-	total := cpus * cpuLines * lineSize
-	n := int(total / int(size))
+	// Calculate number of buckets
+	bucketSize := unsafe.Sizeof(lockMapBucket[K]{})
+	bucketNum := (cpus * cacheLine) / int(bucketSize)
 
-	pool := pools.NewPoolFunc[*lockItem[K]](newLockItem)
-	shards := make([]lockShard[K], n)
-	for i := range shards {
-		shards[i] = newLockShard(pool)
+	// Make map
+	m := &lockMap[K]{
+		pool:    pool,
+		buckets: make([]lockMapBucket[K], bucketNum),
 	}
 
-	return &lockMap[K]{
-		shards: shards,
+	// Init buckets
+	for i := range m.buckets {
+		m.buckets[i].init(m)
 	}
+	return m
+}
+
+func newLockMapPool[K comparable]() pools.Pool[*lockMapItem[K]] {
+	return pools.NewPoolFunc[*lockMapItem[K]](makeLockMapItem)
 }
 
 // Get returns a key key, the lock must be freed after use.
 func (m *lockMap[K]) Get(key K) KeyLock {
 	// Get lock item
-	shard := m.shard(key)
-	item := shard.get(key)
+	b := m.bucket(key)
+	item := b.get(key)
 
 	// Return key lock
-	return &keyLock[K]{item}
+	return newLockMapKeyLock(item)
 }
 
 // Contains returns true if the key is present.
@@ -133,21 +131,21 @@ func (m *lockMap[K]) Get(key K) KeyLock {
 // Usually it means that the key is locked, but it is not guaranteed.
 // In the latter case the key is unlocked but is not yet freed.
 func (m *lockMap[K]) Contains(key K) bool {
-	shard := m.shard(key)
-	return shard.contains(key)
+	b := m.bucket(key)
+	return b.contains(key)
 }
 
 // Lock returns a locked key, the key must be freed after use.
 func (m *lockMap[K]) Lock(ctx async.Context, key K) (LockedKey, status.Status) {
 	// Get lock item
-	shard := m.shard(key)
-	item := shard.get(key)
+	b := m.bucket(key)
+	item := b.get(key)
 
-	// Free if not locked
+	// Release if not locked
 	done := false
 	defer func() {
 		if !done {
-			item.free()
+			item.release()
 		}
 	}()
 
@@ -165,57 +163,33 @@ func (m *lockMap[K]) Lock(ctx async.Context, key K) (LockedKey, status.Status) {
 	}
 
 	// Return locked key
-	k := &lockedKey[K]{item}
+	k := newLockMapLockedKey(item)
 	done = true
 	return k, status.OK
 }
 
-// LockMap locks the map itself, internally it locks all shards.
+// LockMap locks the map itself, internally it locks all buckets.
 func (m *lockMap[K]) LockMap() LockedMap[K] {
-	for i := range m.shards {
-		shard := &m.shards[i]
-		shard.mu.Lock()
+	for i := range m.buckets {
+		b := &m.buckets[i]
+		b.mu.Lock()
 	}
 
-	return &lockedMap[K]{m}
+	return newLockedMap(m)
 }
 
-// unlockMap unlocks the map itself, internally it unlocks all shards.
+// internal
+
+// unlockMap unlocks the map itself, internally it unlocks all buckets.
 func (m *lockMap[K]) unlockMap() {
-	for i := range m.shards {
-		shard := &m.shards[i]
-		shard.mu.Unlock()
+	for i := range m.buckets {
+		b := &m.buckets[i]
+		b.mu.Unlock()
 	}
 }
 
-func (m *lockMap[K]) shard(key K) *lockShard[K] {
-	index := hashing.Shard(key, len(m.shards))
-	return &m.shards[index]
-}
-
-// locked
-
-var _ LockedMap[any] = (*lockedMap[any])(nil)
-
-type lockedMap[K comparable] struct {
-	m *lockMap[K]
-}
-
-// Contains returns true if the key is present.
-func (m *lockedMap[K]) Contains(key K) bool {
-	shard := m.m.shard(key)
-	return shard.containsLocked(key)
-}
-
-// Range ranges over all keys.
-func (m *lockedMap[K]) Range(f func(key K) bool) {
-	for i := range m.m.shards {
-		shard := &m.m.shards[i]
-		shard.rangeLocked(f)
-	}
-}
-
-// Free unlocks the map itself, internally it unlocks all shards.
-func (m *lockedMap[K]) Free() {
-	m.m.unlockMap()
+func (m *lockMap[K]) bucket(key K) *lockMapBucket[K] {
+	h := hashing.Hash(key)
+	i := int(h) % len(m.buckets)
+	return &m.buckets[i]
 }

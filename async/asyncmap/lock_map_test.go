@@ -7,7 +7,6 @@ package asyncmap
 import (
 	"testing"
 	"time"
-	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/async"
 	"github.com/stretchr/testify/assert"
@@ -49,11 +48,11 @@ func TestLockMap__should_retain_key_lock(t *testing.T) {
 	m := newLockMap[int]()
 	key := 123
 
-	lock := m.Get(key).(*keyLock[int])
+	lock := m.Get(key).(*lockMapKeyLock[int])
 	defer lock.Free()
 
-	shard := m.shard(key)
-	item, ok := shard.getNoRetain(key)
+	b := m.bucket(key)
+	item, ok := b.getNoRetain(key)
 	require.True(t, ok)
 	assert.Same(t, lock.item, item)
 	assert.Equal(t, int32(1), item.refs)
@@ -78,9 +77,9 @@ func TestLockMap__should_retain_key_lock_when_already_locked(t *testing.T) {
 	}()
 
 	time.Sleep(10 * time.Millisecond)
-	shard := m.shard(key)
+	b := m.bucket(key)
 
-	item, ok := shard.getNoRetain(key)
+	item, ok := b.getNoRetain(key)
 	require.True(t, ok)
 	assert.Equal(t, int32(2), item.refs)
 }
@@ -98,8 +97,8 @@ func TestLockMap_Lock__should_acquire_locked_key(t *testing.T) {
 	}
 	lock.Free()
 
-	shard := m.shard(key)
-	_, ok := shard.getNoRetain(key)
+	b := m.bucket(key)
+	_, ok := b.getNoRetain(key)
 	assert.False(t, ok)
 }
 
@@ -112,15 +111,8 @@ func TestKeyLock_Free__should_release_delete_key_lock(t *testing.T) {
 	lock := m.Get(key)
 	lock.Free()
 
-	shard := m.shard(key)
+	b := m.bucket(key)
 
-	_, ok := shard.getNoRetain(key)
+	_, ok := b.getNoRetain(key)
 	assert.False(t, ok)
-}
-
-// Shard
-
-func TestLockShard__size_must_be_256(t *testing.T) {
-	size := unsafe.Sizeof(lockShard[int]{})
-	assert.Equal(t, 256, int(size))
 }
