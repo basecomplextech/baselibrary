@@ -19,6 +19,14 @@ import (
 // The map uses multiple buckets (shards) each with its own mutex.
 // Buckets are stored in multiple cache lines to try to avoid false sharing.
 // The number of cache lines is equal to the number of CPUs.
+//
+// # Benchmarks
+//
+//	cpu: Apple M1 Pro
+//	BenchmarkLockMap_Get-10              	20442770	        53.08 ns/op	        18.84 mops	       8 B/op	       1 allocs/op
+//	BenchmarkLockMap_Get_Parallel-10     	18444724	        66.06 ns/op	        15.14 mops	       8 B/op	       1 allocs/op
+//	BenchmarkLockMap_Lock-10             	12843542	        93.09 ns/op	        10.74 mops	       8 B/op	       1 allocs/op
+//	BenchmarkLockMap_Lock_Parallel-10    	14246732	        88.46 ns/op	        11.30 mops	       8 B/op	       1 allocs/op
 type LockMap[K comparable] interface {
 	// Get returns a key lock, the lock must be freed after use.
 	//
