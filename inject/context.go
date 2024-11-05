@@ -12,21 +12,22 @@ import (
 )
 
 type Context interface {
-	// Add adds a constructor or an object to the context.
+	// Add adds multiple constructors or objects to the context, panics on duplicates.
 	//
 	// When passed an object, the method adds the concrete object, not an interface.
 	// Should you need to add an interface, use inject.Add[T], or pass a function
 	// that returns an interface `func() T { return obj }`.
-	Add(v any) Context
+	Add(vv ...any) Context
 
-	// AddOnce adds a constructor or an object if it does not exist already.
+	// AddOnce adds a constructor or an object if it does not exist already, skips duplicates.
 	//
 	// When passed an object, the method adds the concrete object, not an interface.
 	// Should you need to add an interface, use inject.AddOnce[T], or pass a function
 	// that returns an interface `func() T { return obj }`.
-	AddOnce(v any) Context
+	AddOnce(vv ...any) Context
 
-	// AddObject adds an object to the context.
+	// AddObject adds an object (not a constructor) to the context, panics on duplicates.
+	// The method treats functions as objects, not constructors.
 	//
 	// When passed an object, the method adds the concrete object, not an interface.
 	// Should you need to add an interface, use inject.AddObject[T].
@@ -36,9 +37,11 @@ type Context interface {
 	Get(ptr any) Context
 }
 
-// New returns a new context.
-func New() Context {
-	return newContext()
+// New returns a new context with the provided constructors and objects.
+func New(vv ...any) Context {
+	x := newContext()
+	x.Add(vv...)
+	return x
 }
 
 // Add adds a constructor or an object to the context.
@@ -50,7 +53,7 @@ func Add[T any](c Context, v T) {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
-	x.addType(typ, p, false)
+	x.addType(typ, p, false /* panic on duplicates */)
 }
 
 // AddOnce adds a constructor or an object if it does not exist already.
@@ -74,7 +77,7 @@ func AddObject[T any](c Context, obj T) {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
-	x.addType(typ, p, false)
+	x.addType(typ, p, false /* panic on duplicates */)
 }
 
 // Get returns an object.
@@ -106,25 +109,27 @@ func newContext() *context {
 	}
 }
 
-// Add adds a constructor or an object to the context.
-func (x *context) Add(v any) Context {
-	p := newProvider(v)
-
+// Add adds multiple constructors or objects to the context, panics on duplicates.
+func (x *context) Add(vv ...any) Context {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
-	x.add(p, false)
+	for _, v := range vv {
+		p := newProvider(v)
+		x.add(p, false /* panic on duplicates */)
+	}
 	return x
 }
 
-// AddOnce adds a constructor or an object if it does not exist already.
-func (x *context) AddOnce(v any) Context {
-	p := newProvider(v)
-
+// AddObject adds an object (not a constructor) to the context, panics on duplicates.
+func (x *context) AddOnce(vv ...any) Context {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
-	x.add(p, true /* skip existing */)
+	for _, v := range vv {
+		p := newProvider(v)
+		x.add(p, true /* skip existing */)
+	}
 	return x
 }
 
@@ -135,7 +140,7 @@ func (x *context) AddObject(obj any) Context {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
-	x.add(p, false)
+	x.add(p, false /* panic on duplicates */)
 	return x
 }
 

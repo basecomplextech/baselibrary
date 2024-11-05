@@ -18,14 +18,14 @@ func TestContext_Get__should_build_object_and_set_pointer(t *testing.T) {
 	}
 	var obj object
 
-	Test(t).
-		Add(1).
-		Add("hello").
-		Add(func() bool { return true }).
-		Add(func(a int, b string, c bool) object {
+	Test(t,
+		1,
+		"hello",
+		func() bool { return true },
+		func(a int, b string, c bool) object {
 			return object{a, b, c}
-		}).
-		Get(&obj)
+		},
+	).Get(&obj)
 
 	assert.Equal(t, 1, obj.a)
 	assert.Equal(t, "hello", obj.b)
@@ -33,12 +33,14 @@ func TestContext_Get__should_build_object_and_set_pointer(t *testing.T) {
 }
 
 func TestContext_Get__should_panic_on_cycle(t *testing.T) {
-	assert.PanicsWithValue(t, "cycle detected: int <- int", func() {
+	assert.PanicsWithValue(t, "cycle detected: int -> int32 -> string -> int", func() {
 		var obj int
 
-		New().
-			Add(func(a int) int { return a }).
-			Get(&obj)
+		New(
+			func(b int32) int { return int(b) },
+			func(c string) int32 { return 123 },
+			func(a int) string { return "123" },
+		).Get(&obj)
 	})
 }
 

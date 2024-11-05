@@ -9,8 +9,10 @@ import (
 )
 
 // Test returns a test context.
-func Test(t tests.T) Context {
-	return New().
-		Add(t).
-		Add(func() tests.T { return t }) // Add interface
+func Test(t tests.T, vv ...any) Context {
+	tfn := func() tests.T { return t } // returns tests.T interface
+
+	x := New(t, tfn)
+	x.Add(vv...)
+	return x
 }
