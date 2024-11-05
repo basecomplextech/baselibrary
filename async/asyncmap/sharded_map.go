@@ -15,17 +15,17 @@ import (
 // This map is optimized for read-write operations.
 // Use [SyncMap] if you need a map optimized mostly for read operations.
 // Use [AtomicMap] or [AtomicShardedMap] if you need a map optimized for read/write
-// operations with non-blocking reads.
+// operations and non-blocking reads.
 //
 // # Benchmarks
 //
 //	cpu: Apple M1 Pro
-//	BenchmarkShardedMap_Read-10                            	30489063	        37.41 ns/op	        26.73 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedMap_Read_Parallel-10                   	81285898	        14.79 ns/op	        67.60 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedMap_Write-10                           	28579593	        42.33 ns/op	        23.62 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedMap_Write_Parallel-10                  	21006073	        55.74 ns/op	        17.94 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedMap_Read_Write_Parallel-10             	19586400	        60.62 ns/op	         1.07 rmops	        16.50 wmops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedMap_Read_Parallel_Write_Parallel-10    	 3161337	       416.00 ns/op	        33.10 rmops	         2.40 wmops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedMap_Read-10                            	28416379	        37.92 ns/op	        26.37 mops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedMap_Read_Parallel-10                   	45233161	        25.85 ns/op	        38.68 mops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedMap_Write-10                           	28739761	        41.63 ns/op	        24.02 mops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedMap_Write_Parallel-10                  	11624372	       100.70 ns/op	         9.92 mops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedMap_Read_Write_Parallel-10             	 8651703	       139.70 ns/op	         1.31 rmops	       7.15 wmops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedMap_Read_Parallel_Write_Parallel-10    	 1000000	      1162.00 ns/op	        22.56 rmops	       0.86 wmops	       0 B/op	       0 allocs/op
 type ShardedMap[K comparable, V any] interface {
 	Map[K, V]
 }
@@ -44,7 +44,7 @@ type shardedMap[K comparable, V any] struct {
 }
 
 func newShardedMap[K comparable, V any]() *shardedMap[K, V] {
-	cpus := runtime.NumCPU() * 4
+	cpus := runtime.NumCPU()
 
 	return &shardedMap[K, V]{
 		shards: make([]shardedMapShard[K, V], cpus),
