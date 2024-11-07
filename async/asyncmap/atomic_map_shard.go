@@ -27,7 +27,7 @@ func (s *atomicMapShard[K, V]) init(m *atomicShardedMap[K, V], size int) {
 
 func (s *atomicMapShard[K, V]) len() int {
 	state := s.state.Load()
-	return int(state.count)
+	return state.len()
 }
 
 func (s *atomicMapShard[K, V]) clear() {
@@ -109,7 +109,8 @@ func (s *atomicMapShard[K, V]) _getOrSet(h uint32, key K, value V, resize *bool)
 	state := s.state.Load()
 	v, ok := state.getOrSet(h, key, value)
 
-	*resize = state.count >= int64(state.threshold)
+	n := state.len()
+	*resize = n >= state.threshold
 	return v, ok
 }
 
@@ -120,7 +121,8 @@ func (s *atomicMapShard[K, V]) _set(h uint32, key K, value V, resize *bool) {
 	state := s.state.Load()
 	state.set(h, key, value)
 
-	*resize = state.count >= int64(state.threshold)
+	n := state.len()
+	*resize = n >= state.threshold
 }
 
 func (s *atomicMapShard[K, V]) _swap(h uint32, key K, value V, resize *bool) (V, bool) {
@@ -130,7 +132,8 @@ func (s *atomicMapShard[K, V]) _swap(h uint32, key K, value V, resize *bool) (V,
 	state := s.state.Load()
 	v, ok := state.swap(h, key, value)
 
-	*resize = state.count >= int64(state.threshold)
+	n := state.len()
+	*resize = n >= state.threshold
 	return v, ok
 }
 
@@ -141,7 +144,8 @@ func (s *atomicMapShard[K, V]) _resize() {
 	defer s.wmu.Unlock()
 
 	state := s.state.Load()
-	if state.count < int64(state.threshold) {
+	n := state.len()
+	if n < state.threshold {
 		return
 	}
 

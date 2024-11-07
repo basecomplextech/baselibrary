@@ -87,7 +87,7 @@ func newAtomicMapPool[K comparable, V any]() pools.Pool[*atomicMapEntry[K, V]] {
 // Len returns the number of keys.
 func (m *atomicMap[K, V]) Len() int {
 	s := m.state.Load()
-	return int(s.count)
+	return s.len()
 }
 
 // Clear deletes all items.
@@ -184,7 +184,8 @@ func (m *atomicMap[K, V]) getOrSet(key K, value V, resize *bool) (V, bool) {
 	s := m.state.Load()
 	v, ok := s.getOrSet(h, key, value)
 
-	*resize = s.count >= int64(s.threshold)
+	n := s.len()
+	*resize = n >= s.threshold
 	return v, ok
 }
 
@@ -196,7 +197,8 @@ func (m *atomicMap[K, V]) set(key K, value V, resize *bool) {
 	s := m.state.Load()
 	s.set(h, key, value)
 
-	*resize = s.count >= int64(s.threshold)
+	n := s.len()
+	*resize = n >= s.threshold
 }
 
 func (m *atomicMap[K, V]) swap(key K, value V, resize *bool) (V, bool) {
@@ -207,7 +209,8 @@ func (m *atomicMap[K, V]) swap(key K, value V, resize *bool) (V, bool) {
 	s := m.state.Load()
 	v, ok := s.swap(h, key, value)
 
-	*resize = s.count >= int64(s.threshold)
+	n := s.len()
+	*resize = n >= s.threshold
 	return v, ok
 }
 
@@ -218,7 +221,8 @@ func (m *atomicMap[K, V]) resize() {
 	defer m.wmu.Unlock()
 
 	s := m.state.Load()
-	if s.count < int64(s.threshold) {
+	n := s.len()
+	if n < s.threshold {
 		return
 	}
 

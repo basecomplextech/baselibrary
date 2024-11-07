@@ -13,8 +13,8 @@ import (
 type atomicMapState[K comparable, V any] struct {
 	pool pools.Pool[*atomicMapEntry[K, V]]
 
-	count     int64 // number of items
-	threshold int   // next resize threshold
+	count     atomic.Int64 // number of items
+	threshold int          // next resize threshold
 
 	buckets []atomicMapBucket[K, V]
 }
@@ -46,6 +46,10 @@ func emptyAtomicMapState[K comparable, V any](s *atomicMapState[K, V]) *atomicMa
 
 // methods
 
+func (s *atomicMapState[K, V]) len() int {
+	return int(s.count.Load())
+}
+
 func (s *atomicMapState[K, V]) contains(h uint32, key K) bool {
 	b := s.bucket(h)
 	_, ok := b.get(key, s.pool)
@@ -61,7 +65,7 @@ func (s *atomicMapState[K, V]) getOrSet(h uint32, key K, value V) (V, bool) {
 	b := s.bucket(h)
 	v, ok := b.getOrSet(key, value, s.pool)
 	if !ok {
-		atomic.AddInt64(&s.count, 1)
+		s.count.Add(1)
 	}
 	return v, ok
 }
@@ -70,7 +74,7 @@ func (s *atomicMapState[K, V]) delete(h uint32, key K) {
 	b := s.bucket(h)
 	_, ok := b.delete(key, s.pool)
 	if ok {
-		atomic.AddInt64(&s.count, -1)
+		s.count.Add(-1)
 	}
 }
 
@@ -78,7 +82,7 @@ func (s *atomicMapState[K, V]) pop(h uint32, key K) (V, bool) {
 	b := s.bucket(h)
 	v, ok := b.delete(key, s.pool)
 	if ok {
-		atomic.AddInt64(&s.count, -1)
+		s.count.Add(-1)
 	}
 	return v, ok
 }
@@ -87,7 +91,7 @@ func (s *atomicMapState[K, V]) set(h uint32, key K, value V) {
 	b := s.bucket(h)
 	ok := b.set(key, value, s.pool)
 	if ok {
-		atomic.AddInt64(&s.count, 1)
+		s.count.Add(1)
 	}
 }
 
@@ -95,7 +99,7 @@ func (s *atomicMapState[K, V]) swap(h uint32, key K, value V) (v V, _ bool) {
 	b := s.bucket(h)
 	v, ok := b.swap(key, value, s.pool)
 	if !ok {
-		atomic.AddInt64(&s.count, 1)
+		s.count.Add(1)
 	}
 	return v, ok
 }
