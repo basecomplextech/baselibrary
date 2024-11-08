@@ -96,6 +96,15 @@ func (l *prefixLogger) Trace(msg string, keyValues ...any) {
 	l.logger.Trace(msg, keyValues...)
 }
 
+// TraceStatus logs a trace message with a status and a stack trace.
+func (l *prefixLogger) TraceStatus(msg string, st status.Status, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.TraceStatus(msg, st, keyValues...)
+}
+
 // Debug logs a debug record.
 func (l *prefixLogger) Debug(msg string, keyValues ...any) {
 	if p := l.prefix.load(); p != "" {
@@ -103,6 +112,15 @@ func (l *prefixLogger) Debug(msg string, keyValues ...any) {
 	}
 
 	l.logger.Debug(msg, keyValues...)
+}
+
+// DebugStatus logs a debug message with a status and a stack trace.
+func (l *prefixLogger) DebugStatus(msg string, st status.Status, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.DebugStatus(msg, st, keyValues...)
 }
 
 // Info logs an info record.
@@ -114,6 +132,15 @@ func (l *prefixLogger) Info(msg string, keyValues ...any) {
 	l.logger.Info(msg, keyValues...)
 }
 
+// InfoStatus logs an info message with a status and a stack trace.
+func (l *prefixLogger) InfoStatus(msg string, st status.Status, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.InfoStatus(msg, st, keyValues...)
+}
+
 // Notice logs a notice record.
 func (l *prefixLogger) Notice(msg string, keyValues ...any) {
 	if p := l.prefix.load(); p != "" {
@@ -123,6 +150,15 @@ func (l *prefixLogger) Notice(msg string, keyValues ...any) {
 	l.logger.Notice(msg, keyValues...)
 }
 
+// NoticeStatus logs a notice message with a status and a stack trace.
+func (l *prefixLogger) NoticeStatus(msg string, st status.Status, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.NoticeStatus(msg, st, keyValues...)
+}
+
 // Warn logs a warning record.
 func (l *prefixLogger) Warn(msg string, keyValues ...any) {
 	if p := l.prefix.load(); p != "" {
@@ -130,6 +166,15 @@ func (l *prefixLogger) Warn(msg string, keyValues ...any) {
 	}
 
 	l.logger.Warn(msg, keyValues...)
+}
+
+// WarnStatus logs a warning message with a status and a stack trace.
+func (l *prefixLogger) WarnStatus(msg string, st status.Status, keyValues ...any) {
+	if p := l.prefix.load(); p != "" {
+		msg = p + msg
+	}
+
+	l.logger.WarnStatus(msg, st, keyValues...)
 }
 
 // Error logs an error record.

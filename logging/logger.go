@@ -39,17 +39,32 @@ type Logger interface {
 	// Trace logs a trace message.
 	Trace(msg string, keyValues ...any)
 
+	// TraceStatus logs a trace message with a status and a stack trace.
+	TraceStatus(msg string, st status.Status, keyValues ...any)
+
 	// Debug logs a debug message.
 	Debug(msg string, keyValues ...any)
+
+	// DebugStatus logs a debug message with a status and a stack trace.
+	DebugStatus(msg string, st status.Status, keyValues ...any)
 
 	// Info logs an info message.
 	Info(msg string, keyValues ...any)
 
+	// InfoStatus logs an info message with a status and a stack trace.
+	InfoStatus(msg string, st status.Status, keyValues ...any)
+
 	// Notice logs a notice message.
 	Notice(msg string, keyValues ...any)
 
+	// NoticeStatus logs a notice message with a status and a stack trace.
+	NoticeStatus(msg string, st status.Status, keyValues ...any)
+
 	// Warn logs a warning message.
 	Warn(msg string, keyValues ...any)
+
+	// WarnStatus logs a warning message with a status and a stack trace.
+	WarnStatus(msg string, st status.Status, keyValues ...any)
 
 	// Error logs an error message.
 	Error(msg string, keyValues ...any)
@@ -172,11 +187,29 @@ func (l *logger) Trace(msg string, keyValues ...any) {
 	l.Write(rec)
 }
 
+// TraceStatus logs a trace message with a status and a stack trace.
+func (l *logger) TraceStatus(msg string, st status.Status, keyValues ...any) {
+	rec := NewRecord(l.name, LevelTrace).
+		WithMessage(msg).
+		WithFields(keyValues...).
+		WithStatus(st)
+	l.Write(rec)
+}
+
 // Debug logs a debug message.
 func (l *logger) Debug(msg string, keyValues ...any) {
 	rec := NewRecord(l.name, LevelDebug).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	l.Write(rec)
+}
+
+// DebugStatus logs a debug message with a status and a stack trace.
+func (l *logger) DebugStatus(msg string, st status.Status, keyValues ...any) {
+	rec := NewRecord(l.name, LevelDebug).
+		WithMessage(msg).
+		WithFields(keyValues...).
+		WithStatus(st)
 	l.Write(rec)
 }
 
@@ -188,6 +221,15 @@ func (l *logger) Info(msg string, keyValues ...any) {
 	l.Write(rec)
 }
 
+// InfoStatus logs an info message with a status and a stack trace.
+func (l *logger) InfoStatus(msg string, st status.Status, keyValues ...any) {
+	rec := NewRecord(l.name, LevelInfo).
+		WithMessage(msg).
+		WithFields(keyValues...).
+		WithStatus(st)
+	l.Write(rec)
+}
+
 // Notice logs a notice message.
 func (l *logger) Notice(msg string, keyValues ...any) {
 	rec := NewRecord(l.name, LevelNotice).
@@ -196,11 +238,29 @@ func (l *logger) Notice(msg string, keyValues ...any) {
 	l.Write(rec)
 }
 
+// NoticeStatus logs a notice message with a status and a stack trace.
+func (l *logger) NoticeStatus(msg string, st status.Status, keyValues ...any) {
+	rec := NewRecord(l.name, LevelNotice).
+		WithMessage(msg).
+		WithFields(keyValues...).
+		WithStatus(st)
+	l.Write(rec)
+}
+
 // Warn logs a warning message.
 func (l *logger) Warn(msg string, keyValues ...any) {
 	rec := NewRecord(l.name, LevelWarn).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	l.Write(rec)
+}
+
+// WarnStatus logs a warning message with a status and a stack trace.
+func (l *logger) WarnStatus(msg string, st status.Status, keyValues ...any) {
+	rec := NewRecord(l.name, LevelWarn).
+		WithMessage(msg).
+		WithFields(keyValues...).
+		WithStatus(st)
 	l.Write(rec)
 }
 
