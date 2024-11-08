@@ -26,7 +26,10 @@ type Logger interface {
 	// WithFields returns a chained logger with the default fields.
 	WithFields(keyValuePairs ...any) Logger
 
-	// Write
+	// Enabled returns true if a level is enabled.
+	Enabled(level Level) bool
+
+	// Record
 
 	// Begin returns a record builder with the info level.
 	Begin() RecordBuilder
@@ -34,7 +37,7 @@ type Logger interface {
 	// Write sets the logger if abset, adds the default fields and writes the record.
 	Write(rec *Record) error
 
-	// Records
+	// Trace
 
 	// Trace logs a trace message.
 	Trace(msg string, keyValues ...any)
@@ -42,11 +45,21 @@ type Logger interface {
 	// TraceStatus logs a trace message with a status and a stack trace.
 	TraceStatus(msg string, st status.Status, keyValues ...any)
 
+	// TraceOn returns true if trace level is enabled.
+	TraceOn() bool
+
+	// Debug
+
 	// Debug logs a debug message.
 	Debug(msg string, keyValues ...any)
 
 	// DebugStatus logs a debug message with a status and a stack trace.
 	DebugStatus(msg string, st status.Status, keyValues ...any)
+
+	// DebugOn returns true if debug level is enabled.
+	DebugOn() bool
+
+	// Info
 
 	// Info logs an info message.
 	Info(msg string, keyValues ...any)
@@ -54,11 +67,21 @@ type Logger interface {
 	// InfoStatus logs an info message with a status and a stack trace.
 	InfoStatus(msg string, st status.Status, keyValues ...any)
 
+	// InfoOn returns true if info level is enabled.
+	InfoOn() bool
+
+	// Notice
+
 	// Notice logs a notice message.
 	Notice(msg string, keyValues ...any)
 
 	// NoticeStatus logs a notice message with a status and a stack trace.
 	NoticeStatus(msg string, st status.Status, keyValues ...any)
+
+	// NoticeOn return true if notice level is enabled.
+	NoticeOn() bool
+
+	// Warn
 
 	// Warn logs a warning message.
 	Warn(msg string, keyValues ...any)
@@ -66,11 +89,21 @@ type Logger interface {
 	// WarnStatus logs a warning message with a status and a stack trace.
 	WarnStatus(msg string, st status.Status, keyValues ...any)
 
+	// WarnOn returns true if warn level is enabled.
+	WarnOn() bool
+
+	// Error
+
 	// Error logs an error message.
 	Error(msg string, keyValues ...any)
 
 	// ErrorStatus logs an error message with a status and a stack trace.
 	ErrorStatus(msg string, st status.Status, keyValues ...any)
+
+	// ErrorOn returns true if error level is enabled.
+	ErrorOn() bool
+
+	// Fatal
 
 	// Fatal logs a fatal mesage.
 	Fatal(msg string, keyValues ...any)
@@ -78,31 +111,8 @@ type Logger interface {
 	// FatalStatus logs a fatal message with a status and a stack trace.
 	FatalStatus(msg string, st status.Status, keyValues ...any)
 
-	// Level checks
-
-	// Enabled returns true if a level is enabled.
-	Enabled(level Level) bool
-
-	// TraceEnabled returns true if trace level is enabled.
-	TraceEnabled() bool
-
-	// DebugEnabled returns true if debug level is enabled.
-	DebugEnabled() bool
-
-	// InfoEnabled returns true if info level is enabled.
-	InfoEnabled() bool
-
-	// NoticeEnabled return true if notice level is enabled.
-	NoticeEnabled() bool
-
-	// WarnEnabled returns true if warn level is enabled.
-	WarnEnabled() bool
-
-	// ErrorEnabled returns true if error level is enabled.
-	ErrorEnabled() bool
-
-	// FatalEnabled returns true if fatal level is enabled.
-	FatalEnabled() bool
+	// FatalOn returns true if fatal level is enabled.
+	FatalOn() bool
 }
 
 // internal
@@ -156,7 +166,12 @@ func (l *logger) WithFields(keyValuePairs ...any) Logger {
 	return l1
 }
 
-// Write
+// Enabled returns true if a level is enabled.
+func (l *logger) Enabled(level Level) bool {
+	return l.w.Enabled(level)
+}
+
+// Record
 
 // Begin returns a record builder with the info level.
 func (l *logger) Begin() RecordBuilder {
@@ -177,7 +192,7 @@ func (l *logger) Write(rec *Record) error {
 	return l.w.Write(rec)
 }
 
-// Records
+// Trace
 
 // Trace logs a trace message.
 func (l *logger) Trace(msg string, keyValues ...any) {
@@ -196,6 +211,13 @@ func (l *logger) TraceStatus(msg string, st status.Status, keyValues ...any) {
 	l.Write(rec)
 }
 
+// TraceOn returns true if trace level is enabled.
+func (l *logger) TraceOn() bool {
+	return l.w.Enabled(LevelTrace)
+}
+
+// Debug
+
 // Debug logs a debug message.
 func (l *logger) Debug(msg string, keyValues ...any) {
 	rec := NewRecord(l.name, LevelDebug).
@@ -212,6 +234,13 @@ func (l *logger) DebugStatus(msg string, st status.Status, keyValues ...any) {
 		WithStatus(st)
 	l.Write(rec)
 }
+
+// DebugOn returns true if debug level is enabled.
+func (l *logger) DebugOn() bool {
+	return l.w.Enabled(LevelDebug)
+}
+
+// Info
 
 // Info logs an info message.
 func (l *logger) Info(msg string, keyValues ...any) {
@@ -230,6 +259,13 @@ func (l *logger) InfoStatus(msg string, st status.Status, keyValues ...any) {
 	l.Write(rec)
 }
 
+// InfoOn returns true if info level is enabled.
+func (l *logger) InfoOn() bool {
+	return l.w.Enabled(LevelInfo)
+}
+
+// Notice
+
 // Notice logs a notice message.
 func (l *logger) Notice(msg string, keyValues ...any) {
 	rec := NewRecord(l.name, LevelNotice).
@@ -246,6 +282,13 @@ func (l *logger) NoticeStatus(msg string, st status.Status, keyValues ...any) {
 		WithStatus(st)
 	l.Write(rec)
 }
+
+// NoticeOn return true if notice level is enabled.
+func (l *logger) NoticeOn() bool {
+	return l.w.Enabled(LevelNotice)
+}
+
+// Warn
 
 // Warn logs a warning message.
 func (l *logger) Warn(msg string, keyValues ...any) {
@@ -264,6 +307,13 @@ func (l *logger) WarnStatus(msg string, st status.Status, keyValues ...any) {
 	l.Write(rec)
 }
 
+// WarnOn returns true if warn level is enabled.
+func (l *logger) WarnOn() bool {
+	return l.w.Enabled(LevelWarn)
+}
+
+// Error
+
 // Error logs an error message.
 func (l *logger) Error(msg string, keyValues ...any) {
 	rec := NewRecord(l.name, LevelError).
@@ -280,6 +330,13 @@ func (l *logger) ErrorStatus(msg string, st status.Status, keyValues ...any) {
 		WithStatus(st)
 	l.Write(rec)
 }
+
+// ErrorOn returns true if error level is enabled.
+func (l *logger) ErrorOn() bool {
+	return l.w.Enabled(LevelError)
+}
+
+// Fatal
 
 // Fatal logs a fatal mesage.
 func (l *logger) Fatal(msg string, keyValues ...any) {
@@ -298,44 +355,7 @@ func (l *logger) FatalStatus(msg string, st status.Status, keyValues ...any) {
 	l.Write(rec)
 }
 
-// Level checks
-
-// Enabled returns true if a level is enabled.
-func (l *logger) Enabled(level Level) bool {
-	return l.w.Enabled(level)
-}
-
-// TraceEnabled returns true if trace level is enabled.
-func (l *logger) TraceEnabled() bool {
-	return l.w.Enabled(LevelTrace)
-}
-
-// DebugEnabled returns true if debug level is enabled.
-func (l *logger) DebugEnabled() bool {
-	return l.w.Enabled(LevelDebug)
-}
-
-// InfoEnabled returns true if info level is enabled.
-func (l *logger) InfoEnabled() bool {
-	return l.w.Enabled(LevelInfo)
-}
-
-// NoticeEnabled return true if notice level is enabled.
-func (l *logger) NoticeEnabled() bool {
-	return l.w.Enabled(LevelNotice)
-}
-
-// WarnEnabled returns true if warn level is enabled.
-func (l *logger) WarnEnabled() bool {
-	return l.w.Enabled(LevelWarn)
-}
-
-// ErrorEnabled returns true if error level is enabled.
-func (l *logger) ErrorEnabled() bool {
-	return l.w.Enabled(LevelError)
-}
-
-// FatalEnabled returns true if fatal level is enabled.
-func (l *logger) FatalEnabled() bool {
+// FatalOn returns true if fatal level is enabled.
+func (l *logger) FatalOn() bool {
 	return l.w.Enabled(LevelFatal)
 }

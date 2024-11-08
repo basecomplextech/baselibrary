@@ -65,15 +65,22 @@ func (l *prefixLogger) Name() string {
 	return l.logger.Name()
 }
 
-// Begin returns a record builder with info level.
-func (l *prefixLogger) Begin() RecordBuilder {
-	return l.logger.Begin()
-}
-
 // Logger returns a child logger.
 func (l *prefixLogger) Logger(name string) Logger {
 	child := l.logger.Logger(name)
 	return newPrefixLogger(child, l.prefix)
+}
+
+// Enabled returns true if a level is enabled.
+func (l *prefixLogger) Enabled(level Level) bool {
+	return l.logger.Enabled(level)
+}
+
+// Record
+
+// Begin returns a record builder with info level.
+func (l *prefixLogger) Begin() RecordBuilder {
+	return l.logger.Begin()
 }
 
 // Write writes a record.
@@ -85,7 +92,7 @@ func (l *prefixLogger) Write(rec *Record) error {
 	return l.logger.Write(rec)
 }
 
-// Records
+// Trace
 
 // Trace logs a trace record.
 func (l *prefixLogger) Trace(msg string, keyValues ...any) {
@@ -105,6 +112,13 @@ func (l *prefixLogger) TraceStatus(msg string, st status.Status, keyValues ...an
 	l.logger.TraceStatus(msg, st, keyValues...)
 }
 
+// TraceOn returns true if trace level is enabled.
+func (l *prefixLogger) TraceOn() bool {
+	return l.logger.TraceOn()
+}
+
+// Debug
+
 // Debug logs a debug record.
 func (l *prefixLogger) Debug(msg string, keyValues ...any) {
 	if p := l.prefix.load(); p != "" {
@@ -122,6 +136,13 @@ func (l *prefixLogger) DebugStatus(msg string, st status.Status, keyValues ...an
 
 	l.logger.DebugStatus(msg, st, keyValues...)
 }
+
+// DebugOn returns true if debug level is enabled.
+func (l *prefixLogger) DebugOn() bool {
+	return l.logger.DebugOn()
+}
+
+// Info
 
 // Info logs an info record.
 func (l *prefixLogger) Info(msg string, keyValues ...any) {
@@ -141,6 +162,13 @@ func (l *prefixLogger) InfoStatus(msg string, st status.Status, keyValues ...any
 	l.logger.InfoStatus(msg, st, keyValues...)
 }
 
+// InfoOn returns true if info level is enabled.
+func (l *prefixLogger) InfoOn() bool {
+	return l.logger.InfoOn()
+}
+
+// Notice
+
 // Notice logs a notice record.
 func (l *prefixLogger) Notice(msg string, keyValues ...any) {
 	if p := l.prefix.load(); p != "" {
@@ -158,6 +186,13 @@ func (l *prefixLogger) NoticeStatus(msg string, st status.Status, keyValues ...a
 
 	l.logger.NoticeStatus(msg, st, keyValues...)
 }
+
+// NoticeOn return true if notice level is enabled.
+func (l *prefixLogger) NoticeOn() bool {
+	return l.logger.NoticeOn()
+}
+
+// Warn
 
 // Warn logs a warning record.
 func (l *prefixLogger) Warn(msg string, keyValues ...any) {
@@ -177,6 +212,13 @@ func (l *prefixLogger) WarnStatus(msg string, st status.Status, keyValues ...any
 	l.logger.WarnStatus(msg, st, keyValues...)
 }
 
+// WarnOn returns true if warn level is enabled.
+func (l *prefixLogger) WarnOn() bool {
+	return l.logger.WarnOn()
+}
+
+// Error
+
 // Error logs an error record.
 func (l *prefixLogger) Error(msg string, keyValues ...any) {
 	if p := l.prefix.load(); p != "" {
@@ -194,6 +236,13 @@ func (l *prefixLogger) ErrorStatus(msg string, st status.Status, keyValues ...an
 
 	l.logger.ErrorStatus(msg, st, keyValues...)
 }
+
+// ErrorOn returns true if error level is enabled.
+func (l *prefixLogger) ErrorOn() bool {
+	return l.logger.ErrorOn()
+}
+
+// Fatal
 
 // Fatal logs a fatal record.
 func (l *prefixLogger) Fatal(msg string, keyValues ...any) {
@@ -213,46 +262,9 @@ func (l *prefixLogger) FatalStatus(msg string, st status.Status, keyValues ...an
 	l.logger.FatalStatus(msg, st, keyValues...)
 }
 
-// Level checks
-
-// Enabled returns true if a level is enabled.
-func (l *prefixLogger) Enabled(level Level) bool {
-	return l.logger.Enabled(level)
-}
-
-// TraceEnabled returns true if trace level is enabled.
-func (l *prefixLogger) TraceEnabled() bool {
-	return l.logger.TraceEnabled()
-}
-
-// DebugEnabled returns true if debug level is enabled.
-func (l *prefixLogger) DebugEnabled() bool {
-	return l.logger.DebugEnabled()
-}
-
-// InfoEnabled returns true if info level is enabled.
-func (l *prefixLogger) InfoEnabled() bool {
-	return l.logger.InfoEnabled()
-}
-
-// NoticeEnabled return true if notice level is enabled.
-func (l *prefixLogger) NoticeEnabled() bool {
-	return l.logger.NoticeEnabled()
-}
-
-// WarnEnabled returns true if warn level is enabled.
-func (l *prefixLogger) WarnEnabled() bool {
-	return l.logger.WarnEnabled()
-}
-
-// ErrorEnabled returns true if error level is enabled.
-func (l *prefixLogger) ErrorEnabled() bool {
-	return l.logger.ErrorEnabled()
-}
-
-// FatalEnabled returns true if fatal level is enabled.
-func (l *prefixLogger) FatalEnabled() bool {
-	return l.logger.FatalEnabled()
+// FatalOn returns true if fatal level is enabled.
+func (l *prefixLogger) FatalOn() bool {
+	return l.logger.FatalOn()
 }
 
 // private
