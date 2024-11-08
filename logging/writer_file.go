@@ -69,7 +69,7 @@ func (w *fileWriter) Write(rec *Record) error {
 	}
 
 	// Format record
-	buf := alloc.NewBuffer()
+	buf := alloc.AcquireBuffer()
 	defer buf.Free()
 
 	if err := w.format.Format(buf, rec); err != nil {

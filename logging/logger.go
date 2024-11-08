@@ -175,7 +175,7 @@ func (l *logger) Enabled(level Level) bool {
 
 // Begin returns a record builder with the info level.
 func (l *logger) Begin() RecordBuilder {
-	r := NewRecord(l.name, LevelInfo)
+	r := newRecord(l.name, LevelInfo)
 	return newRecordBuilder(l, r)
 }
 
@@ -196,18 +196,22 @@ func (l *logger) Write(rec *Record) error {
 
 // Trace logs a trace message.
 func (l *logger) Trace(msg string, keyValues ...any) {
-	rec := NewRecord(l.name, LevelTrace).
+	rec := newRecord(l.name, LevelTrace).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
 // TraceStatus logs a trace message with a status and a stack trace.
 func (l *logger) TraceStatus(msg string, st status.Status, keyValues ...any) {
-	rec := NewRecord(l.name, LevelTrace).
+	rec := newRecord(l.name, LevelTrace).
 		WithMessage(msg).
 		WithFields(keyValues...).
 		WithStatus(st)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
@@ -220,18 +224,22 @@ func (l *logger) TraceOn() bool {
 
 // Debug logs a debug message.
 func (l *logger) Debug(msg string, keyValues ...any) {
-	rec := NewRecord(l.name, LevelDebug).
+	rec := newRecord(l.name, LevelDebug).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
 // DebugStatus logs a debug message with a status and a stack trace.
 func (l *logger) DebugStatus(msg string, st status.Status, keyValues ...any) {
-	rec := NewRecord(l.name, LevelDebug).
+	rec := newRecord(l.name, LevelDebug).
 		WithMessage(msg).
 		WithFields(keyValues...).
 		WithStatus(st)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
@@ -244,18 +252,22 @@ func (l *logger) DebugOn() bool {
 
 // Info logs an info message.
 func (l *logger) Info(msg string, keyValues ...any) {
-	rec := NewRecord(l.name, LevelInfo).
+	rec := newRecord(l.name, LevelInfo).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
 // InfoStatus logs an info message with a status and a stack trace.
 func (l *logger) InfoStatus(msg string, st status.Status, keyValues ...any) {
-	rec := NewRecord(l.name, LevelInfo).
+	rec := newRecord(l.name, LevelInfo).
 		WithMessage(msg).
 		WithFields(keyValues...).
 		WithStatus(st)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
@@ -268,18 +280,22 @@ func (l *logger) InfoOn() bool {
 
 // Notice logs a notice message.
 func (l *logger) Notice(msg string, keyValues ...any) {
-	rec := NewRecord(l.name, LevelNotice).
+	rec := newRecord(l.name, LevelNotice).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
 // NoticeStatus logs a notice message with a status and a stack trace.
 func (l *logger) NoticeStatus(msg string, st status.Status, keyValues ...any) {
-	rec := NewRecord(l.name, LevelNotice).
+	rec := newRecord(l.name, LevelNotice).
 		WithMessage(msg).
 		WithFields(keyValues...).
 		WithStatus(st)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
@@ -292,18 +308,22 @@ func (l *logger) NoticeOn() bool {
 
 // Warn logs a warning message.
 func (l *logger) Warn(msg string, keyValues ...any) {
-	rec := NewRecord(l.name, LevelWarn).
+	rec := newRecord(l.name, LevelWarn).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
 // WarnStatus logs a warning message with a status and a stack trace.
 func (l *logger) WarnStatus(msg string, st status.Status, keyValues ...any) {
-	rec := NewRecord(l.name, LevelWarn).
+	rec := newRecord(l.name, LevelWarn).
 		WithMessage(msg).
 		WithFields(keyValues...).
 		WithStatus(st)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
@@ -316,18 +336,22 @@ func (l *logger) WarnOn() bool {
 
 // Error logs an error message.
 func (l *logger) Error(msg string, keyValues ...any) {
-	rec := NewRecord(l.name, LevelError).
+	rec := newRecord(l.name, LevelError).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
 // ErrorStatus logs an error message with a status and a stack trace.
 func (l *logger) ErrorStatus(msg string, st status.Status, keyValues ...any) {
-	rec := NewRecord(l.name, LevelError).
+	rec := newRecord(l.name, LevelError).
 		WithMessage(msg).
 		WithFields(keyValues...).
 		WithStatus(st)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
@@ -340,18 +364,22 @@ func (l *logger) ErrorOn() bool {
 
 // Fatal logs a fatal mesage.
 func (l *logger) Fatal(msg string, keyValues ...any) {
-	rec := NewRecord(l.name, LevelFatal).
+	rec := newRecord(l.name, LevelFatal).
 		WithMessage(msg).
 		WithFields(keyValues...)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 
 // FatalStatus logs a fatal message with a status and a stack trace.
 func (l *logger) FatalStatus(msg string, st status.Status, keyValues ...any) {
-	rec := NewRecord(l.name, LevelFatal).
+	rec := newRecord(l.name, LevelFatal).
 		WithMessage(msg).
 		WithFields(keyValues...).
 		WithStatus(st)
+	defer releaseRecord(rec)
+
 	l.Write(rec)
 }
 

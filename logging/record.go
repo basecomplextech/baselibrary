@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/panics"
+	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -28,6 +30,15 @@ func NewRecord(logger string, level Level) *Record {
 		Level:  level,
 		Logger: logger,
 	}
+}
+
+// newRecord acquires and returns a new record from the pool.
+func newRecord(logger string, level Level) *Record {
+	r := recordPool.New()
+	r.Time = time.Now()
+	r.Level = level
+	r.Logger = logger
+	return r
 }
 
 func (r *Record) WithTime(t time.Time) *Record {
@@ -106,4 +117,24 @@ func (r *Record) WithStatus(st status.Status) *Record {
 	}
 
 	return r.WithStack(perr.Stack)
+}
+
+// pool
+
+var recordPool = pools.NewPoolFunc(
+	func() *Record {
+		return &Record{}
+	},
+)
+
+func releaseRecord(r *Record) {
+	r.reset()
+	recordPool.Put(r)
+}
+
+func (r *Record) reset() {
+	fields := slices2.Truncate(r.Fields)
+
+	*r = Record{}
+	r.Fields = fields
 }
