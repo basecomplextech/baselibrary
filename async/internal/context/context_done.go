@@ -9,7 +9,7 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-var done MutContext = &doneContext{}
+var done CancelContext = &doneContext{}
 
 type doneContext struct{}
 

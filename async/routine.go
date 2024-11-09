@@ -90,7 +90,7 @@ func Exited[T any](result T, st status.Status) Routine[T] {
 var _ Routine[any] = (*routine[any])(nil)
 
 type routine[T any] struct {
-	ctx    MutContext
+	ctx    CancelContext
 	result promise[T]
 }
 

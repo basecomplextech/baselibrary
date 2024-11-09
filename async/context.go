@@ -15,8 +15,8 @@ type (
 	// Context is an async cancellation context.
 	Context = context.Context
 
-	// MutContext is a mutable async cancellation context.
-	MutContext = context.MutContext
+	// CancelContext is a cancellable async context.
+	CancelContext = context.CancelContext
 
 	// ContextCallback is called when the context is cancelled.
 	ContextCallback = context.Callback
@@ -25,7 +25,7 @@ type (
 // New
 
 // NewContext returns a new cancellable context.
-func NewContext() MutContext {
+func NewContext() CancelContext {
 	return context.New()
 }
 
@@ -35,7 +35,7 @@ func NoContext() Context {
 }
 
 // CancelledContext returns a cancelled context.
-func CancelledContext() MutContext {
+func CancelledContext() CancelContext {
 	return context.Cancelled()
 }
 
@@ -54,7 +54,7 @@ func DeadlineContext(deadline time.Time) Context {
 // Next
 
 // NextContext returns a child context.
-func NextContext(parent Context) MutContext {
+func NextContext(parent Context) CancelContext {
 	return context.Next(parent)
 }
 

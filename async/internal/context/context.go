@@ -43,8 +43,8 @@ type Context interface {
 	Free()
 }
 
-// MutContext is a mutable async cancellation context.
-type MutContext interface {
+// CancelContext is a cancellable async context.
+type CancelContext interface {
 	Context
 
 	// Cancel cancels the context.
@@ -60,7 +60,7 @@ type Callback interface {
 // New
 
 // New returns a new cancellable context.
-func New() MutContext {
+func New() CancelContext {
 	return newContext(nil /* no parent */)
 }
 
@@ -70,7 +70,7 @@ func No() Context {
 }
 
 // Cancelled returns a cancelled context.
-func Cancelled() MutContext {
+func Cancelled() CancelContext {
 	return done
 }
 
@@ -90,7 +90,7 @@ func Deadline(deadline time.Time) Context {
 // Next
 
 // Next returns a child context.
-func Next(parent Context) MutContext {
+func Next(parent Context) CancelContext {
 	return newContext(parent)
 }
 
@@ -114,7 +114,7 @@ func Std(ctx Context) context_.Context {
 
 // internal
 
-var _ MutContext = (*context)(nil)
+var _ CancelContext = (*context)(nil)
 
 type context struct {
 	refs  atomic.Int32 // 1 by default, with releasedBit, see unpackRefs
