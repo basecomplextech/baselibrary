@@ -5,6 +5,7 @@
 package context
 
 import (
+	context_ "context"
 	"sync/atomic"
 	"time"
 
@@ -42,7 +43,7 @@ type Context interface {
 	Free()
 }
 
-// MutContext is a cancellable context.
+// MutContext is a mutable async cancellation context.
 type MutContext interface {
 	Context
 
@@ -50,7 +51,7 @@ type MutContext interface {
 	Cancel()
 }
 
-// Callback receives context cancellation notifications.
+// Callback is called when the context is cancelled.
 type Callback interface {
 	// OnCancelled is called when the context is cancelled.
 	OnCancelled(status.Status)
@@ -69,7 +70,7 @@ func No() Context {
 }
 
 // Cancelled returns a cancelled context.
-func Cancelled() Context {
+func Cancelled() MutContext {
 	return done
 }
 
@@ -102,6 +103,13 @@ func NextTimeout(parent Context, timeout time.Duration) Context {
 func NextDeadline(parent Context, deadline time.Time) Context {
 	timeout := time.Until(deadline)
 	return newContextTimeout(parent, timeout)
+}
+
+// Standard
+
+// Std returns a standard library context from an async one.
+func Std(ctx Context) context_.Context {
+	return newStdContext(ctx)
 }
 
 // internal

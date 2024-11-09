@@ -6,450 +6,71 @@ package async
 
 import (
 	context_ "context"
-	"sync"
 	"time"
 
-	"github.com/basecomplextech/baselibrary/opt"
-	"github.com/basecomplextech/baselibrary/pools"
-	"github.com/basecomplextech/baselibrary/status"
+	"github.com/basecomplextech/baselibrary/async/internal/context"
 )
 
-// Context is an async cancellation context.
-//
-// Usage:
-//
-//	ctx := NewContext()
-//	defer ctx.Free()
-type Context interface {
-	// Cancel cancels the context.
-	Cancel()
+type (
+	// Context is an async cancellation context.
+	Context = context.Context
 
-	// Done returns true if the context is cancelled.
-	Done() bool
+	// MutContext is a mutable async cancellation context.
+	MutContext = context.MutContext
 
-	// Wait returns a channel which is closed when the context is cancelled.
-	Wait() <-chan struct{}
-
-	// Status returns a cancellation status or OK.
-	Status() status.Status
-
-	// Callbacks
-
-	// AddCallback adds a callback.
-	AddCallback(c ContextCallback)
-
-	// RemoveCallback removes a callback.
-	RemoveCallback(c ContextCallback)
-
-	// Internal
-
-	// Free cancels and releases the context.
-	Free()
-}
-
-// ContextCallback receives context cancellation notifications.
-type ContextCallback interface {
-	// OnCancelled is called when the context is cancelled.
-	OnCancelled(status.Status)
-}
+	// ContextCallback is called when the context is cancelled.
+	ContextCallback = context.Callback
+)
 
 // New
 
-// NewContext returns a new context.
-func NewContext() Context {
-	return newContext(nil /* no parent */)
+// NewContext returns a new cancellable context.
+func NewContext() MutContext {
+	return context.New()
 }
 
 // NoContext returns a non-cancellable background context.
 func NoContext() Context {
-	return noCtx
+	return context.No()
 }
 
 // CancelledContext returns a cancelled context.
-func CancelledContext() Context {
-	return doneCtx
+func CancelledContext() MutContext {
+	return context.Cancelled()
 }
 
 // Timeout
 
 // TimeoutContext returns a context with a timeout.
 func TimeoutContext(timeout time.Duration) Context {
-	return newContextTimeout(nil /* no parent */, timeout)
+	return context.Timeout(timeout)
 }
 
 // DeadlineContext returns a context with a deadline.
 func DeadlineContext(deadline time.Time) Context {
-	timeout := time.Until(deadline)
-	return newContextTimeout(nil /* no parent */, timeout)
+	return context.Deadline(deadline)
 }
 
 // Next
 
 // NextContext returns a child context.
-func NextContext(parent Context) Context {
-	return newContext(parent)
+func NextContext(parent Context) MutContext {
+	return context.Next(parent)
 }
 
 // NextTimeoutContext returns a child context with a timeout.
 func NextTimeoutContext(parent Context, timeout time.Duration) Context {
-	return newContextTimeout(parent, timeout)
+	return context.NextTimeout(parent, timeout)
 }
 
 // NextDeadlineContext returns a child context with a deadline.
 func NextDeadlineContext(parent Context, deadline time.Time) Context {
-	timeout := time.Until(deadline)
-	return newContextTimeout(parent, timeout)
+	return context.NextDeadline(parent, deadline)
 }
 
 // Standard
 
 // StdContext returns a standard library context from an async one.
 func StdContext(ctx Context) context_.Context {
-	return newStdContext(ctx)
-}
-
-// internal
-
-var _ Context = (*context)(nil)
-
-type context struct {
-	cmu   sync.Mutex // cancel mutex, prevents data race between cancel/free
-	smu   sync.Mutex // state mutex
-	state *contextState
-}
-
-type contextState struct {
-	parent Context // maybe nil
-
-	done    bool
-	cause   status.Status
-	channel opt.Opt[chan struct{}] // lazily created
-
-	timer     *time.Timer                  // maybe nil
-	callbacks map[ContextCallback]struct{} // maybe nil
-}
-
-func newContext(parent Context) *context {
-	s := acquireContextState()
-	s.parent = parent
-	s.cause = status.Cancelled
-	c := &context{state: s}
-
-	// Maybe add callback
-	if parent != nil {
-		parent.AddCallback(c)
-	}
-	return c
-}
-
-func newContextTimeout(parent Context, timeout time.Duration) *context {
-	c := newContextTimeout1(parent, timeout)
-
-	// Add callback outside of lock
-	if parent != nil {
-		parent.AddCallback(c)
-	}
-	return c
-}
-
-func newContextTimeout1(parent Context, timeout time.Duration) *context {
-	s := acquireContextState()
-	s.parent = parent
-	s.cause = status.Timeout
-	c := &context{state: s}
-
-	// Maybe already done
-	if timeout <= 0 {
-		c.cancel(status.None)
-		return c
-	}
-
-	// Start timer
-	// Lock to prevent data race with immediate timeout.
-	c.smu.Lock()
-	defer c.smu.Unlock()
-
-	s.timer = time.AfterFunc(timeout, c.timeout)
-	return c
-}
-
-func (s *contextState) reset() {
-	callbacks := s.callbacks
-	*s = contextState{}
-
-	if callbacks != nil {
-		clear(callbacks)
-		s.callbacks = callbacks
-	}
-}
-
-// Cancel cancels the context.
-func (c *context) Cancel() {
-	c.cancel(status.None)
-}
-
-// Done returns true if the context is cancelled.
-func (c *context) Done() bool {
-	s, ok := c.lockState()
-	if !ok {
-		return true
-	}
-	defer c.smu.Unlock()
-
-	return s.done
-}
-
-// Wait returns a channel which is closed when the context is cancelled.
-func (c *context) Wait() <-chan struct{} {
-	s, ok := c.lockState()
-	if !ok {
-		return closedChan
-	}
-	defer c.smu.Unlock()
-
-	if s.done {
-		return closedChan
-	}
-
-	ch, ok := s.channel.Unwrap()
-	if !ok {
-		ch = make(chan struct{})
-		s.channel.Set(ch)
-	}
-	return ch
-}
-
-// Status returns a cancellation status or OK.
-func (c *context) Status() status.Status {
-	s, ok := c.lockState()
-	if !ok {
-		return status.Cancelled
-	}
-	defer c.smu.Unlock()
-
-	return s.cause
-}
-
-// Callbacks
-
-// AddCallback adds a callback.
-func (c *context) AddCallback(cb ContextCallback) {
-	s, ok := c.lockState()
-	if !ok {
-		cb.OnCancelled(status.Cancelled)
-		return
-	}
-
-	// Maybe done, notify immediately outside of lock
-	if s.done {
-		c.smu.Unlock()
-		cb.OnCancelled(s.cause)
-		return
-	}
-
-	// Add callback
-	defer c.smu.Unlock()
-
-	if s.callbacks == nil {
-		s.callbacks = make(map[ContextCallback]struct{})
-	}
-	s.callbacks[cb] = struct{}{}
-}
-
-// RemoveCallback removes a callback.
-func (c *context) RemoveCallback(cb ContextCallback) {
-	s, ok := c.lockState()
-	if !ok {
-		return
-	}
-	defer c.smu.Unlock()
-
-	if s.callbacks != nil {
-		delete(s.callbacks, cb)
-	}
-}
-
-// OnCancelled is called when a parent context is done.
-func (c *context) OnCancelled(st status.Status) {
-	c.cancel(st)
-}
-
-// Internal
-
-// Free cancels and releases the context.
-func (c *context) Free() {
-	// First, cancel
-	c.cancel(status.None /* default */)
-
-	// Then, release
-	c.cmu.Lock()
-	defer c.cmu.Unlock()
-
-	s, ok := c.lockState()
-	if !ok {
-		return
-	}
-	defer c.smu.Unlock()
-
-	c.state = nil
-	releaseContextState(s)
-}
-
-// internal
-
-func (c *context) cancel(st status.Status) {
-	c.cmu.Lock()
-	defer c.cmu.Unlock()
-
-	// Try to cancel
-	s, ok := c.doCancel(st)
-	if !ok {
-		return
-	}
-
-	// State is immutable here
-	// Notify callbacks, parent outside of the state lock.
-
-	// Notify callbacks
-	if len(s.callbacks) > 0 {
-		for cb := range s.callbacks {
-			cb.OnCancelled(s.cause)
-		}
-	}
-
-	// Remove from parent
-	if s.parent != nil {
-		s.parent.RemoveCallback(c)
-	}
-}
-
-func (c *context) timeout() {
-	c.cancel(status.None)
-}
-
-// private
-
-func (c *context) lockState() (*contextState, bool) {
-	c.smu.Lock()
-
-	if c.state == nil {
-		c.smu.Unlock()
-		return nil, false
-	}
-
-	return c.state, true
-}
-
-func (c *context) doCancel(st status.Status) (*contextState, bool) {
-	s, ok := c.lockState()
-	if !ok {
-		return nil, false
-	}
-	defer c.smu.Unlock()
-
-	if s.done {
-		return nil, false
-	}
-
-	// Mark as done, close
-	s.done = true
-	if ch, ok := s.channel.Unwrap(); ok {
-		close(ch)
-	}
-
-	// Maybe set cause
-	if st.Code != status.CodeNone {
-		s.cause = st
-	}
-
-	// Maybe stop timer
-	if s.timer != nil {
-		s.timer.Stop()
-	}
-	return s, true
-}
-
-// done context
-
-var doneCtx Context = &doneContext{}
-
-type doneContext struct{}
-
-func (*doneContext) Cancel()                           {}
-func (*doneContext) Done() bool                        { return true }
-func (*doneContext) Wait() <-chan struct{}             { return closedChan }
-func (*doneContext) Status() status.Status             { return status.OK }
-func (*doneContext) AddCallback(cb ContextCallback)    { cb.OnCancelled(status.Cancelled) }
-func (*doneContext) RemoveCallback(cb ContextCallback) {}
-func (*doneContext) Free()                             {}
-
-// no context
-
-var noCtx Context = &noContext{}
-
-type noContext struct{}
-
-func (*noContext) Cancel()                        {}
-func (*noContext) Done() bool                     { return false }
-func (*noContext) Wait() <-chan struct{}          { return nil }
-func (*noContext) Status() status.Status          { return status.OK }
-func (*noContext) AddCallback(ContextCallback)    {}
-func (*noContext) RemoveCallback(ContextCallback) {}
-func (*noContext) Free()                          {}
-
-// std context
-
-var _ context_.Context = (*stdContext)(nil)
-
-type stdContext struct {
-	ctx Context
-}
-
-func newStdContext(ctx Context) *stdContext {
-	return &stdContext{ctx: ctx}
-}
-
-// Deadline returns the time when work done on behalf of this context should be canceled.
-func (x *stdContext) Deadline() (deadline time.Time, ok bool) {
-	return
-}
-
-// Done returns a channel that's closed when work done on behalf of this context should be canceled.
-func (x *stdContext) Done() <-chan struct{} {
-	return x.ctx.Wait()
-}
-
-// If Done is not yet closed, Err returns nil.
-func (x *stdContext) Err() error {
-	st := x.ctx.Status()
-	switch st.Code {
-	case status.CodeCancelled:
-		return context_.Canceled
-	case status.CodeTimeout:
-		return context_.DeadlineExceeded
-	}
-	return status.ToError(st)
-}
-
-// Value returns the value associated with this context for key, or nil
-// if no value is associated with key.
-func (x *stdContext) Value(key any) any {
-	return nil
-}
-
-// state pool
-
-var contextStatePool = pools.NewPoolFunc(
-	func() *contextState {
-		return &contextState{}
-	},
-)
-
-func acquireContextState() *contextState {
-	return contextStatePool.New()
-}
-
-func releaseContextState(s *contextState) {
-	s.reset()
-	contextStatePool.Put(s)
+	return context.Std(ctx)
 }

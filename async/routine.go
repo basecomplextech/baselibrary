@@ -5,6 +5,7 @@
 package async
 
 import (
+	"github.com/basecomplextech/baselibrary/async/internal/context"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -49,29 +50,6 @@ func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
 	return r
 }
 
-// GoPool runs a function in a pool, recovers on panics.
-func GoPool(pool RoutinePool, fn func(ctx Context) status.Status) Routine[struct{}] {
-	r := newRoutine[struct{}]()
-
-	pool.Go(func() {
-		defer r.ctx.Free()
-		defer func() {
-			e := recover()
-			if e == nil {
-				return
-			}
-
-			st := status.Recover(e)
-			r.result.Complete(struct{}{}, st)
-		}()
-
-		st := fn(r.ctx)
-		r.result.Complete(struct{}{}, st)
-	})
-
-	return r
-}
-
 // Run
 
 // Run runs a function in a new routine, and returns the result, recovers on panics.
@@ -98,30 +76,6 @@ func Run[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
 	return r
 }
 
-// RunPool runs a function in a routine pool, and returns the result, recovers on panics.
-func RunPool[T any](pool RoutinePool, fn func(ctx Context) (T, status.Status)) Routine[T] {
-	r := newRoutine[T]()
-
-	pool.Go(func() {
-		defer r.ctx.Free()
-		defer func() {
-			e := recover()
-			if e == nil {
-				return
-			}
-
-			var zero T
-			st := status.Recover(e)
-			r.result.Complete(zero, st)
-		}()
-
-		result, st := fn(r.ctx)
-		r.result.Complete(result, st)
-	})
-
-	return r
-}
-
 // Exited
 
 // Exited returns a routine which has exited with the given result and status.
@@ -136,13 +90,13 @@ func Exited[T any](result T, st status.Status) Routine[T] {
 var _ Routine[any] = (*routine[any])(nil)
 
 type routine[T any] struct {
-	ctx    Context
+	ctx    MutContext
 	result promise[T]
 }
 
 func newRoutine[T any]() *routine[T] {
 	return &routine[T]{
-		ctx:    newContext(nil /* no parent */),
+		ctx:    context.New(),
 		result: newPromiseEmbedded[T](),
 	}
 }
