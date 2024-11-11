@@ -16,13 +16,14 @@ func Parse128(b []byte) (Bin128, error) {
 		return Bin128{}, nil
 	case len(b) == 0:
 		return Bin128{}, nil
-	case len(b) != ByteLen128:
+	case len(b) != Len128:
 		return Bin128{}, errors.New("bin128: invalid bin128 length")
 	}
 
-	u := Bin128{}
-	copy(u[:], b)
-	return u, nil
+	v := Bin128{}
+	copy(v[0][:], b)
+	copy(v[1][:], b[8:])
+	return v, nil
 }
 
 // ParseString128 parses a bin128 from 33-char string.
@@ -32,29 +33,29 @@ func ParseString128(s string) (Bin128, error) {
 		return Bin128{}, nil
 	case len(s) == 0:
 		return Bin128{}, nil
-	case len(s) != CharLen128:
+	case len(s) != Len128Char:
 		return Bin128{}, errors.New("bin128: invalid bin128 string length")
 	}
 
-	u := Bin128{}
+	v := Bin128{}
 	b := unsafeByteString(s)
 
-	_, err := hex.Decode(u[:], b[:16])
+	_, err := hex.Decode(v[0][:], b[:16])
 	if err != nil {
-		return u, err
+		return v, err
 	}
-	_, err = hex.Decode(u[8:], b[17:])
+	_, err = hex.Decode(v[1][:], b[17:])
 	if err != nil {
-		return u, err
+		return v, err
 	}
-	return u, nil
+	return v, nil
 }
 
 // MustParseString128 parses a bin128 from 33-char string or panics.
 func MustParseString128(s string) Bin128 {
-	u, err := ParseString128(s)
+	v, err := ParseString128(s)
 	if err != nil {
 		panic(err)
 	}
-	return u
+	return v
 }

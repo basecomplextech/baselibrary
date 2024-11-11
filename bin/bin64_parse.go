@@ -16,13 +16,13 @@ func Parse64(b []byte) (Bin64, error) {
 		return Bin64{}, nil
 	case len(b) == 0:
 		return Bin64{}, nil
-	case len(b) != ByteLen64:
+	case len(b) != Len64:
 		return Bin64{}, errors.New("bin64: invalid bin64 length")
 	}
 
-	u := Bin64{}
-	copy(u[:], b)
-	return u, nil
+	v := Bin64{}
+	copy(v[:], b)
+	return v, nil
 }
 
 // ParseString64 parses a bin64 from 32-char string.
@@ -32,23 +32,23 @@ func ParseString64(s string) (Bin64, error) {
 		return Bin64{}, nil
 	case len(s) == 0:
 		return Bin64{}, nil
-	case len(s) != CharLen64:
+	case len(s) != Len64Char:
 		return Bin64{}, errors.New("bin64: invalid bin64 string length")
 	}
 
-	u := Bin64{}
-	_, err := hex.Decode(u[:], []byte(s))
+	v := Bin64{}
+	_, err := hex.Decode(v[:], []byte(s))
 	if err != nil {
-		return u, err
+		return v, err
 	}
-	return u, nil
+	return v, nil
 }
 
 // MustParseString64 parses a bin64 from 16-char string or panics.
 func MustParseString64(s string) Bin64 {
-	u, err := ParseString64(s)
+	v, err := ParseString64(s)
 	if err != nil {
 		panic(err)
 	}
-	return u
+	return v
 }

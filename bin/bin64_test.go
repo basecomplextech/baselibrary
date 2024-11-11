@@ -16,16 +16,28 @@ func TestTimeRandom64(t *testing.T) {
 	assert.NotEqual(t, b0, b1)
 }
 
-func TestPattern64__should_match_string(t *testing.T) {
+func TestParseString64(t *testing.T) {
+	b0 := Random64()
+	s := b0.String()
+
+	b1, err := ParseString64(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, b0, b1)
+}
+
+func TestRegexp64__should_match_string(t *testing.T) {
 	s0 := (Bin64{}).String()
 	s1 := Random64().String()
 	s2 := " 341a7d60bc5893a6 "
 	s3 := "341a7d60-bc5893a6"
 
-	m0 := Pattern64.MatchString(s0)
-	m1 := Pattern64.MatchString(s1)
-	m2 := Pattern64.MatchString(s2)
-	m3 := Pattern64.MatchString(s3)
+	m0 := Regexp64.MatchString(s0)
+	m1 := Regexp64.MatchString(s1)
+	m2 := Regexp64.MatchString(s2)
+	m3 := Regexp64.MatchString(s3)
 
 	assert.True(t, m0)
 	assert.True(t, m1)

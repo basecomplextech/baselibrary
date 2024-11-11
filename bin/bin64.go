@@ -14,18 +14,21 @@ import (
 	"github.com/basecomplextech/baselibrary/buffer"
 )
 
-const (
-	ByteLen64 = 8
-	CharLen64 = (ByteLen64 * 2) // 341a7d60bc5893a6
-)
+const Len64 = 8
+const Len64Char = (Len64 * 2) // 341a7d60bc5893a6
 
-var (
-	Max64     = Bin64{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
-	Pattern64 = regexp.MustCompile(`^[0-9A-Za-z]{16}$`)
-)
+var Max64 = Bin64{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+var Regexp64 = regexp.MustCompile(`^[0-9A-Za-z]{16}$`)
+
+// Bin64
 
 // Bin64 is a binary 64-bit value.
-type Bin64 [ByteLen64]byte
+type Bin64 [Len64]byte
+
+// New64 returns a bin64 from a byte array.
+func New64(b [Len64]byte) Bin64 {
+	return b
+}
 
 // Int64 returns a bin64 from an int64, encoded as big-endian.
 func Int64(v int64) Bin64 {
@@ -34,13 +37,12 @@ func Int64(v int64) Bin64 {
 	return b
 }
 
-// Join64 returns a bin64 from two int32 encoded as big-endian.
-func Join64(v0, v1 int32) Bin64 {
-	b := Bin64{}
-	binary.BigEndian.PutUint32(b[:], uint32(v0))
-	binary.BigEndian.PutUint32(b[4:], uint32(v1))
-	return b
+// Size returns 8 bytes.
+func (b Bin64) Size() int {
+	return Len64
 }
+
+// Compare
 
 // Compare compares two values.
 //
@@ -53,20 +55,20 @@ func (b0 Bin64) Compare(b1 Bin64) int {
 	return bytes.Compare(b0[:], b1[:])
 }
 
+// Equal returns whether two values are equal.
+func (b0 Bin64) Equal(b1 Bin64) bool {
+	return b0 == b1
+}
+
 // Less returns whether the current value is less than another.
 func (b0 Bin64) Less(b1 Bin64) bool {
 	return bytes.Compare(b0[:], b1[:]) < 0
 }
 
-// Size returns 8 bytes.
-func (b Bin64) Size() int {
-	return len(b)
-}
-
 // Ints
 
-// Int32s returns two int32s decoded as big-endian.
-func (b Bin64) Int32s() (int32, int32) {
+// Int32 returns two int32 decoded as big-endian.
+func (b Bin64) Int32() (int32, int32) {
 	v0 := binary.BigEndian.Uint32(b[:])
 	v1 := binary.BigEndian.Uint32(b[4:])
 	return int32(v0), int32(v1)
@@ -75,6 +77,11 @@ func (b Bin64) Int32s() (int32, int32) {
 // Int64 returns an int64 decoded as big-endian.
 func (b Bin64) Int64() int64 {
 	return int64(binary.BigEndian.Uint64(b[:]))
+}
+
+// Uint64 returns a uint64 decoded as big-endian.
+func (b Bin64) Uint64() uint64 {
+	return binary.BigEndian.Uint64(b[:])
 }
 
 // Hash
@@ -97,7 +104,7 @@ func (b Bin64) Hash64() uint64 {
 
 // String returns a 16-char lower-case hex-encoded string.
 func (b Bin64) String() string {
-	buf := make([]byte, CharLen64)
+	buf := make([]byte, Len64Char)
 	hex.Encode(buf, b[:])
 	return string(buf)
 }
@@ -105,7 +112,7 @@ func (b Bin64) String() string {
 // AppendHexTo appends a 16-char lower-case hex-encoded string to a buffer.
 func (b Bin64) AppendHexTo(buf []byte) []byte {
 	n := len(buf)
-	n1 := n + CharLen64
+	n1 := n + Len64Char
 
 	buf = buf[:n1]
 	hex.Encode(buf[n:], b[:])
@@ -126,10 +133,18 @@ func (b Bin64) MarshalTo(buf []byte) {
 
 // MarshalToBuffer marshals the value to a buffer.
 func (b Bin64) MarshalToBuffer(buf buffer.Buffer) []byte {
-	p := buf.Grow(ByteLen64)
+	p := buf.Grow(Len64)
 	copy(p, b[:])
 	return p
 }
+
+// MarshalJSON marshals the value to a JSON string.
+func (b Bin64) MarshalJSON() ([]byte, error) {
+	s := b.String()
+	return json.Marshal(s)
+}
+
+// Unmarshal
 
 // Unmarshal parses a 16-byte array.
 func (b *Bin64) Unmarshal(buf []byte) error {
@@ -140,12 +155,6 @@ func (b *Bin64) Unmarshal(buf []byte) error {
 
 	*b = b0
 	return nil
-}
-
-// MarshalJSON marshals the value to a JSON string.
-func (b Bin64) MarshalJSON() ([]byte, error) {
-	s := b.String()
-	return json.Marshal(s)
 }
 
 // MarshalJSON parses the value from a JSON string.
