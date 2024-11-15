@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/basecomplextech/baselibrary/collect/chans"
+	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -117,7 +118,7 @@ func Std(ctx Context) context_.Context {
 var _ CancelContext = (*context)(nil)
 
 type context struct {
-	refs  atomic.Int32 // 1 by default, with releasedBit, see unpackRefs
+	refs  ref.Atomic32 // 1 by default, with released bit
 	freed atomic.Bool  // free only once
 	state atomic.Pointer[state]
 }
@@ -126,7 +127,7 @@ func newContext(parent Context) *context {
 	s := newState(parent)
 
 	x := &context{}
-	x.refs.Add(1)
+	x.refs.Init(1)
 	x.state.Store(s)
 
 	// Maybe add callback
@@ -263,31 +264,21 @@ func (x *context) timeout() {
 
 // acquire increments refs and returns the state, or immediately releases it if released.
 func (x *context) acquire() (*state, bool) {
-	r := x.refs.Add(1)
-
-	_, released := unpackRefs(r)
-	if released {
-		x.release()
-		return nil, false
+	acquired := x.refs.Acquire()
+	if acquired {
+		s := x.state.Load()
+		return s, true
 	}
 
-	s := x.state.Load()
-	return s, true
+	// Release immediately
+	x.release()
+	return nil, false
 }
 
 // release decrements refs and returns the state to the pool if refs reach zero.
 func (x *context) release() {
-	r := x.refs.Add(-1)
-
-	// Check alive or released
-	refs, released := unpackRefs(r)
-	if refs > 0 || released {
-		return
-	}
-
-	// Release only once
-	ok := x.refs.CompareAndSwap(0, releasedBit)
-	if !ok {
+	released := x.refs.Release()
+	if !released {
 		return
 	}
 
@@ -295,15 +286,4 @@ func (x *context) release() {
 	s := x.state.Swap(nil)
 	s.reset()
 	releaseState(s)
-}
-
-// ref
-
-// releasedBit is used to enforce a single release when refs reach 0.
-const releasedBit = int32(1 << 30)
-
-func unpackRefs(r int32) (refs int32, released bool) {
-	released = r&releasedBit != 0
-	refs = r &^ releasedBit
-	return
 }
