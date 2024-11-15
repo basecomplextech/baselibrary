@@ -83,6 +83,30 @@ func (b *atomicMapBucket[K, V]) set(key K, value V, pool pools.Pool[*atomicMapEn
 	return ok
 }
 
+func (b *atomicMapBucket[K, V]) setAbsent(key K, value V, pool pools.Pool[*atomicMapEntry[K, V]]) bool {
+	b.wmu.Lock()
+	defer b.wmu.Unlock()
+
+	// Load current entry
+	entry := b.entry.Load()
+
+	// Check if exists
+	if entry != nil {
+		if _, ok := entry.get(key); ok {
+			return false
+		}
+	}
+
+	// Make next entry
+	next := newAtomicMapEntry(pool)
+	next.init(entry)
+	next.set(key, value)
+
+	// Swap entry
+	b.swapEntry(next, entry, pool)
+	return true
+}
+
 func (b *atomicMapBucket[K, V]) swap(key K, value V, pool pools.Pool[*atomicMapEntry[K, V]]) (
 	v V, ok bool) {
 

@@ -150,9 +150,7 @@ func TestAtomicShardedMap_Delete__should_skip_absent_key(t *testing.T) {
 	assert.Equal(t, 0, n1)
 }
 
-// Pop
-
-func TestAtomicShardedMap_Pop__should_delete_and_return_value(t *testing.T) {
+func TestAtomicShardedMap_Delete__should_delete_and_return_value(t *testing.T) {
 	m := newAtomicShardedMap[int, int](0)
 	n := 1024
 
@@ -161,7 +159,7 @@ func TestAtomicShardedMap_Pop__should_delete_and_return_value(t *testing.T) {
 	}
 
 	for i := 0; i < n; i++ {
-		v, ok := m.Pop(i)
+		v, ok := m.Delete(i)
 		require.True(t, ok)
 		require.Equal(t, i, v)
 	}
@@ -170,12 +168,12 @@ func TestAtomicShardedMap_Pop__should_delete_and_return_value(t *testing.T) {
 	assert.Equal(t, 0, n1)
 }
 
-func TestAtomicShardedMap_Pop__should_return_false_if_key_not_exists(t *testing.T) {
+func TestAtomicShardedMap_Delete__should_return_false_if_key_not_exists(t *testing.T) {
 	m := newAtomicShardedMap[int, int](0)
 	n := 1024
 
 	for i := 0; i < n; i++ {
-		_, ok := m.Pop(i)
+		_, ok := m.Delete(i)
 		require.False(t, ok)
 	}
 }
@@ -188,6 +186,44 @@ func TestAtomicShardedMap_Set__should_set_value(t *testing.T) {
 
 	for i := 0; i < n; i++ {
 		m.Set(i, i)
+	}
+
+	for i := 0; i < n; i++ {
+		v, ok := m.Get(i)
+		require.True(t, ok)
+		require.Equal(t, i, v)
+	}
+}
+
+// SetAbsent
+
+func TestAtomicShardedMap_SetAbsent__should_set_value(t *testing.T) {
+	m := newAtomicShardedMap[int, int](0)
+	n := 1024
+
+	for i := 0; i < n; i++ {
+		ok := m.SetAbsent(i, i)
+		require.True(t, ok)
+	}
+
+	for i := 0; i < n; i++ {
+		v, ok := m.Get(i)
+		require.True(t, ok)
+		require.Equal(t, i, v)
+	}
+}
+
+func TestAtomicShardedMap_SetAbsent__should_skip_existing_key(t *testing.T) {
+	m := newAtomicShardedMap[int, int](0)
+	n := 1024
+
+	for i := 0; i < n; i++ {
+		m.Set(i, i)
+	}
+
+	for i := 0; i < n; i++ {
+		ok := m.SetAbsent(i, i)
+		require.False(t, ok)
 	}
 
 	for i := 0; i < n; i++ {

@@ -104,22 +104,22 @@ func (m *atomicShardedMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
 	return s.getOrSet(h, key, value)
 }
 
-// Delete deletes a value by key.
-func (m *atomicShardedMap[K, V]) Delete(key K) {
+// Delete deletes a key value, and returns the previous value.
+func (m *atomicShardedMap[K, V]) Delete(key K) (V, bool) {
 	s, h := m.shard(key)
-	s.delete(h, key)
-}
-
-// Pop deletes and returns a value by key, or false.
-func (m *atomicShardedMap[K, V]) Pop(key K) (v V, _ bool) {
-	s, h := m.shard(key)
-	return s.pop(h, key)
+	return s.delete(h, key)
 }
 
 // Set sets a value for a key.
 func (m *atomicShardedMap[K, V]) Set(key K, value V) {
 	s, h := m.shard(key)
 	s.set(h, key, value)
+}
+
+// SetAbsent sets a key value if absent, returns true if set.
+func (m *atomicShardedMap[K, V]) SetAbsent(key K, value V) bool {
+	s, h := m.shard(key)
+	return s.setAbsent(h, key, value)
 }
 
 // Swap swaps a key value and returns the previous value.

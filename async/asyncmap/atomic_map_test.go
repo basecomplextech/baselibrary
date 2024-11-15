@@ -160,9 +160,7 @@ func TestAtomicMap_Delete__should_skip_absent_key(t *testing.T) {
 	assert.Equal(t, 0, n1)
 }
 
-// Pop
-
-func TestAtomicMap_Pop__should_delete_and_return_value(t *testing.T) {
+func TestAtomicMap_Delete__should_delete_and_return_value(t *testing.T) {
 	m := newAtomicMap[int, int](0)
 	n := 128
 
@@ -171,7 +169,7 @@ func TestAtomicMap_Pop__should_delete_and_return_value(t *testing.T) {
 	}
 
 	for i := 0; i < n; i++ {
-		v, ok := m.Pop(i)
+		v, ok := m.Delete(i)
 		require.True(t, ok)
 		require.Equal(t, i, v)
 	}
@@ -180,12 +178,12 @@ func TestAtomicMap_Pop__should_delete_and_return_value(t *testing.T) {
 	assert.Equal(t, 0, n1)
 }
 
-func TestAtomicMap_Pop__should_return_false_if_key_not_exists(t *testing.T) {
+func TestAtomicMap_Delete__should_return_false_if_key_not_exists(t *testing.T) {
 	m := newAtomicMap[int, int](0)
 	n := 128
 
 	for i := 0; i < n; i++ {
-		_, ok := m.Pop(i)
+		_, ok := m.Delete(i)
 		require.False(t, ok)
 	}
 }
@@ -224,6 +222,43 @@ func TestAtomicMap_Set__should_resize_map_on_threshold(t *testing.T) {
 
 	size1 := len(m.state.Load().buckets)
 	assert.Equal(t, n*2, size1)
+}
+
+// SetAbsent
+
+func TestAtomicMap_SetAbsent__should_set_value_if_absent(t *testing.T) {
+	m := newAtomicMap[int, int](0)
+	n := 128
+
+	for i := 0; i < n; i++ {
+		m.SetAbsent(i, i)
+	}
+
+	for i := 0; i < n; i++ {
+		v, ok := m.Get(i)
+		require.True(t, ok)
+		require.Equal(t, i, v)
+	}
+}
+
+func TestAtomicMap_SetAbsent__should_not_set_value_if_exists(t *testing.T) {
+	m := newAtomicMap[int, int](0)
+	n := 128
+
+	for i := 0; i < n; i++ {
+		m.Set(i, i)
+	}
+
+	for i := 0; i < n; i++ {
+		ok := m.SetAbsent(i, i*2)
+		assert.False(t, ok)
+	}
+
+	for i := 0; i < n; i++ {
+		v, ok := m.Get(i)
+		require.True(t, ok)
+		require.Equal(t, i, v)
+	}
 }
 
 // Swap

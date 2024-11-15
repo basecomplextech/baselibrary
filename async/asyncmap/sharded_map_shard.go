@@ -53,16 +53,7 @@ func (s *shardedMapShard[K, V]) contains(key K) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if m, ok := s.entry.Unwrap(); ok {
-		if m.key == key {
-			return true
-		}
-	}
-	if more, ok := s.more.Unwrap(); ok {
-		_, ok := more[key]
-		return ok
-	}
-	return false
+	return s._contains(key)
 }
 
 func (s *shardedMapShard[K, V]) get(key K) (v V, _ bool) {
@@ -111,22 +102,7 @@ func (s *shardedMapShard[K, V]) getOrSet(key K, value V) (v V, ok bool) {
 	return value, false
 }
 
-func (s *shardedMapShard[K, V]) delete(key K) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if m, ok := s.entry.Unwrap(); ok {
-		if m.key == key {
-			s.entry.Unset()
-			return
-		}
-	}
-	if more, ok := s.more.Unwrap(); ok {
-		delete(more, key)
-	}
-}
-
-func (s *shardedMapShard[K, V]) pop(key K) (v V, _ bool) {
+func (s *shardedMapShard[K, V]) delete(key K) (v V, _ bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -150,18 +126,20 @@ func (s *shardedMapShard[K, V]) set(key K, value V) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if !s.entry.Valid {
-		e := shardedMapEntry[K, V]{key: key, value: value}
-		s.entry.Set(e)
-		return
+	s._set(key, value)
+}
+
+func (s *shardedMapShard[K, V]) setAbsent(key K, value V) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	ok := s._contains(key)
+	if ok {
+		return false
 	}
 
-	more, ok := s.more.Unwrap()
-	if !ok {
-		more = make(map[K]V)
-		s.more.Set(more)
-	}
-	more[key] = value
+	s._set(key, value)
+	return true
 }
 
 func (s *shardedMapShard[K, V]) swap(key K, value V) (v V, _ bool) {
@@ -201,4 +179,34 @@ func (s *shardedMapShard[K, V]) range_(fn func(K, V) bool) bool {
 		}
 	}
 	return true
+}
+
+// private
+
+func (s *shardedMapShard[K, V]) _contains(key K) bool {
+	if m, ok := s.entry.Unwrap(); ok {
+		if m.key == key {
+			return true
+		}
+	}
+	if more, ok := s.more.Unwrap(); ok {
+		_, ok := more[key]
+		return ok
+	}
+	return false
+}
+
+func (s *shardedMapShard[K, V]) _set(key K, value V) {
+	if !s.entry.Valid {
+		e := shardedMapEntry[K, V]{key: key, value: value}
+		s.entry.Set(e)
+		return
+	}
+
+	more, ok := s.more.Unwrap()
+	if !ok {
+		more = make(map[K]V)
+		s.more.Set(more)
+	}
+	more[key] = value
 }

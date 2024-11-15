@@ -15,20 +15,20 @@ type Map[K comparable, V any] interface {
 	// Contains returns true if a key exists.
 	Contains(key K) bool
 
-	// Get returns a value by key, or false.
+	// Get returns a key value, or false.
 	Get(key K) (V, bool)
 
-	// GetOrSet returns a value by key and true, or sets a value and false.
+	// GetOrSet returns a key value and true, or sets a value and false.
 	GetOrSet(key K, value V) (V, bool)
 
-	// Delete deletes a value by key.
-	Delete(key K)
-
-	// Pop deletes and returns a value by key, or false.
-	Pop(key K) (V, bool)
+	// Delete deletes a key value, and returns the previous value.
+	Delete(key K) (V, bool)
 
 	// Set sets a value for a key.
 	Set(key K, value V)
+
+	// SetAbsent sets a key value if absent, returns true if set.
+	SetAbsent(key K, value V) bool
 
 	// Swap swaps a key value and returns the previous value.
 	Swap(key K, value V) (V, bool)

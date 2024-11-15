@@ -60,20 +60,12 @@ func (s *atomicMapShard[K, V]) getOrSet(h uint32, key K, value V) (V, bool) {
 	return v, ok
 }
 
-func (s *atomicMapShard[K, V]) delete(h uint32, key K) {
+func (s *atomicMapShard[K, V]) delete(h uint32, key K) (V, bool) {
 	s.wmu.RLock()
 	defer s.wmu.RUnlock()
 
 	state := s.state.Load()
-	state.delete(h, key)
-}
-
-func (s *atomicMapShard[K, V]) pop(h uint32, key K) (V, bool) {
-	s.wmu.RLock()
-	defer s.wmu.RUnlock()
-
-	state := s.state.Load()
-	return state.pop(h, key)
+	return state.delete(h, key)
 }
 
 func (s *atomicMapShard[K, V]) set(h uint32, key K, value V) {
@@ -83,6 +75,16 @@ func (s *atomicMapShard[K, V]) set(h uint32, key K, value V) {
 	if resize {
 		s._resize()
 	}
+}
+
+func (s *atomicMapShard[K, V]) setAbsent(h uint32, key K, value V) bool {
+	resize := false
+	ok := s._setAbsent(h, key, value, &resize)
+
+	if resize {
+		s._resize()
+	}
+	return ok
 }
 
 func (s *atomicMapShard[K, V]) swap(h uint32, key K, value V) (V, bool) {
@@ -123,6 +125,18 @@ func (s *atomicMapShard[K, V]) _set(h uint32, key K, value V, resize *bool) {
 
 	n := state.len()
 	*resize = n >= state.threshold
+}
+
+func (s *atomicMapShard[K, V]) _setAbsent(h uint32, key K, value V, resize *bool) bool {
+	s.wmu.RLock()
+	defer s.wmu.RUnlock()
+
+	state := s.state.Load()
+	ok := state.setAbsent(h, key, value)
+
+	n := state.len()
+	*resize = n >= state.threshold
+	return ok
 }
 
 func (s *atomicMapShard[K, V]) _swap(h uint32, key K, value V, resize *bool) (V, bool) {

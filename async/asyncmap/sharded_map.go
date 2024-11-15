@@ -89,22 +89,22 @@ func (m *shardedMap[K, V]) GetOrSet(key K, value V) (V, bool) {
 	return s.getOrSet(key, value)
 }
 
-// Delete deletes a value by key.
-func (m *shardedMap[K, V]) Delete(key K) {
+// Delete deletes a key value, and returns the previous value.
+func (m *shardedMap[K, V]) Delete(key K) (V, bool) {
 	s := m.shard(key)
-	s.delete(key)
-}
-
-// Pop deletes and returns a value by key, or false.
-func (m *shardedMap[K, V]) Pop(key K) (V, bool) {
-	s := m.shard(key)
-	return s.pop(key)
+	return s.delete(key)
 }
 
 // Set sets a value for a key.
 func (m *shardedMap[K, V]) Set(key K, value V) {
 	s := m.shard(key)
 	s.set(key, value)
+}
+
+// SetAbsent sets a key value if absent, returns true if set.
+func (m *shardedMap[K, V]) SetAbsent(key K, value V) bool {
+	s := m.shard(key)
+	return s.setAbsent(key, value)
 }
 
 // Swap swaps a key value and returns the previous value.

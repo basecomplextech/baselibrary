@@ -80,13 +80,8 @@ func (m *syncMap[K, V]) GetOrSet(key K, value V) (_ V, set bool) {
 	return val.(V), ok
 }
 
-// Delete deletes a value by key.
-func (m *syncMap[K, V]) Delete(key K) {
-	m.raw.Delete(key)
-}
-
-// Pop deletes and returns a value by key, or false.
-func (m *syncMap[K, V]) Pop(key K) (v V, _ bool) {
+// Delete deletes a key value, and returns the previous value.
+func (m *syncMap[K, V]) Delete(key K) (v V, _ bool) {
 	val, ok := m.raw.LoadAndDelete(key)
 	if !ok {
 		return v, false
@@ -97,6 +92,12 @@ func (m *syncMap[K, V]) Pop(key K) (v V, _ bool) {
 // Set sets a value for a key.
 func (m *syncMap[K, V]) Set(key K, value V) {
 	m.raw.Store(key, value)
+}
+
+// SetAbsent sets a key value if absent, returns true if set.
+func (m *syncMap[K, V]) SetAbsent(key K, value V) bool {
+	_, loaded := m.raw.LoadOrStore(key, value)
+	return !loaded
 }
 
 // Swap swaps a key value and returns the previous value.

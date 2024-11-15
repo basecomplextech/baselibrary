@@ -126,24 +126,14 @@ func (m *atomicMap[K, V]) GetOrSet(key K, value V) (V, bool) {
 	return v, ok
 }
 
-// Delete deletes a value by key.
-func (m *atomicMap[K, V]) Delete(key K) {
+// Delete deletes a key value, and returns the previous value.
+func (m *atomicMap[K, V]) Delete(key K) (V, bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
 	h := hashing.Hash(key)
 	s := m.state.Load()
-	s.delete(h, key)
-}
-
-// Pop deletes and returns a value by key, or false.
-func (m *atomicMap[K, V]) Pop(key K) (V, bool) {
-	m.wmu.RLock()
-	defer m.wmu.RUnlock()
-
-	h := hashing.Hash(key)
-	s := m.state.Load()
-	return s.pop(h, key)
+	return s.delete(h, key)
 }
 
 // Set sets a value for a key.
@@ -154,6 +144,17 @@ func (m *atomicMap[K, V]) Set(key K, value V) {
 	if resize {
 		m.resize()
 	}
+}
+
+// SetAbsent sets a key value if absent, returns true if set.
+func (m *atomicMap[K, V]) SetAbsent(key K, value V) bool {
+	resize := false
+	_, ok := m.getOrSet(key, value, &resize)
+
+	if resize {
+		m.resize()
+	}
+	return !ok
 }
 
 // Swap swaps a key value and returns the previous value.
@@ -199,6 +200,19 @@ func (m *atomicMap[K, V]) set(key K, value V, resize *bool) {
 
 	n := s.len()
 	*resize = n >= s.threshold
+}
+
+func (m *atomicMap[K, V]) setAbsent(key K, value V, resize *bool) bool {
+	m.wmu.RLock()
+	defer m.wmu.RUnlock()
+
+	h := hashing.Hash(key)
+	s := m.state.Load()
+	ok := s.setAbsent(h, key, value)
+
+	n := s.len()
+	*resize = n >= s.threshold
+	return ok
 }
 
 func (m *atomicMap[K, V]) swap(key K, value V, resize *bool) (V, bool) {

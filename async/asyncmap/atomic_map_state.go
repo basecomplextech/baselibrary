@@ -70,15 +70,7 @@ func (s *atomicMapState[K, V]) getOrSet(h uint32, key K, value V) (V, bool) {
 	return v, ok
 }
 
-func (s *atomicMapState[K, V]) delete(h uint32, key K) {
-	b := s.bucket(h)
-	_, ok := b.delete(key, s.pool)
-	if ok {
-		s.count.Add(-1)
-	}
-}
-
-func (s *atomicMapState[K, V]) pop(h uint32, key K) (V, bool) {
+func (s *atomicMapState[K, V]) delete(h uint32, key K) (V, bool) {
 	b := s.bucket(h)
 	v, ok := b.delete(key, s.pool)
 	if ok {
@@ -93,6 +85,15 @@ func (s *atomicMapState[K, V]) set(h uint32, key K, value V) {
 	if ok {
 		s.count.Add(1)
 	}
+}
+
+func (s *atomicMapState[K, V]) setAbsent(h uint32, key K, value V) bool {
+	b := s.bucket(h)
+	ok := b.setAbsent(key, value, s.pool)
+	if ok {
+		s.count.Add(1)
+	}
+	return ok
 }
 
 func (s *atomicMapState[K, V]) swap(h uint32, key K, value V) (v V, _ bool) {
