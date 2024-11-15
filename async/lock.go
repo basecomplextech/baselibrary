@@ -36,11 +36,19 @@ func (l Lock) Lock() {
 	<-l
 }
 
-// Unlock unlocks the lock.
+// Unlock unlocks the lock, or panics if the lock is already unlocked.
 func (l Lock) Unlock() {
 	select {
 	case l <- struct{}{}:
 	default:
 		panic("unlock of unlocked lock")
+	}
+}
+
+// UnlockIfLocked unlocks the lock if it is locked, otherwise does nothing.
+func (l Lock) UnlockIfLocked() {
+	select {
+	case l <- struct{}{}:
+	default:
 	}
 }
