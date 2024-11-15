@@ -52,7 +52,10 @@ func (r *Atomic32) Release() (released bool) {
 
 	// Check alive or released already
 	refs, releasedAlready := unpackAtomic32(v)
-	if refs > 0 || releasedAlready {
+	switch {
+	case refs < 0:
+		panic("release of already released reference")
+	case refs > 0 || releasedAlready:
 		return false
 	}
 
