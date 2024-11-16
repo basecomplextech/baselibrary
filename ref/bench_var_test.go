@@ -6,6 +6,27 @@ package ref
 
 import "testing"
 
+func BenchmarkVar(b *testing.B) {
+	v := newVar[int]()
+	v.Set(123)
+
+	b.SetParallelism(10)
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		ref, ok := v.Acquire()
+		if !ok {
+			b.Fatal("no value")
+		}
+		ref.Release()
+	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+
+	b.ReportMetric(ops/1000_000, "mops")
+}
+
 func BenchmarkVar_Parallel(b *testing.B) {
 	v := newVar[int]()
 	v.Set(123)

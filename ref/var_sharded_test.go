@@ -13,11 +13,11 @@ import (
 
 // Acquire
 
-func TestConcurrentVar_Acquire__should_acquire_current_reference(t *testing.T) {
+func TestShardedVar_Acquire__should_acquire_current_reference(t *testing.T) {
 	cpuNum := runtime.NumCPU()
 
 	r := NewNoop(1)
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -39,11 +39,11 @@ func TestConcurrentVar_Acquire__should_acquire_current_reference(t *testing.T) {
 
 // SetRetain
 
-func TestConcurrentVar_SetRetain__should_retain_new_reference(t *testing.T) {
+func TestShardedVar_SetRetain__should_retain_new_reference(t *testing.T) {
 	cpuNum := runtime.NumCPU()
 
 	r := NewNoop(1)
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r)
 	assert.Equal(t, int64(cpuNum+1), r.Refcount())
 
@@ -51,13 +51,13 @@ func TestConcurrentVar_SetRetain__should_retain_new_reference(t *testing.T) {
 	assert.Equal(t, int64(cpuNum), r.Refcount())
 }
 
-func TestConcurrentVar_SetRetain__should_release_previous_reference(t *testing.T) {
+func TestShardedVar_SetRetain__should_release_previous_reference(t *testing.T) {
 	cpuNum := runtime.NumCPU()
 
 	r0 := NewNoop(1)
 	r1 := NewNoop(2)
 
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r0)
 	v.SetRetain(r1)
 

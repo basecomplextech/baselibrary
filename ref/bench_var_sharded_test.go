@@ -6,9 +6,9 @@ package ref
 
 import "testing"
 
-func BenchmarkConcurrentVar(b *testing.B) {
+func BenchmarkShardedVar(b *testing.B) {
 	r := NewNoop(1)
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -25,9 +25,9 @@ func BenchmarkConcurrentVar(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkConcurrentVar_Parallel(b *testing.B) {
+func BenchmarkShardedVar_Parallel(b *testing.B) {
 	r := NewNoop(1)
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -51,9 +51,9 @@ func BenchmarkConcurrentVar_Parallel(b *testing.B) {
 
 // Acquire
 
-func BenchmarkConcurrentVar_Acquire(b *testing.B) {
+func BenchmarkShardedVar_Acquire(b *testing.B) {
 	r := NewNoop(1)
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -70,9 +70,9 @@ func BenchmarkConcurrentVar_Acquire(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkConcurrentVar_Acquire_Parallel(b *testing.B) {
+func BenchmarkShardedVar_Acquire_Parallel(b *testing.B) {
 	r := NewNoop(1)
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 

@@ -11,34 +11,34 @@ import (
 	"github.com/basecomplextech/baselibrary/opt"
 )
 
-// ConcurrentVar is a sharded atomic non-blocking variable which holds a value reference.
+// ShardedVar is a sharded atomic non-blocking variable which holds a value reference.
 //
-// The concurrent variable is optimized for high contention scenarios.
+// The sharded variable is optimized for high contention scenarios.
 // Internally it uses multiple shards to reduce contention.
 //
 // Fastrand is used to select a shard on access. The scalability of this approach is limited,
 // but it is still faster than using a single mutex/atomic.
-type ConcurrentVar[T any] interface {
+type ShardedVar[T any] interface {
 	Var[T]
 }
 
-// NewConcurrentVar returns a new concurrent variable.
-func NewConcurrentVar[T any]() ConcurrentVar[T] {
-	return newCVar[T]()
+// NewShardedVar returns a new concurrent variable.
+func NewShardedVar[T any]() ShardedVar[T] {
+	return newShardedVar[T]()
 }
 
 // internal
 
-var _ ConcurrentVar[any] = (*cvar[any])(nil)
+var _ ShardedVar[any] = (*shardedVar[any])(nil)
 
-type cvar[T any] struct {
+type shardedVar[T any] struct {
 	shards []*varImpl[T] // no need to use cache-line padding, contention is on varRef
 	wmu    sync.RWMutex
 }
 
-func newCVar[T any]() *cvar[T] {
+func newShardedVar[T any]() *shardedVar[T] {
 	cpus := runtime.NumCPU()
-	v := &cvar[T]{
+	v := &shardedVar[T]{
 		shards: make([]*varImpl[T], cpus),
 	}
 
@@ -49,13 +49,13 @@ func newCVar[T any]() *cvar[T] {
 }
 
 // Acquire acquires, retains and returns a value reference, or false.
-func (v *cvar[T]) Acquire() (R[T], bool) {
+func (v *shardedVar[T]) Acquire() (R[T], bool) {
 	i := int(fastrand()) % len(v.shards)
 	return v.shards[i].Acquire()
 }
 
 // Set sets a value, releases the previous reference.
-func (v *cvar[T]) Set(value T) {
+func (v *shardedVar[T]) Set(value T) {
 	v.wmu.Lock()
 	defer v.wmu.Unlock()
 
@@ -68,7 +68,7 @@ func (v *cvar[T]) Set(value T) {
 }
 
 // SetRetain sets a value reference, retains the new one and releases the old one.
-func (v *cvar[T]) SetRetain(ref R[T]) {
+func (v *shardedVar[T]) SetRetain(ref R[T]) {
 	v.wmu.Lock()
 	defer v.wmu.Unlock()
 
@@ -78,7 +78,7 @@ func (v *cvar[T]) SetRetain(ref R[T]) {
 }
 
 // Unset clears the value.
-func (v *cvar[T]) Unset() {
+func (v *shardedVar[T]) Unset() {
 	v.wmu.Lock()
 	defer v.wmu.Unlock()
 
@@ -91,12 +91,12 @@ func (v *cvar[T]) Unset() {
 
 // Unwrap returns the current value.
 // The method must be externally synchronized.
-func (v *cvar[T]) Unwrap() opt.Opt[T] {
+func (v *shardedVar[T]) Unwrap() opt.Opt[T] {
 	return v.shards[0].Unwrap()
 }
 
 // UnwrapRef returns the current reference.
 // The method must be externally synchronized.
-func (v *cvar[T]) UnwrapRef() opt.Opt[R[T]] {
+func (v *shardedVar[T]) UnwrapRef() opt.Opt[R[T]] {
 	return v.shards[0].UnwrapRef()
 }
