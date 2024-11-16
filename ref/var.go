@@ -86,9 +86,9 @@ func (v *varImpl[T]) SetRetain(ref R[T]) {
 	prev := v.cur.Swap(next)
 	ref.Retain()
 
-	// Detach and release the previous one
+	// Release the previous one
 	if prev != nil {
-		prev.detach()
+		prev.release()
 	}
 }
 
@@ -100,9 +100,9 @@ func (v *varImpl[T]) Unset() {
 	// Clear the current reference
 	prev := v.cur.Swap(nil)
 
-	// Detach and release the previous one
+	// Release the previous one
 	if prev != nil {
-		prev.detach()
+		prev.release()
 	}
 }
 
