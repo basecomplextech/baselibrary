@@ -79,7 +79,7 @@ type LockMap[K comparable] interface {
 	//		ok := locks.Contains(key)
 	//		// ...
 	//	}
-	LockMap() LockedMap[K]
+	LockMap() LockedLockMap[K]
 }
 
 // NewLockMap returns a new lock map.
@@ -173,13 +173,24 @@ func (m *lockMap[K]) Lock(ctx async.Context, key K) (LockedKey, status.Status) {
 }
 
 // LockMap locks the map itself, internally it locks all buckets.
-func (m *lockMap[K]) LockMap() LockedMap[K] {
-	for i := range m.buckets {
-		b := &m.buckets[i]
-		b.mu.Lock()
+func (m *lockMap[K]) LockMap() LockedLockMap[K] {
+	i := 0
+	done := false
+	defer func() {
+		if !done {
+			for ; i >= 0; i-- {
+				m.buckets[i].mu.Unlock()
+			}
+		}
+	}()
+
+	for i = range m.buckets {
+		m.buckets[i].mu.Lock()
 	}
 
-	return newLockedMap(m)
+	locked := newLockedLockMap(m)
+	done = true
+	return locked
 }
 
 // internal

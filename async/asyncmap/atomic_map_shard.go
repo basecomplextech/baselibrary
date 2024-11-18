@@ -34,6 +34,10 @@ func (s *atomicMapShard[K, V]) clear() {
 	s.wmu.Lock()
 	defer s.wmu.Unlock()
 
+	s.clearLocked()
+}
+
+func (s *atomicMapShard[K, V]) clearLocked() {
 	state := s.state.Load()
 	next := emptyAtomicMapState(state)
 

@@ -95,10 +95,7 @@ func (m *atomicMap[K, V]) Clear() {
 	m.wmu.Lock()
 	defer m.wmu.Unlock()
 
-	s := m.state.Load()
-	next := emptyAtomicMapState(s)
-
-	m.state.Store(next)
+	m.clearLocked()
 }
 
 // Contains returns true if a key exists.
@@ -175,7 +172,14 @@ func (m *atomicMap[K, V]) Range(fn func(K, V) bool) {
 	s.range_(fn)
 }
 
-// private
+// LockMap exclusively locks the map.
+func (m *atomicMap[K, V]) LockMap() LockedMap[K, V] {
+	m.wmu.Lock()
+
+	return newLockedAtomicMap(m)
+}
+
+// internal
 
 func (m *atomicMap[K, V]) getOrSet(key K, value V, resize *bool) (V, bool) {
 	m.wmu.RLock()
@@ -226,6 +230,15 @@ func (m *atomicMap[K, V]) swap(key K, value V, resize *bool) (V, bool) {
 	n := s.len()
 	*resize = n >= s.threshold
 	return v, ok
+}
+
+// private
+
+func (m *atomicMap[K, V]) clearLocked() {
+	s := m.state.Load()
+	next := emptyAtomicMapState(s)
+
+	m.state.Store(next)
 }
 
 // resize

@@ -304,3 +304,19 @@ func TestAtomicMap_Range__should_iterate_over_all_items(t *testing.T) {
 
 	assert.Equal(t, items, items1)
 }
+
+// LockMap
+
+func TestAtomicMap_LockMap__should_lock_map(t *testing.T) {
+	m := newAtomicMap[int, int](0)
+	n := 128
+	items := make([]int, 0, n)
+
+	for i := 0; i < n; i++ {
+		m.Set(i, i)
+		items = append(items, i)
+	}
+
+	locked := m.LockMap()
+	locked.Free()
+}

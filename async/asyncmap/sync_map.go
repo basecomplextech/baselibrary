@@ -89,6 +89,11 @@ func (m *syncMap[K, V]) Delete(key K) (v V, _ bool) {
 	return val.(V), true
 }
 
+// LockMap is not supported.
+func (m *syncMap[K, V]) LockMap() LockedMap[K, V] {
+	panic("not supported")
+}
+
 // Set sets a value for a key.
 func (m *syncMap[K, V]) Set(key K, value V) {
 	m.raw.Store(key, value)

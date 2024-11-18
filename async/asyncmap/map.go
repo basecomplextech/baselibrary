@@ -24,6 +24,24 @@ type Map[K comparable, V any] interface {
 	// Delete deletes a key value, and returns the previous value.
 	Delete(key K) (V, bool)
 
+	// LockMap exclusively locks the map.
+	//
+	// Usage:
+	//
+	//	m := NewAtomicMap[int, int]()
+	//
+	//	locked := m.LockMap()
+	//	defer locked.Free()
+	//
+	//	// Handle items if required
+	//	locked.Range(func(k int, v int) bool {
+	//		return true
+	//	})
+	//
+	//	// Clear items if required
+	//	locked.Clear()
+	LockMap() LockedMap[K, V]
+
 	// Set sets a value for a key.
 	Set(key K, value V)
 
@@ -36,4 +54,20 @@ type Map[K comparable, V any] interface {
 	// Range iterates over all key-value pairs.
 	// The iteration stops if the function returns false.
 	Range(fn func(K, V) bool)
+}
+
+// LockedMap provides an exclusive access to an async map.
+// The map must be freed after usage.
+type LockedMap[K comparable, V any] interface {
+	// Clear deletes all items.
+	Clear()
+
+	// Range iterates over all key-value pairs.
+	// The iteration stops if the function returns false.
+	Range(fn func(K, V) bool)
+
+	// Internal
+
+	// Free unlocks the locked map.
+	Free()
 }

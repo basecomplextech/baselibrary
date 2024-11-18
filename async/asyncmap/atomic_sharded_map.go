@@ -139,6 +139,27 @@ func (m *atomicShardedMap[K, V]) Range(fn func(K, V) bool) {
 	}
 }
 
+// LockMap exclusively locks the map.
+func (m *atomicShardedMap[K, V]) LockMap() LockedMap[K, V] {
+	i := 0
+	done := false
+	defer func() {
+		if !done {
+			for ; i >= 0; i-- {
+				m.shards[i].wmu.Unlock()
+			}
+		}
+	}()
+
+	for i = range m.shards {
+		m.shards[i].wmu.Lock()
+	}
+
+	locked := newAtomicShardedLocked(m)
+	done = true
+	return locked
+}
+
 // private
 
 // hashes returns two hierarchical key hashes, one for map and one for shard.

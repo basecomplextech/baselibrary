@@ -4,8 +4,8 @@
 
 package asyncmap
 
-// LockedMap is an interface to interact with a map locked in exclusive mode.
-type LockedMap[K comparable] interface {
+// LockedLockMap is an interface to interact with a map locked in exclusive mode.
+type LockedLockMap[K comparable] interface {
 	// Contains returns true if the key is present.
 	Contains(key K) bool
 
@@ -18,24 +18,24 @@ type LockedMap[K comparable] interface {
 
 // internal
 
-var _ LockedMap[any] = (*lockedMap[any])(nil)
+var _ LockedLockMap[any] = (*lockedLockMap[any])(nil)
 
-type lockedMap[K comparable] struct {
+type lockedLockMap[K comparable] struct {
 	m *lockMap[K]
 }
 
-func newLockedMap[K comparable](m *lockMap[K]) LockedMap[K] {
-	return &lockedMap[K]{m: m}
+func newLockedLockMap[K comparable](m *lockMap[K]) LockedLockMap[K] {
+	return &lockedLockMap[K]{m: m}
 }
 
 // Contains returns true if the key is present.
-func (m *lockedMap[K]) Contains(key K) bool {
+func (m *lockedLockMap[K]) Contains(key K) bool {
 	b := m.m.bucket(key)
 	return b.containsLocked(key)
 }
 
 // Range ranges over all keys.
-func (m *lockedMap[K]) Range(fn func(key K) bool) {
+func (m *lockedLockMap[K]) Range(fn func(key K) bool) {
 	for i := range m.m.buckets {
 		b := &m.m.buckets[i]
 		b.rangeLocked(fn)
@@ -43,7 +43,7 @@ func (m *lockedMap[K]) Range(fn func(key K) bool) {
 }
 
 // Free unlocks the map itself, internally it unlocks all buckets.
-func (m *lockedMap[K]) Free() {
+func (m *lockedLockMap[K]) Free() {
 	m.m.unlockMap()
 	m.m = nil
 }

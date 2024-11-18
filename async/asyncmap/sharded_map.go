@@ -95,6 +95,11 @@ func (m *shardedMap[K, V]) Delete(key K) (V, bool) {
 	return s.delete(key)
 }
 
+// LockMap exclusively locks the map.
+func (m *shardedMap[K, V]) LockMap() LockedMap[K, V] {
+	panic("implement me")
+}
+
 // Set sets a value for a key.
 func (m *shardedMap[K, V]) Set(key K, value V) {
 	s := m.shard(key)
