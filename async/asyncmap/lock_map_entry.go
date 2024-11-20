@@ -45,7 +45,7 @@ func (e *lockMapEntry[K]) set(m *lockMapItem[K]) {
 func (e *lockMapEntry[K]) delete(m *lockMapItem[K]) {
 	if m1, ok := e.item.Unwrap(); ok {
 		if m1 == m {
-			e.item.Unset()
+			e.item.Clear()
 			return
 		}
 	}

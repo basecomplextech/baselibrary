@@ -42,7 +42,7 @@ func (s *shardedMapShard[K, V]) clear() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.entry.Unset()
+	s.entry.Clear()
 
 	if more, ok := s.more.Unwrap(); ok {
 		clear(more)
@@ -108,7 +108,7 @@ func (s *shardedMapShard[K, V]) delete(key K) (v V, _ bool) {
 
 	if m, ok := s.entry.Unwrap(); ok {
 		if m.key == key {
-			s.entry.Unset()
+			s.entry.Clear()
 			return m.value, true
 		}
 	}

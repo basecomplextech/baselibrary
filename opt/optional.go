@@ -37,17 +37,19 @@ func None[T any]() Opt[T] {
 	return Opt[T]{}
 }
 
+// Clear clears the value and returns the previous one if any.
+func (o *Opt[T]) Clear() (v T, ok bool) {
+	v, ok = o.Value, o.Valid
+	*o = Opt[T]{}
+	return
+}
+
 // Set sets the value.
 func (o *Opt[T]) Set(value T) {
 	*o = Opt[T]{
 		Valid: true,
 		Value: value,
 	}
-}
-
-// Unset clears the value.
-func (o *Opt[T]) Unset() {
-	*o = Opt[T]{}
 }
 
 // Unwrap returns the value and true if set.

@@ -28,11 +28,10 @@ func (t *timer) stop() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	timer, ok := t.timer.Unwrap()
+	timer, ok := t.timer.Clear()
 	if !ok {
 		return
 	}
 
-	t.timer.Unset()
 	timer.Stop()
 }
