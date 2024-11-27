@@ -18,14 +18,9 @@ type FreeGroup interface {
 	Free()
 }
 
-// NewFreeGroup returns a new unlimited free group.
+// NewFreeGroup returns a new free group.
 func NewFreeGroup() FreeGroup {
-	return newFreeGroup(0)
-}
-
-// NewFreeGroupCap returns a new free group with the given maximum capacity.
-func NewFreeGroupCap(capacity int) FreeGroup {
-	return newFreeGroup(capacity)
+	return newFreeGroup()
 }
 
 // internal
@@ -36,25 +31,16 @@ type freeGroup struct {
 	*freeGroupState
 }
 
-func newFreeGroup(maxCap int) *freeGroup {
-	g := &freeGroup{acquireFreeGroupState()}
-	g.maxCap = maxCap
-	return g
+func newFreeGroup() *freeGroup {
+	return &freeGroup{acquireFreeGroupState()}
 }
 
 type freeGroupState struct {
-	maxCap  int
 	objects []Freer
 }
 
 // Add an object to the free group.
 func (g *freeGroup) Add(obj Freer) {
-	if g.maxCap > 0 {
-		if len(g.objects) >= g.maxCap {
-			return
-		}
-	}
-
 	g.objects = append(g.objects, obj)
 }
 
