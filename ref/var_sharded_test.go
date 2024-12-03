@@ -14,10 +14,10 @@ import (
 
 // Acquire
 
-func TestConcurrentVar_Acquire__should_acquire_current_reference(t *testing.T) {
+func TestShardedVar_Acquire__should_acquire_current_reference(t *testing.T) {
 	r := NewNoop(1)
 
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -39,10 +39,10 @@ func TestConcurrentVar_Acquire__should_acquire_current_reference(t *testing.T) {
 
 // SetRetain
 
-func TestConcurrentVar_SetRetain__should_retain_new_reference(t *testing.T) {
+func TestShardedVar_SetRetain__should_retain_new_reference(t *testing.T) {
 	r := NewNoop(1)
 
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r)
 	assert.Equal(t, int64(2), r.Refcount())
 
@@ -50,11 +50,11 @@ func TestConcurrentVar_SetRetain__should_retain_new_reference(t *testing.T) {
 	assert.Equal(t, int64(1), r.Refcount())
 }
 
-func TestConcurrentVar_SetRetain__should_release_previous_reference(t *testing.T) {
+func TestShardedVar_SetRetain__should_release_previous_reference(t *testing.T) {
 	r0 := NewNoop(1)
 	r1 := NewNoop(2)
 
-	v := NewConcurrentVar[int]()
+	v := NewShardedVar[int]()
 	v.SetRetain(r0)
 	v.SetRetain(r1)
 
@@ -82,14 +82,14 @@ func TestConcurrentVar_SetRetain__should_release_previous_reference(t *testing.T
 
 // Shard
 
-func TestConcVarShard__should_have_cache_line_size(t *testing.T) {
-	s := unsafe.Sizeof(concVarShard[int]{})
+func TestShardedVarShard__should_have_cache_line_size(t *testing.T) {
+	s := unsafe.Sizeof(shardedVarShard[int]{})
 
 	assert.Equal(t, uintptr(256), s)
 }
 
-func TestConcValueCount__should_have_cache_line_size(t *testing.T) {
-	s := unsafe.Sizeof(concValueCount{})
+func TestShardedValueCount__should_have_cache_line_size(t *testing.T) {
+	s := unsafe.Sizeof(shardedValueCount{})
 
 	assert.Equal(t, uintptr(256), s)
 }

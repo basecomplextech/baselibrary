@@ -10,12 +10,12 @@ import (
 	"github.com/basecomplextech/baselibrary/opt"
 )
 
-type concVarShard[T any] struct {
-	ref atomic.Pointer[concValueRef[T]]
+type shardedVarShard[T any] struct {
+	ref atomic.Pointer[shardedValueRef[T]]
 	_   [256 - 8]byte // padding
 }
 
-func (s *concVarShard[T]) acquire() (R[T], bool) {
+func (s *shardedVarShard[T]) acquire() (R[T], bool) {
 	ref := s.ref.Load()
 	if ref == nil {
 		return nil, false
@@ -27,7 +27,7 @@ func (s *concVarShard[T]) acquire() (R[T], bool) {
 	return nil, false
 }
 
-func (s *concVarShard[T]) set(ref *concValueRef[T]) {
+func (s *shardedVarShard[T]) set(ref *shardedValueRef[T]) {
 	prev := s.ref.Swap(ref)
 	if prev == nil {
 		return
@@ -36,7 +36,7 @@ func (s *concVarShard[T]) set(ref *concValueRef[T]) {
 	prev.Release()
 }
 
-func (s *concVarShard[T]) unset() {
+func (s *shardedVarShard[T]) unset() {
 	prev := s.ref.Swap(nil)
 	if prev == nil {
 		return
@@ -45,7 +45,7 @@ func (s *concVarShard[T]) unset() {
 	prev.Release()
 }
 
-func (s *concVarShard[T]) unwrap() opt.Opt[T] {
+func (s *shardedVarShard[T]) unwrap() opt.Opt[T] {
 	r := s.ref.Load()
 	if r == nil {
 		return opt.None[T]()
@@ -55,7 +55,7 @@ func (s *concVarShard[T]) unwrap() opt.Opt[T] {
 	return opt.New[T](value)
 }
 
-func (s *concVarShard[T]) unwrapRef() opt.Opt[R[T]] {
+func (s *shardedVarShard[T]) unwrapRef() opt.Opt[R[T]] {
 	r := s.ref.Load()
 	if r == nil {
 		return opt.None[R[T]]()

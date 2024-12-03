@@ -49,3 +49,18 @@ func BenchmarkVar_Parallel(b *testing.B) {
 
 	b.ReportMetric(ops/1000_000, "mops")
 }
+
+// SetRetain
+
+func BenchmarkVar_SetRetain(b *testing.B) {
+	v := NewVar[int]()
+
+	for i := 0; i < b.N; i++ {
+		r := newDummyRef[int]()
+		v.SetRetain(r)
+	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(ops/1000_000, "mops")
+}

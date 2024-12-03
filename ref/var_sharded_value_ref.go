@@ -8,21 +8,21 @@ import (
 	"fmt"
 )
 
-var _ R[any] = (*concValueRef[any])(nil)
+var _ R[any] = (*shardedValueRef[any])(nil)
 
-type concValueRef[T any] struct {
-	val  *concValue[T]
+type shardedValueRef[T any] struct {
+	val  *shardedValue[T]
 	refs *Atomic64
 }
 
-func (r *concValueRef[T]) init(val *concValue[T], refs *Atomic64) {
+func (r *shardedValueRef[T]) init(val *shardedValue[T], refs *Atomic64) {
 	r.val = val
 	r.refs = refs
 	r.refs.Init(1)
 }
 
 // Acquire increments refcount and returns the reference.
-func (r *concValueRef[T]) Acquire() bool {
+func (r *shardedValueRef[T]) Acquire() bool {
 	if ok := r.refs.Acquire(); ok {
 		return true
 	}
@@ -32,12 +32,12 @@ func (r *concValueRef[T]) Acquire() bool {
 }
 
 // Refcount returns the number of current references.
-func (r *concValueRef[T]) Refcount() int64 {
+func (r *shardedValueRef[T]) Refcount() int64 {
 	return r.refs.Refcount()
 }
 
 // Retain increments refcount, panics when count is <= 0.
-func (r *concValueRef[T]) Retain() {
+func (r *shardedValueRef[T]) Retain() {
 	if ok := r.refs.Acquire(); ok {
 		return
 	}
@@ -48,7 +48,7 @@ func (r *concValueRef[T]) Retain() {
 }
 
 // Release decrements refcount and releases the object if the count is 0.
-func (r *concValueRef[T]) Release() {
+func (r *shardedValueRef[T]) Release() {
 	if ok := r.refs.Release(); !ok {
 		return
 	}
@@ -59,9 +59,9 @@ func (r *concValueRef[T]) Release() {
 }
 
 // Unwrap returns the object or panics if the refcount is 0.
-func (r *concValueRef[T]) Unwrap() T {
+func (r *shardedValueRef[T]) Unwrap() T {
 	// Unwrapping a released reference is already a programming error.
-	// So let's ignore the race condition here.
+	// So let's ignore a possible race condition here.
 
 	count := r.Refcount()
 	if count <= 0 {

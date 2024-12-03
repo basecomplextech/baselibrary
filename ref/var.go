@@ -12,6 +12,13 @@ import (
 )
 
 // Var is an atomic non-blocking variable which holds a value reference.
+//
+// Benchmarks
+//
+//	cpu: Apple M1 Pro
+//	BenchmarkVar-10              	86551359	        13.97 ns/op	        71.58 mops	       0 B/op	       0 allocs/op
+//	BenchmarkVar_Parallel-10     	 7920332	       151.00 ns/op	         6.62 mops	       0 B/op	       0 allocs/op
+//	BenchmarkVar_SetRetain-10    	31419198	        37.71 ns/op	        26.52 mops	      24 B/op	       1 allocs/op
 type Var[T any] interface {
 	// Acquire acquires, retains and returns a value reference, or false.
 	Acquire() (R[T], bool)
