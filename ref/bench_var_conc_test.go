@@ -4,11 +4,13 @@
 
 package ref
 
-import "testing"
+import (
+	"testing"
+)
 
-func BenchmarkShardedVar(b *testing.B) {
+func BenchmarkConcurrentVar(b *testing.B) {
 	r := NewNoop(1)
-	v := NewShardedVar[int]()
+	v := NewConcurrentVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -25,9 +27,9 @@ func BenchmarkShardedVar(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkShardedVar_Parallel(b *testing.B) {
+func BenchmarkConcurrentVar_Parallel(b *testing.B) {
 	r := NewNoop(1)
-	v := NewShardedVar[int]()
+	v := NewConcurrentVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -51,9 +53,9 @@ func BenchmarkShardedVar_Parallel(b *testing.B) {
 
 // Acquire
 
-func BenchmarkShardedVar_Acquire(b *testing.B) {
+func BenchmarkConcurrentVar_Acquire(b *testing.B) {
 	r := NewNoop(1)
-	v := NewShardedVar[int]()
+	v := NewConcurrentVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -70,9 +72,9 @@ func BenchmarkShardedVar_Acquire(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkShardedVar_Acquire_Parallel(b *testing.B) {
+func BenchmarkConcurrentVar_Acquire_Parallel(b *testing.B) {
 	r := NewNoop(1)
-	v := NewShardedVar[int]()
+	v := NewConcurrentVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -96,8 +98,8 @@ func BenchmarkShardedVar_Acquire_Parallel(b *testing.B) {
 
 // SetRetain
 
-func BenchmarkShardedVar_SetRetain(b *testing.B) {
-	v := NewShardedVar[int]()
+func BenchmarkConcurrentVar_SetRetain(b *testing.B) {
+	v := NewConcurrentVar[int]()
 
 	for i := 0; i < b.N; i++ {
 		r := newDummyRef[int]()
