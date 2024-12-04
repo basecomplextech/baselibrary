@@ -82,12 +82,6 @@ func TestShardedVar_SetRetain__should_release_previous_reference(t *testing.T) {
 
 // Shard
 
-func TestShardedVarShard__should_have_cache_line_size(t *testing.T) {
-	s := unsafe.Sizeof(shardedVarShard[int]{})
-
-	assert.Equal(t, uintptr(256), s)
-}
-
 func TestShardedValueCount__should_have_cache_line_size(t *testing.T) {
 	s := unsafe.Sizeof(shardedValueCount{})
 

@@ -6,15 +6,13 @@ package ref
 
 import (
 	"fmt"
-	"sync/atomic"
 )
 
 // NewNoop returns a new reference with no freer.
 func NewNoop[T any](obj T) R[T] {
-	return &refNoop[T]{
-		refs: 1,
-		obj:  obj,
-	}
+	r := &refNoop[T]{obj: obj}
+	r.refs.Init(1)
+	return r
 }
 
 // internal
@@ -22,33 +20,37 @@ func NewNoop[T any](obj T) R[T] {
 var _ R[any] = (*refNoop[any])(nil)
 
 type refNoop[T any] struct {
-	refs int64
+	refs Atomic64
 	obj  T
 }
 
 func (r *refNoop[T]) Refcount() int64 {
-	return atomic.LoadInt64(&r.refs)
+	return r.refs.Refcount()
+}
+
+func (r *refNoop[T]) Acquire() bool {
+	if ok := r.refs.Acquire(); ok {
+		return true
+	}
+
+	r.Release()
+	return false
 }
 
 func (r *refNoop[T]) Retain() {
-	v := atomic.AddInt64(&r.refs, 1)
-	if v <= 1 {
-		panic(fmt.Sprintf("retain: %T already released", r.obj))
+	if ok := r.refs.Acquire(); ok {
+		return
 	}
+
+	panic(fmt.Sprintf("retain: %T already released", r.obj))
 }
 
 func (r *refNoop[T]) Release() {
-	v := atomic.AddInt64(&r.refs, -1)
-	switch {
-	case v > 0:
-		return
-	case v < 0:
-		panic(fmt.Sprintf("release: %T already released", r.obj))
-	}
+	r.refs.Release()
 }
 
 func (r *refNoop[T]) Unwrap() T {
-	v := atomic.LoadInt64(&r.refs)
+	v := r.refs.Refcount()
 	if v <= 0 {
 		panic(fmt.Sprintf("unwrap: %T already released", r.obj))
 	}

@@ -15,6 +15,9 @@ func newDummyRef[T any]() R[T] {
 // Refcount returns the number of current references.
 func (dummyRef[T]) Refcount() int64 { return 0 }
 
+// Acquire tries to increment refcount and returns true, or false if already released.
+func (dummyRef[T]) Acquire() bool { return false }
+
 // Retain increments refcount, panics when count is <= 0.
 func (dummyRef[T]) Retain() {}
 

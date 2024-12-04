@@ -6,7 +6,6 @@ package ref
 
 import (
 	"fmt"
-	"sync/atomic"
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/pools"
@@ -22,21 +21,21 @@ func NewFree[T any](obj T, free func()) R[T] {
 func NewFreer[T any](obj T, freer Freer) R[T] {
 	size := unsafe.Sizeof(obj)
 	if size <= maxUnpooledSize {
-		return &refFreer[T]{
-			refs:  1,
+		r := &refFreer[T]{
 			obj:   obj,
 			freer: freer,
 		}
+		r.refs.Init(1)
+		return r
 	}
 
 	s := acquireRefFreer[T]()
 	s.obj = obj
 	s.freer = freer
 
-	return &refFreerPooled[T]{
-		refs:          1,
-		refFreerState: s,
-	}
+	r := &refFreerPooled[T]{refFreerState: s}
+	r.refs.Init(1)
+	return r
 }
 
 // internal
@@ -44,29 +43,38 @@ func NewFreer[T any](obj T, freer Freer) R[T] {
 var _ R[any] = (*refFreer[any])(nil)
 
 type refFreer[T any] struct {
-	refs  int64
+	refs  Atomic64
 	freer Freer
 	obj   T
 }
 
 func (r *refFreer[T]) Refcount() int64 {
-	return atomic.LoadInt64(&r.refs)
+	return r.refs.Refcount()
+}
+
+// Acquire tries to increment refcount and returns true, or false if already released.
+func (r *refFreer[T]) Acquire() bool {
+	if ok := r.refs.Acquire(); ok {
+		return true
+	}
+
+	r.Release()
+	return false
 }
 
 func (r *refFreer[T]) Retain() {
-	v := atomic.AddInt64(&r.refs, 1)
-	if v <= 1 {
-		panic(fmt.Sprintf("retain: %T already released", r.obj))
+	if ok := r.refs.Acquire(); ok {
+		return
 	}
+
+	r.Release()
+	panic(fmt.Sprintf("retain: %T already released", r.obj))
 }
 
 func (r *refFreer[T]) Release() {
-	v := atomic.AddInt64(&r.refs, -1)
-	switch {
-	case v > 0:
+	released := r.refs.Release()
+	if !released {
 		return
-	case v < 0:
-		panic(fmt.Sprintf("release: %T already released", r.obj))
 	}
 
 	var zero T
@@ -76,7 +84,7 @@ func (r *refFreer[T]) Release() {
 }
 
 func (r *refFreer[T]) Unwrap() T {
-	v := atomic.LoadInt64(&r.refs)
+	v := r.refs.Refcount()
 	if v <= 0 {
 		panic(fmt.Sprintf("unwrap: %T already released", r.obj))
 	}
@@ -88,7 +96,7 @@ func (r *refFreer[T]) Unwrap() T {
 var _ R[any] = (*refFreerPooled[any])(nil)
 
 type refFreerPooled[T any] struct {
-	refs int64
+	refs Atomic64
 	*refFreerState[T]
 }
 
@@ -99,23 +107,31 @@ type refFreerState[T any] struct {
 }
 
 func (r *refFreerPooled[T]) Refcount() int64 {
-	return atomic.LoadInt64(&r.refs)
+	return r.refs.Refcount()
+}
+
+func (r *refFreerPooled[T]) Acquire() bool {
+	if ok := r.refs.Acquire(); ok {
+		return true
+	}
+
+	r.Release()
+	return false
 }
 
 func (r *refFreerPooled[T]) Retain() {
-	v := atomic.AddInt64(&r.refs, 1)
-	if v <= 1 {
-		panic(fmt.Sprintf("retain: %T already released", r))
+	if ok := r.refs.Acquire(); ok {
+		return
 	}
+
+	r.Release()
+	panic(fmt.Sprintf("retain: %T already released", r))
 }
 
 func (r *refFreerPooled[T]) Release() {
-	v := atomic.AddInt64(&r.refs, -1)
-	switch {
-	case v > 0:
+	released := r.refs.Release()
+	if !released {
 		return
-	case v < 0:
-		panic(fmt.Sprintf("release: %T already released", r))
 	}
 
 	r.freer.Free()
@@ -126,7 +142,7 @@ func (r *refFreerPooled[T]) Release() {
 }
 
 func (r *refFreerPooled[T]) Unwrap() T {
-	v := atomic.LoadInt64(&r.refs)
+	v := r.refs.Refcount()
 	if v <= 0 {
 		panic(fmt.Sprintf("unwrap: %T already released", r))
 	}

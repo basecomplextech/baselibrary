@@ -6,7 +6,6 @@ package ref
 
 import (
 	"fmt"
-	"sync/atomic"
 	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/pools"
@@ -24,21 +23,21 @@ import (
 func Next[T, T1 any](obj T, parent R[T1]) R[T] {
 	size := unsafe.Sizeof(obj)
 	if size <= maxUnpooledSize {
-		return &refNext[T, T1]{
-			refs:   1,
+		r := &refNext[T, T1]{
 			obj:    obj,
 			parent: parent,
 		}
+		r.refs.Init(1)
+		return r
 	}
 
 	s := acquireRefNext[T, T1]()
 	s.obj = obj
 	s.parent = parent
 
-	return &refNextPooled[T, T1]{
-		refs:         1,
-		refNextState: s,
-	}
+	r := &refNextPooled[T, T1]{refNextState: s}
+	r.refs.Init(1)
+	return r
 }
 
 // NextRetain returns a new reference with a parent reference as a freer, retains the parent.
@@ -60,29 +59,37 @@ func NextRetain[T, T1 any](obj T, parent R[T1]) R[T] {
 var _ R[any] = (*refNext[any, any])(nil)
 
 type refNext[T, T1 any] struct {
-	refs   int64
+	refs   Atomic64
 	parent R[T1]
 	obj    T
 }
 
 func (r *refNext[T, T1]) Refcount() int64 {
-	return atomic.LoadInt64(&r.refs)
+	return r.refs.Refcount()
+}
+
+func (r *refNext[T, T1]) Acquire() bool {
+	if ok := r.refs.Acquire(); ok {
+		return true
+	}
+
+	r.Release()
+	return false
 }
 
 func (r *refNext[T, T1]) Retain() {
-	v := atomic.AddInt64(&r.refs, 1)
-	if v <= 1 {
-		panic(fmt.Sprintf("retain: %T already released", r.obj))
+	if ok := r.refs.Acquire(); ok {
+		return
 	}
+
+	r.Release()
+	panic(fmt.Sprintf("retain: %T already released", r.obj))
 }
 
 func (r *refNext[T, T1]) Release() {
-	v := atomic.AddInt64(&r.refs, -1)
-	switch {
-	case v > 0:
+	released := r.refs.Release()
+	if !released {
 		return
-	case v < 0:
-		panic(fmt.Sprintf("release: %T already released", r.obj))
 	}
 
 	var zero T
@@ -92,7 +99,7 @@ func (r *refNext[T, T1]) Release() {
 }
 
 func (r *refNext[T, T1]) Unwrap() T {
-	v := atomic.LoadInt64(&r.refs)
+	v := r.refs.Refcount()
 	if v <= 0 {
 		panic(fmt.Sprintf("unwrap: %T already released", r.obj))
 	}
@@ -104,7 +111,7 @@ func (r *refNext[T, T1]) Unwrap() T {
 var _ R[any] = (*refNextPooled[any, any])(nil)
 
 type refNextPooled[T, T1 any] struct {
-	refs int64
+	refs Atomic64
 	*refNextState[T, T1]
 }
 
@@ -115,23 +122,31 @@ type refNextState[T, T1 any] struct {
 }
 
 func (r *refNextPooled[T, T1]) Refcount() int64 {
-	return atomic.LoadInt64(&r.refs)
+	return r.refs.Refcount()
+}
+
+func (r *refNextPooled[T, T1]) Acquire() bool {
+	if ok := r.refs.Acquire(); ok {
+		return true
+	}
+
+	r.Release()
+	return false
 }
 
 func (r *refNextPooled[T, T1]) Retain() {
-	v := atomic.AddInt64(&r.refs, 1)
-	if v <= 1 {
-		panic(fmt.Sprintf("retain: %T already released", r))
+	if ok := r.refs.Acquire(); ok {
+		return
 	}
+
+	r.Release()
+	panic(fmt.Sprintf("retain: %T already released", r))
 }
 
 func (r *refNextPooled[T, T1]) Release() {
-	v := atomic.AddInt64(&r.refs, -1)
-	switch {
-	case v > 0:
+	released := r.refs.Release()
+	if !released {
 		return
-	case v < 0:
-		panic(fmt.Sprintf("release: %T already released", r))
 	}
 
 	r.parent.Release()
@@ -142,7 +157,7 @@ func (r *refNextPooled[T, T1]) Release() {
 }
 
 func (r *refNextPooled[T, T1]) Unwrap() T {
-	v := atomic.LoadInt64(&r.refs)
+	v := r.refs.Refcount()
 	if v <= 0 {
 		panic(fmt.Sprintf("unwrap: %T already released", r))
 	}

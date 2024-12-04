@@ -27,6 +27,16 @@ func (r *varRef[T]) Refcount() int64 {
 	return r.refs.Refcount()
 }
 
+// Acquire tries to increment refcount and returns true, or false if already released.
+func (r *varRef[T]) Acquire() bool {
+	if ok := r.refs.Acquire(); ok {
+		return true
+	}
+
+	r.release()
+	return false
+}
+
 // Retain increments refcount, panics when count is <= 0.
 func (r *varRef[T]) Retain() {
 	// Increment refs, return if alive

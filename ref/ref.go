@@ -6,7 +6,6 @@ package ref
 
 import (
 	"fmt"
-	"sync/atomic"
 )
 
 // R is a generic atomic countable reference.
@@ -14,6 +13,9 @@ import (
 type R[T any] interface {
 	// Refcount returns the number of current references.
 	Refcount() int64
+
+	// Acquire tries to increment refcount and returns true, or false if already released.
+	Acquire() bool
 
 	// Retain increments refcount, panics when count is <= 0.
 	Retain()
@@ -46,10 +48,9 @@ type Ref interface {
 //   - [Next] returns a child reference with a parent reference as a freer.
 //   - [NextRetain] returns a child reference and retains the parent.
 func New[T Freer](obj T) R[T] {
-	return &ref[T]{
-		refs: 1,
-		obj:  obj,
-	}
+	r := &ref[T]{obj: obj}
+	r.refs.Init(1)
+	return r
 }
 
 // internal
@@ -60,28 +61,36 @@ const maxUnpooledSize = 24
 var _ R[Freer] = (*ref[Freer])(nil)
 
 type ref[T Freer] struct {
-	refs int64
+	refs Atomic64
 	obj  T
 }
 
 func (r *ref[T]) Refcount() int64 {
-	return atomic.LoadInt64(&r.refs)
+	return r.refs.Refcount()
+}
+
+func (r *ref[T]) Acquire() bool {
+	if ok := r.refs.Acquire(); ok {
+		return true
+	}
+
+	r.Release()
+	return false
 }
 
 func (r *ref[T]) Retain() {
-	v := atomic.AddInt64(&r.refs, 1)
-	if v <= 1 {
-		panic(fmt.Sprintf("retain: %T already released", r.obj))
+	if ok := r.refs.Acquire(); ok {
+		return
 	}
+
+	r.Release()
+	panic(fmt.Sprintf("retain: %T already released", r.obj))
 }
 
 func (r *ref[T]) Release() {
-	v := atomic.AddInt64(&r.refs, -1)
-	switch {
-	case v > 0:
+	released := r.refs.Release()
+	if !released {
 		return
-	case v < 0:
-		panic(fmt.Sprintf("release: %T already released", r.obj))
 	}
 
 	var zero T
@@ -90,7 +99,7 @@ func (r *ref[T]) Release() {
 }
 
 func (r *ref[T]) Unwrap() T {
-	v := atomic.LoadInt64(&r.refs)
+	v := r.refs.Refcount()
 	if v <= 0 {
 		panic(fmt.Sprintf("unwrap: %T already released", r.obj))
 	}
