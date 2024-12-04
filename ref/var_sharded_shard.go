@@ -12,7 +12,7 @@ import (
 
 type shardedVarShard[T any] struct {
 	ref atomic.Pointer[shardedValueRef[T]]
-	_   [256 - 8]byte // padding
+	// no need for padding, contention is on the value ref
 }
 
 func (s *shardedVarShard[T]) acquire() (R[T], bool) {
@@ -52,7 +52,7 @@ func (s *shardedVarShard[T]) unwrap() opt.Opt[T] {
 	}
 
 	value := r.Unwrap()
-	return opt.New[T](value)
+	return opt.New(value)
 }
 
 func (s *shardedVarShard[T]) unwrapRef() opt.Opt[R[T]] {
