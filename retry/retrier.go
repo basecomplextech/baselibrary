@@ -14,9 +14,6 @@ import (
 
 // Retrier retries functions on errors and panics, uses exponential backoff.
 type Retrier interface {
-	// Recover calls a function once, recovers on panics, logs errors.
-	Recover(ctx async.Context, fn func(ctx async.Context) status.Status) status.Status
-
 	// Retry calls a function, retries on errors and panics, uses exponential backoff.
 	Retry(ctx async.Context, fn func(ctx async.Context) status.Status) status.Status
 
@@ -40,20 +37,6 @@ type retrier struct {
 
 func newRetrier(opts Options) Retrier {
 	return &retrier{opts: opts}
-}
-
-// Recover calls a function once, recovers on panics, logs errors.
-func (r *retrier) Recover(ctx async.Context, fn func(ctx async.Context) status.Status) status.Status {
-	// Call function
-	st := r.run(ctx, fn)
-	switch st.Code {
-	case status.CodeOK, status.CodeCancelled:
-		return st
-	}
-
-	// Log error
-	r.logError(0, st)
-	return st
 }
 
 // Retry calls a function, retries on errors and panics, uses exponential backoff.
