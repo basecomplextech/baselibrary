@@ -5,12 +5,13 @@
 package ref
 
 import (
+	"sync/atomic"
 	"testing"
 )
 
 func BenchmarkShardedVar(b *testing.B) {
 	r := NewNoop(1)
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -29,7 +30,7 @@ func BenchmarkShardedVar(b *testing.B) {
 
 func BenchmarkShardedVar_Parallel(b *testing.B) {
 	r := NewNoop(1)
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -51,11 +52,54 @@ func BenchmarkShardedVar_Parallel(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
+func BenchmarkShardedVar_AcquireSet_Parallel(b *testing.B) {
+	r := NewNoop(1)
+	v := newShardedVar[int]()
+	v.SetRetain(r)
+	r.Release()
+
+	b.ReportAllocs()
+
+	stop := make(chan struct{})
+	var writes atomic.Int64
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+
+			r := newDummyRef[int]()
+			v.SetRetain(r)
+
+			writes.Add(1)
+		}
+	}()
+	defer close(stop)
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			r, ok := v.Acquire()
+			if !ok {
+				b.Fatal("acquire failed")
+			}
+			r.Release()
+		}
+	})
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+
+	b.ReportMetric(ops/1000_000, "mops")
+	b.ReportMetric(float64(writes.Load()), "writes")
+}
+
 // Acquire
 
 func BenchmarkShardedVar_Acquire(b *testing.B) {
 	r := NewNoop(1)
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -74,7 +118,7 @@ func BenchmarkShardedVar_Acquire(b *testing.B) {
 
 func BenchmarkShardedVar_Acquire_Parallel(b *testing.B) {
 	r := NewNoop(1)
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -99,7 +143,7 @@ func BenchmarkShardedVar_Acquire_Parallel(b *testing.B) {
 // SetRetain
 
 func BenchmarkShardedVar_SetRetain(b *testing.B) {
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 
 	for i := 0; i < b.N; i++ {
 		r := newDummyRef[int]()

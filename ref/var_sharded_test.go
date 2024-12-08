@@ -17,7 +17,7 @@ import (
 func TestShardedVar_Acquire__should_acquire_current_reference(t *testing.T) {
 	r := NewNoop(1)
 
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
 
@@ -38,7 +38,7 @@ func TestShardedVar_Acquire__should_acquire_current_reference(t *testing.T) {
 }
 
 func TestShardedVar_Acquire__should_return_false_when_unset(t *testing.T) {
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 
 	r, ok := v.Acquire()
 	assert.False(t, ok)
@@ -50,7 +50,7 @@ func TestShardedVar_Acquire__should_return_false_when_unset(t *testing.T) {
 func TestShardedVar_SetRetain__should_retain_new_reference(t *testing.T) {
 	r := NewNoop(1)
 
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 	v.SetRetain(r)
 	assert.Equal(t, int64(2), r.Refcount())
 
@@ -62,7 +62,7 @@ func TestShardedVar_SetRetain__should_release_previous_reference(t *testing.T) {
 	r0 := NewNoop(1)
 	r1 := NewNoop(2)
 
-	v := NewShardedVar[int]()
+	v := newShardedVar[int]()
 	v.SetRetain(r0)
 	v.SetRetain(r1)
 
@@ -90,8 +90,14 @@ func TestShardedVar_SetRetain__should_release_previous_reference(t *testing.T) {
 
 // Shard
 
-func TestShardedValueCount__should_have_cache_line_size(t *testing.T) {
-	s := unsafe.Sizeof(shardedValueCount{})
+func TestShardedVarShard__should_have_cache_line_size(t *testing.T) {
+	s := unsafe.Sizeof(shardedVarShard[any]{})
 
-	assert.Equal(t, uintptr(256), s)
+	assert.Equal(t, 256, int(s))
+}
+
+func TestShardedVarRefCount__should_have_cache_line_size(t *testing.T) {
+	s := unsafe.Sizeof(varRefCount{})
+
+	assert.Equal(t, 256, int(s))
 }

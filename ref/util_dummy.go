@@ -4,8 +4,6 @@
 
 package ref
 
-var _ R[any] = (*dummyRef[any])(nil)
-
 type dummyRef[T any] struct{}
 
 func newDummyRef[T any]() R[T] {
