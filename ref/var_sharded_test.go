@@ -37,6 +37,14 @@ func TestShardedVar_Acquire__should_acquire_current_reference(t *testing.T) {
 	assert.Equal(t, int64(0), r.Refcount())
 }
 
+func TestShardedVar_Acquire__should_return_false_when_unset(t *testing.T) {
+	v := NewShardedVar[int]()
+
+	r, ok := v.Acquire()
+	assert.False(t, ok)
+	assert.Nil(t, r)
+}
+
 // SetRetain
 
 func TestShardedVar_SetRetain__should_retain_new_reference(t *testing.T) {
