@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/basecomplextech/baselibrary/async"
-	"github.com/basecomplextech/baselibrary/logging"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -32,25 +31,34 @@ func NewRetrier(opts Options) Retrier {
 var _ Retrier = (*retrier)(nil)
 
 type retrier struct {
-	opts Options
+	opts   Options
+	logger ErrorLogger
 }
 
 func newRetrier(opts Options) Retrier {
-	return &retrier{opts: opts}
+	logger := defaultErrorLogger
+	if opts.ErrorLogger != nil {
+		logger = opts.ErrorLogger
+	}
+
+	return &retrier{
+		opts:   opts,
+		logger: logger,
+	}
 }
 
 // Retry calls a function, retries on errors and panics, uses exponential backoff.
 func (r *retrier) Retry(ctx async.Context, fn func(ctx async.Context) status.Status) status.Status {
 	for attempt := 0; ; attempt++ {
 		// Call function
-		st := r.run(ctx, fn)
+		st := r.recover(ctx, fn)
 		switch st.Code {
 		case status.CodeOK, status.CodeCancelled:
 			return st
 		}
 
 		// Log error
-		r.logError(attempt, st)
+		r.logger.RetryError(st, attempt)
 
 		// Check max retries
 		if r.opts.MaxRetries != 0 {
@@ -84,13 +92,13 @@ func (r *retrier) Loop(ctx async.Context, fn func(ctx async.Context, success *bo
 		}
 
 		// Call function
-		st := fn(ctx, success)
+		st := r.recoverLoop(ctx, success, fn)
 		if st.Code == status.CodeCancelled {
 			return st
 		}
 
 		// Log error
-		r.logError(attempt, st)
+		r.logger.RetryError(st, attempt)
 
 		// Sleep before retry
 		delay := timeout(attempt, r.opts.MinTimeout, r.opts.MaxTimeout)
@@ -106,7 +114,9 @@ func (r *retrier) Loop(ctx async.Context, fn func(ctx async.Context, success *bo
 
 // private
 
-func (r *retrier) run(ctx async.Context, fn func(ctx async.Context) status.Status) (st status.Status) {
+func (r *retrier) recover(ctx async.Context,
+	fn func(ctx async.Context) status.Status) (st status.Status) {
+
 	defer func() {
 		if e := recover(); e != nil {
 			st = status.Recover(e)
@@ -116,20 +126,14 @@ func (r *retrier) run(ctx async.Context, fn func(ctx async.Context) status.Statu
 	return fn(ctx)
 }
 
-func (r *retrier) logError(attempt int, st status.Status) {
-	if r.opts.ErrorLogger != nil {
-		r.opts.ErrorLogger.LogError(attempt, st)
-		return
-	}
+func (r *retrier) recoverLoop(ctx async.Context, success *bool,
+	fn func(ctx async.Context, success *bool) status.Status) (st status.Status) {
 
-	logger := logging.Stderr
-	if r.opts.Logger != nil {
-		logger = r.opts.Logger
-	}
+	defer func() {
+		if e := recover(); e != nil {
+			st = status.Recover(e)
+		}
+	}()
 
-	if attempt == 0 {
-		logger.ErrorStatus("Failed to execute function", st)
-	} else {
-		logger.DebugStatus("Failed to execute function", st, "attempt", attempt)
-	}
+	return fn(ctx, success)
 }
