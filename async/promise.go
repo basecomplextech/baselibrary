@@ -14,11 +14,14 @@ import (
 type Promise[T any] interface {
 	Future[T]
 
-	// Complete completes the promise with a status and a result.
-	Complete(result T, st status.Status) bool
-
 	// Reject rejects the promise with a status.
 	Reject(st status.Status) bool
+
+	// Resolve completes the promise with a result and ok.
+	Resolve(result T) bool
+
+	// Complete completes the promise with a status and a result.
+	Complete(result T, st status.Status) bool
 }
 
 // NewPromise returns a pending promise.
@@ -70,6 +73,17 @@ func (p *promise[T]) Wait() <-chan struct{} {
 	return p.wait
 }
 
+// Reject rejects the promise with a status.
+func (p *promise[T]) Reject(st status.Status) bool {
+	var zero T
+	return p.Complete(zero, st)
+}
+
+// Resolve completes the promise with a result and ok.
+func (p *promise[T]) Resolve(result T) bool {
+	return p.Complete(result, status.OK)
+}
+
 // Complete completes the promise with a status and a result.
 func (p *promise[T]) Complete(result T, st status.Status) bool {
 	p.mu.Lock()
@@ -84,12 +98,6 @@ func (p *promise[T]) Complete(result T, st status.Status) bool {
 	p.result = result
 	close(p.wait)
 	return true
-}
-
-// Reject rejects the promise with a status.
-func (p *promise[T]) Reject(st status.Status) bool {
-	var zero T
-	return p.Complete(zero, st)
 }
 
 // Result returns a value and a status.

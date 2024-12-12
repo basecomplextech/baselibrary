@@ -25,6 +25,9 @@ type Future[T any] interface {
 
 // FutureDyn is a future interface without generics, i.e. Future[?].
 type FutureDyn interface {
+	// Done returns true if the future is complete.
+	Done() bool
+
 	// Wait returns a channel which is closed when the future is complete.
 	Wait() <-chan struct{}
 
