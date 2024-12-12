@@ -21,12 +21,12 @@ func newStdContext(ctx Context) *stdContext {
 	return &stdContext{ctx: ctx}
 }
 
-// Deadline returns the time when work done on behalf of this context should be canceled.
+// Deadline returns the time when work done on behalf of this context should be cancelled.
 func (x *stdContext) Deadline() (deadline time.Time, ok bool) {
 	return
 }
 
-// Done returns a channel that's closed when work done on behalf of this context should be canceled.
+// Done returns a channel that's closed when work done on behalf of this context should be cancelled.
 func (x *stdContext) Done() <-chan struct{} {
 	return x.ctx.Wait()
 }
