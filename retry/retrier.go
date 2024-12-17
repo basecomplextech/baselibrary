@@ -26,6 +26,11 @@ func NewRetrier(opts Options) Retrier {
 	return newRetrier(opts)
 }
 
+// NewRetrierLogger returns a new retrier with a custom error logger.
+func NewRetrierLogger(logger ErrorLogger) Retrier {
+	return newRetrier(Options{ErrorLogger: logger})
+}
+
 // internal
 
 var _ Retrier = (*retrier)(nil)
