@@ -13,24 +13,27 @@ import (
 
 type Context interface {
 	// Add adds multiple constructors or objects to the context, panics on duplicates.
-	//
 	// When passed an object, the method adds the concrete object, not an interface.
-	// Should you need to add an interface, use inject.Add[T], or pass a function
-	// that returns an interface `func() T { return obj }`.
+	//
+	// If you need to add an interface:
+	//	- Wrap an object into inject.Typed(obj),
+	//	- Or use generic inject.Add[T].
 	Add(vv ...any) Context
 
 	// AddOnce adds a constructor or an object if it does not exist already, skips duplicates.
-	//
 	// When passed an object, the method adds the concrete object, not an interface.
-	// Should you need to add an interface, use inject.AddOnce[T], or pass a function
-	// that returns an interface `func() T { return obj }`.
+	//
+	// If you need to add an interface:
+	//	- Wrap an object into inject.Typed(obj),
+	//	- Or use generic inject.AddOnce[T].
 	AddOnce(vv ...any) Context
 
 	// AddObject adds an object (not a constructor) to the context, panics on duplicates.
 	// The method treats functions as objects, not constructors.
 	//
-	// When passed an object, the method adds the concrete object, not an interface.
-	// Should you need to add an interface, use inject.AddObject[T].
+	// If you need to add an interface:
+	//	- Wrap an object into inject.Typed(obj),
+	//	- Or use generic inject.AddObject[T].
 	AddObject(obj any) Context
 
 	// Get inits an object and sets the pointer.
