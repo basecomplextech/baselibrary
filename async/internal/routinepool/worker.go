@@ -16,7 +16,7 @@ type worker struct {
 
 type task struct {
 	w  *worker
-	fn func()
+	fn Runner
 }
 
 func newWorker(p *pool) *worker {
@@ -31,7 +31,7 @@ func newWorker(p *pool) *worker {
 	return w
 }
 
-func (w *worker) Go(fn func()) {
+func (w *worker) run(runner Runner) {
 	if !w.running {
 		w.running = true
 
@@ -40,7 +40,7 @@ func (w *worker) Go(fn func()) {
 
 	task := task{
 		w:  w,
-		fn: fn,
+		fn: runner,
 	}
 	w.queue <- task
 }
@@ -63,6 +63,6 @@ func run(queue chan task) {
 }
 
 func runTask(t task) {
-	t.fn()
+	t.fn.Run()
 	t.w.pool.release(t.w)
 }

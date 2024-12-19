@@ -21,47 +21,18 @@ func NewRoutinePool() RoutinePool {
 
 // GoPool runs a function in a pool, recovers on panics.
 func GoPool(pool RoutinePool, fn func(ctx Context) status.Status) Routine[struct{}] {
-	r := newRoutine[struct{}]()
+	fn1 := func(ctx Context) (struct{}, status.Status) {
+		return struct{}{}, fn(ctx)
+	}
 
-	pool.Go(func() {
-		defer r.ctx.Free()
-		defer func() {
-			e := recover()
-			if e == nil {
-				return
-			}
-
-			st := status.Recover(e)
-			r.result.Complete(struct{}{}, st)
-		}()
-
-		st := fn(r.ctx)
-		r.result.Complete(struct{}{}, st)
-	})
-
+	r := newRoutine[struct{}](fn1)
+	pool.Run(r)
 	return r
 }
 
 // RunPool runs a function in a routine pool, and returns the result, recovers on panics.
 func RunPool[T any](pool RoutinePool, fn func(ctx Context) (T, status.Status)) Routine[T] {
-	r := newRoutine[T]()
-
-	pool.Go(func() {
-		defer r.ctx.Free()
-		defer func() {
-			e := recover()
-			if e == nil {
-				return
-			}
-
-			var zero T
-			st := status.Recover(e)
-			r.result.Complete(zero, st)
-		}()
-
-		result, st := fn(r.ctx)
-		r.result.Complete(result, st)
-	})
-
+	r := newRoutine[T](fn)
+	pool.Run(r)
 	return r
 }

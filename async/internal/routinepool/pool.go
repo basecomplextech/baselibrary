@@ -12,6 +12,9 @@ import (
 type RoutinePool interface {
 	// Go runs a function in the pool.
 	Go(fn func())
+
+	// Run runs a runner in the pool.
+	Run(r Runner)
 }
 
 // New returns a new goroutine pool.
@@ -38,7 +41,13 @@ func newPool() *pool {
 // Go runs a function in the pool.
 func (p *pool) Go(fn func()) {
 	w := p.pool.New()
-	w.Go(fn)
+	w.run(runnerFunc(fn))
+}
+
+// Run runs a runner in the pool.
+func (p *pool) Run(r Runner) {
+	w := p.pool.New()
+	w.run(r)
 }
 
 // release releases a worker to the pool.

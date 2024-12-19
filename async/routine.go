@@ -29,58 +29,25 @@ type RoutineDyn interface {
 
 // Go runs a function in a new routine, recovers on panics.
 func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
-	r := newRoutine[struct{}]()
+	fn1 := func(ctx Context) (struct{}, status.Status) {
+		return struct{}{}, fn(ctx)
+	}
 
-	go func() {
-		defer r.ctx.Free()
-		defer func() {
-			e := recover()
-			if e == nil {
-				return
-			}
-
-			st := status.Recover(e)
-			r.result.Complete(struct{}{}, st)
-		}()
-
-		st := fn(r.ctx)
-		r.result.Complete(struct{}{}, st)
-	}()
-
+	r := newRoutine[struct{}](fn1)
+	go r.Run()
 	return r
 }
-
-// Run
 
 // Run runs a function in a new routine, and returns the result, recovers on panics.
 func Run[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
-	r := newRoutine[T]()
-
-	go func() {
-		defer r.ctx.Free()
-		defer func() {
-			e := recover()
-			if e == nil {
-				return
-			}
-
-			var zero T
-			st := status.Recover(e)
-			r.result.Complete(zero, st)
-		}()
-
-		result, st := fn(r.ctx)
-		r.result.Complete(result, st)
-	}()
-
+	r := newRoutine[T](fn)
+	go r.Run()
 	return r
 }
 
-// Exited
-
 // Exited returns a routine which has exited with the given result and status.
 func Exited[T any](result T, st status.Status) Routine[T] {
-	r := newRoutine[T]()
+	r := newRoutine[T](nil)
 	r.result.Complete(result, st)
 	return r
 }
@@ -91,13 +58,15 @@ var _ Routine[any] = (*routine[any])(nil)
 
 type routine[T any] struct {
 	ctx    CancelContext
+	fn     func(ctx Context) (T, status.Status)
 	result promise[T]
 }
 
-func newRoutine[T any]() *routine[T] {
+func newRoutine[T any](fn func(ctx Context) (T, status.Status)) *routine[T] {
 	return &routine[T]{
 		ctx:    context.New(),
 		result: newPromiseEmbedded[T](),
+		fn:     fn,
 	}
 }
 
@@ -125,4 +94,23 @@ func (r *routine[T]) Result() (T, status.Status) {
 // Status returns a status or none.
 func (r *routine[T]) Status() status.Status {
 	return r.result.Status()
+}
+
+// private
+
+func (r *routine[T]) Run() {
+	defer r.ctx.Free()
+	defer func() {
+		e := recover()
+		if e == nil {
+			return
+		}
+
+		var zero T
+		st := status.Recover(e)
+		r.result.Complete(zero, st)
+	}()
+
+	result, st := r.fn(r.ctx)
+	r.result.Complete(result, st)
 }
