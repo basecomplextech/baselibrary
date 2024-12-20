@@ -22,6 +22,7 @@ type Routine[T any] interface {
 type RoutineDyn interface {
 	FutureDyn
 
+	// Stop requests the routine to stop and returns a wait channel.
 	Stop() <-chan struct{}
 }
 
@@ -64,6 +65,14 @@ type routine[T any] struct {
 
 func newRoutine[T any](fn func(ctx Context) (T, status.Status)) *routine[T] {
 	return &routine[T]{
+		ctx:    context.New(),
+		result: newPromiseEmbedded[T](),
+		fn:     fn,
+	}
+}
+
+func newRoutineEmbedded[T any](fn func(ctx Context) (T, status.Status)) routine[T] {
+	return routine[T]{
 		ctx:    context.New(),
 		result: newPromiseEmbedded[T](),
 		fn:     fn,
