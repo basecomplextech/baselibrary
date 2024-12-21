@@ -7,6 +7,7 @@ package async
 import (
 	"sync"
 
+	"github.com/basecomplextech/baselibrary/collect/chans"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -68,7 +69,7 @@ func (s *service) Wait() <-chan struct{} {
 	defer s.mu.Unlock()
 
 	if s.routine == nil {
-		return closedChan
+		return chans.Closed()
 	}
 	return s.routine.Wait()
 }
@@ -123,7 +124,7 @@ func (s *service) Stop() <-chan struct{} {
 	defer s.mu.Unlock()
 
 	if s.routine == nil {
-		return closedChan
+		return chans.Closed()
 	}
 	return s.routine.Stop()
 }

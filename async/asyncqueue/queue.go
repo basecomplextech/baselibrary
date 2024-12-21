@@ -2,21 +2,24 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package asyncqueue
 
 import (
 	"sync"
 
+	"github.com/basecomplextech/baselibrary/collect/chans"
 	"github.com/basecomplextech/baselibrary/collect/slices2"
 )
 
 // Queue is an unbounded FIFO queue.
 type Queue[T any] interface {
-	// Clear clears the queue.
-	Clear()
-
 	// Len returns the number of elements in the queue.
 	Len() int
+
+	// Methods
+
+	// Clear clears the queue.
+	Clear()
 
 	// Push adds an element to the queue, panics if the queue is freed.
 	Push(v T)
@@ -27,12 +30,14 @@ type Queue[T any] interface {
 	// Wait returns a channel which is notified on new elements.
 	Wait() <-chan struct{}
 
+	// Internal
+
 	// Free clears and closes the queue.
 	Free()
 }
 
-// NewQueue returns an empty queue.
-func NewQueue[T any](items ...T) Queue[T] {
+// New returns an empty queue.
+func New[T any](items ...T) Queue[T] {
 	q := newQueue[T]()
 
 	if len(items) > 0 {
@@ -57,6 +62,16 @@ func newQueue[T any]() *queue[T] {
 	}
 }
 
+// Len returns the number of elements in the queue.
+func (q *queue[T]) Len() int {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
+	return len(q.list)
+}
+
+// Methods
+
 // Clear clears the queue.
 func (q *queue[T]) Clear() {
 	q.mu.Lock()
@@ -64,14 +79,6 @@ func (q *queue[T]) Clear() {
 	q.assertNotFreed()
 
 	q.list = slices2.Truncate(q.list)
-}
-
-// Len returns the number of elements in the queue.
-func (q *queue[T]) Len() int {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
-
-	return len(q.list)
 }
 
 // Push adds an element to the queue, panics if the queue is freed.
@@ -113,10 +120,12 @@ func (q *queue[T]) Wait() <-chan struct{} {
 	q.assertNotFreed()
 
 	if len(q.list) > 0 {
-		return closedChan
+		return chans.Closed()
 	}
 	return q.wait
 }
+
+// Internal
 
 // Free clears and closes the queue.
 func (q *queue[T]) Free() {
@@ -139,9 +148,3 @@ func (q *queue[T]) assertNotFreed() {
 		panic("operation on freed queue")
 	}
 }
-
-var closedChan = func() chan struct{} {
-	ch := make(chan struct{})
-	close(ch)
-	return ch
-}()

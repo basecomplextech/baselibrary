@@ -7,6 +7,7 @@ package async
 import (
 	"sync"
 
+	"github.com/basecomplextech/baselibrary/collect/chans"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -68,7 +69,7 @@ func (p *promise[T]) Wait() <-chan struct{} {
 	defer p.mu.Unlock()
 
 	if p.done {
-		return closedChan
+		return chans.Closed()
 	}
 	return p.wait
 }
