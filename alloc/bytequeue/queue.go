@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package byteq
+package bytequeue
 
 import (
 	"math"
@@ -62,13 +62,13 @@ type Queue interface {
 }
 
 // New allocates an unbounded byte queue.
-func New(heap *heap.Heap) Queue {
-	return newQueue(heap, 0)
+func New() Queue {
+	return newQueue(heap.Global, 0)
 }
 
 // NewCap allocates a byte queue with a soft max capacity.
-func NewCap(heap *heap.Heap, cap int) Queue {
-	return newQueue(heap, cap)
+func NewCap(cap int) Queue {
+	return newQueue(heap.Global, cap)
 }
 
 // internal
