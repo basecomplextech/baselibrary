@@ -2,9 +2,10 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package asyncstream
 
 import (
+	"github.com/basecomplextech/baselibrary/async"
 	"github.com/basecomplextech/baselibrary/opt"
 	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/basecomplextech/baselibrary/status"
@@ -13,7 +14,7 @@ import (
 // Stream is an async stream of values.
 type Stream[T any] interface {
 	// Next returns the next value from the stream, or false if the stream has ended.
-	Next(ctx Context) (T, bool, status.Status)
+	Next(ctx async.Context) (T, bool, status.Status)
 
 	// Internal
 
@@ -22,21 +23,21 @@ type Stream[T any] interface {
 }
 
 // StreamNextFunc is a function that returns the next value from a stream.
-type StreamNextFunc[T any] func(ctx Context) (T, bool, status.Status)
+type StreamNextFunc[T any] func(ctx async.Context) (T, bool, status.Status)
 
-// NewStream returns a new stream.
-func NewStream[T any](next StreamNextFunc[T]) Stream[T] {
+// New returns a new stream.
+func New[T any](next StreamNextFunc[T]) Stream[T] {
 	return newStream(next, opt.None[ref.Freer]())
 }
 
-// NewStreamFree returns a new stream with a free function.
-func NewStreamFree[T any](next StreamNextFunc[T], free func()) Stream[T] {
+// NewFree returns a new stream with a free function.
+func NewFree[T any](next StreamNextFunc[T], free func()) Stream[T] {
 	freer := ref.FreeFunc(free)
-	return NewStreamFreer(next, freer)
+	return NewFreer(next, freer)
 }
 
-// NewStreamFreer returns a new stream with a freer.
-func NewStreamFreer[T any](next StreamNextFunc[T], freer ref.Freer) Stream[T] {
+// NewFreer returns a new stream with a freer.
+func NewFreer[T any](next StreamNextFunc[T], freer ref.Freer) Stream[T] {
 	return &stream[T]{
 		next:  next,
 		freer: opt.New(freer),
@@ -48,7 +49,7 @@ func NewStreamFreer[T any](next StreamNextFunc[T], freer ref.Freer) Stream[T] {
 var _ Stream[any] = (*stream[any])(nil)
 
 type stream[T any] struct {
-	next  func(ctx Context) (T, bool, status.Status)
+	next  func(ctx async.Context) (T, bool, status.Status)
 	freer opt.Opt[ref.Freer]
 }
 
@@ -60,7 +61,7 @@ func newStream[T any](next StreamNextFunc[T], freer opt.Opt[ref.Freer]) Stream[T
 }
 
 // Next returns the next value from the stream, or false if the stream has ended.
-func (s *stream[T]) Next(ctx Context) (T, bool, status.Status) {
+func (s *stream[T]) Next(ctx async.Context) (T, bool, status.Status) {
 	return s.next(ctx)
 }
 
