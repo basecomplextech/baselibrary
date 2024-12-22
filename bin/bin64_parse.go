@@ -5,6 +5,7 @@
 package bin
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 )
@@ -13,35 +14,34 @@ import (
 func Parse64(b []byte) (Bin64, error) {
 	switch {
 	case b == nil:
-		return Bin64{}, nil
+		return 0, nil
 	case len(b) == 0:
-		return Bin64{}, nil
+		return 0, nil
 	case len(b) != Len64:
-		return Bin64{}, errors.New("bin64: invalid bin64 length")
+		return 0, errors.New("bin64: invalid bin64 length")
 	}
 
-	v := Bin64{}
-	copy(v[:], b)
-	return v, nil
+	v := binary.BigEndian.Uint64(b)
+	return Bin64(v), nil
 }
 
 // ParseString64 parses a bin64 from 32-char string.
 func ParseString64(s string) (Bin64, error) {
 	switch {
 	case s == "":
-		return Bin64{}, nil
+		return 0, nil
 	case len(s) == 0:
-		return Bin64{}, nil
+		return 0, nil
 	case len(s) != Len64Char:
-		return Bin64{}, errors.New("bin64: invalid bin64 string length")
+		return 0, errors.New("bin64: invalid bin64 string length")
 	}
 
-	v := Bin64{}
-	_, err := hex.Decode(v[:], []byte(s))
+	p := [Len64]byte{}
+	_, err := hex.Decode(p[:], []byte(s))
 	if err != nil {
-		return v, err
+		return 0, err
 	}
-	return v, nil
+	return Parse64(p[:])
 }
 
 // MustParseString64 parses a bin64 from 16-char string or panics.

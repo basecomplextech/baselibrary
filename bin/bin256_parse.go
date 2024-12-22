@@ -5,6 +5,7 @@
 package bin
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 )
@@ -21,10 +22,10 @@ func Parse256(b []byte) (Bin256, error) {
 	}
 
 	v := Bin256{}
-	copy(v[0][:], b)
-	copy(v[1][:], b[8:])
-	copy(v[2][:], b[16:])
-	copy(v[3][:], b[24:])
+	v[0] = Bin64(binary.BigEndian.Uint64(b))
+	v[1] = Bin64(binary.BigEndian.Uint64(b[8:]))
+	v[2] = Bin64(binary.BigEndian.Uint64(b[16:]))
+	v[3] = Bin64(binary.BigEndian.Uint64(b[24:]))
 	return v, nil
 }
 
@@ -39,26 +40,26 @@ func ParseString256(s string) (Bin256, error) {
 		return Bin256{}, errors.New("bin256: invalid bin256 length")
 	}
 
-	v := Bin256{}
 	b := unsafeByteString(s)
+	p := [Len256]byte{}
 
-	_, err := hex.Decode(v[0][:], b[:16])
+	_, err := hex.Decode(p[:8], b[:16])
 	if err != nil {
-		return v, err
+		return Bin256{}, err
 	}
-	_, err = hex.Decode(v[1][:], b[17:33])
+	_, err = hex.Decode(p[8:16], b[17:33])
 	if err != nil {
-		return v, err
+		return Bin256{}, err
 	}
-	_, err = hex.Decode(v[2][:], b[34:50])
+	_, err = hex.Decode(p[16:24], b[34:50])
 	if err != nil {
-		return v, err
+		return Bin256{}, err
 	}
-	_, err = hex.Decode(v[3][:], b[51:])
+	_, err = hex.Decode(p[24:], b[51:])
 	if err != nil {
-		return v, err
+		return Bin256{}, err
 	}
-	return v, nil
+	return Parse256(p[:])
 }
 
 // MustParseString256 parses a bin256 from 67-char string or panics.

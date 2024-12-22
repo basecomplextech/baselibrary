@@ -14,18 +14,18 @@ func Random256() Bin256 {
 	p := random.read256()
 
 	b := Bin256{}
-	copy(b[0][:], p[:])
-	copy(b[1][:], p[8:])
-	copy(b[2][:], p[16:])
-	copy(b[3][:], p[24:])
+	b[0] = Bin64(binary.BigEndian.Uint64(p[:8]))
+	b[1] = Bin64(binary.BigEndian.Uint64(p[8:]))
+	b[2] = Bin64(binary.BigEndian.Uint64(p[16:]))
+	b[3] = Bin64(binary.BigEndian.Uint64(p[24:]))
 	return b
 }
 
 // TimeRandom256 returns a time-random bin256 with a millisecond resolution.
 func TimeRandom256() Bin256 {
-	b := Random256()
-
 	now := time.Now().UnixNano() / int64(time.Millisecond)
-	binary.BigEndian.PutUint64(b[0][:], uint64(now))
+
+	b := Random256()
+	b[0] = Bin64(uint64(now))
 	return b
 }

@@ -5,9 +5,11 @@
 package bin
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"regexp"
+	"slices"
 
 	"github.com/basecomplextech/baselibrary/buffer"
 )
@@ -26,8 +28,8 @@ type Bin128 [2]Bin64
 // New128 returns a bin128 from a byte array.
 func New128(b [Len128]byte) Bin128 {
 	v := Bin128{}
-	copy(v[0][:], b[0:])
-	copy(v[1][:], b[8:])
+	v[0] = Bin64(binary.BigEndian.Uint64(b[0:]))
+	v[1] = Bin64(binary.BigEndian.Uint64(b[8:]))
 	return v
 }
 
@@ -114,22 +116,25 @@ func (b Bin128) Hash64() uint64 {
 
 // String returns a 33-char lower-case hex-encoded string.
 func (b Bin128) String() string {
-	buf := make([]byte, Len128Char)
-	hex.Encode(buf, b[0][:])
-	buf[16] = '-'
-	hex.Encode(buf[17:], b[1][:])
+	buf := make([]byte, 0, Len128Char)
+	buf = b.AppendHexTo(buf)
 	return string(buf)
 }
 
 // AppendHexTo appends a 33-char lower-case hex-encoded string to a buffer.
 func (b Bin128) AppendHexTo(buf []byte) []byte {
+	p := [Len128]byte{}
+	b.MarshalTo(p[:])
+
 	n := len(buf)
 	n1 := n + Len128Char
 
+	buf = slices.Grow(buf, n1)
 	buf = buf[:n1]
-	hex.Encode(buf[n:], b[0][:])
+
+	hex.Encode(buf[n:], p[:8])
 	buf[n+16] = '-'
-	hex.Encode(buf[n+17:], b[1][:])
+	hex.Encode(buf[n+17:], p[8:])
 	return buf
 }
 
@@ -144,8 +149,8 @@ func (b Bin128) Marshal() []byte {
 
 // MarshalTo marshals the value to a 16-byte array.
 func (b Bin128) MarshalTo(buf []byte) {
-	copy(buf, b[0][:])
-	copy(buf[8:], b[1][:])
+	b[0].MarshalTo(buf)
+	b[1].MarshalTo(buf[8:])
 }
 
 // MarshalToBuffer marshals the value to a buffer.

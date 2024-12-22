@@ -6,9 +6,11 @@
 package bin
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"regexp"
+	"slices"
 
 	"github.com/basecomplextech/baselibrary/buffer"
 )
@@ -25,13 +27,13 @@ var Regexp256 = regexp.MustCompile(`^[0-9A-Za-z]{16}-[0-9A-Za-z]{16}-[0-9A-Za-z]
 type Bin256 [4]Bin64
 
 // New256 returns a bin256 from a byte array.
-func New256(b [Len256]byte) Bin256 {
-	v := Bin256{}
-	copy(v[0][:], b[0:])
-	copy(v[1][:], b[8:])
-	copy(v[2][:], b[16:])
-	copy(v[3][:], b[24:])
-	return v
+func New256(p [Len256]byte) Bin256 {
+	b := Bin256{}
+	b[0] = Bin64(binary.BigEndian.Uint64(p[:8]))
+	b[1] = Bin64(binary.BigEndian.Uint64(p[8:16]))
+	b[2] = Bin64(binary.BigEndian.Uint64(p[16:24]))
+	b[3] = Bin64(binary.BigEndian.Uint64(p[24:]))
+	return b
 }
 
 // Int256 returns a bin256 from four int64s encoded as big-endian.
@@ -141,30 +143,29 @@ func (b Bin256) Hash64() uint64 {
 
 // String returns a 64-char lower-case hex-encoded string.
 func (b Bin256) String() string {
-	buf := make([]byte, Len256Char)
-	hex.Encode(buf, b[0][:])
-	buf[16] = '-'
-	hex.Encode(buf[17:], b[1][:])
-	buf[33] = '-'
-	hex.Encode(buf[34:], b[2][:])
-	buf[50] = '-'
-	hex.Encode(buf[51:], b[3][:])
+	buf := make([]byte, 0, Len256)
+	buf = b.AppendHexTo(buf)
 	return string(buf)
 }
 
 // AppendHexTo appends a 67-char lower-case hex-encoded string to a buffer.
 func (b Bin256) AppendHexTo(buf []byte) []byte {
+	p := [Len256]byte{}
+	b.MarshalTo(p[:])
+
 	n := len(buf)
 	n1 := n + Len256Char
 
+	buf = slices.Grow(buf, n1)
 	buf = buf[:n1]
-	hex.Encode(buf[n:], b[0][:])
+
+	hex.Encode(buf[n:], p[:8])
 	buf[n+16] = '-'
-	hex.Encode(buf[n+17:], b[1][:])
+	hex.Encode(buf[n+17:], p[8:16])
 	buf[n+33] = '-'
-	hex.Encode(buf[n+34:], b[2][:])
+	hex.Encode(buf[n+34:], p[16:24])
 	buf[n+50] = '-'
-	hex.Encode(buf[n+51:], b[3][:])
+	hex.Encode(buf[n+51:], p[24:])
 	return buf
 }
 
