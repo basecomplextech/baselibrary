@@ -81,11 +81,7 @@ func TestHLClock_Update__should_update_last_time_increment_sequence(t *testing.T
 
 	c := newHLClock()
 
-	b, st := c.Update(a)
-	if !st.OK() {
-		t.Fatal(st)
-	}
-
+	b := c.Update(a)
 	assert.Equal(t, a.Wall, b.Wall)
 	assert.Equal(t, a.Seq+1, b.Seq)
 }
@@ -98,15 +94,8 @@ func TestHLClock_Update__should_increment_seq_when_equal_wall_times(t *testing.T
 
 	c := newHLClock()
 
-	_, st := c.Update(a)
-	if !st.OK() {
-		t.Fatal(st)
-	}
-	b, st := c.Update(a)
-	if !st.OK() {
-		t.Fatal(st)
-	}
-
+	_ = c.Update(a)
+	b := c.Update(a)
 	assert.Equal(t, a.Wall, b.Wall)
 	assert.Equal(t, a.Seq+2, b.Seq)
 }

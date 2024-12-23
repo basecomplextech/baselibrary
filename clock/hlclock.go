@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/basecomplextech/baselibrary/proto/pclock"
-	"github.com/basecomplextech/baselibrary/status"
 )
 
-// HLClock is a hybrid logical clock.
+// HLClock is a thread-safe hybrid logical clock.
 //
 // See "Logical Physical Clocks and Consistent Snapshots in Globally Distributed Databases"
 // https://cse.buffalo.edu/tech-reports/2014-04.pdf
@@ -25,7 +24,7 @@ type HLClock interface {
 	Next() pclock.HLTimestamp
 
 	// Update updates the last time if another is greater, increments the sequence number.
-	Update(t pclock.HLTimestamp) (pclock.HLTimestamp, status.Status)
+	Update(t pclock.HLTimestamp) pclock.HLTimestamp
 }
 
 // NewHLClock returns a new hybrid logical clock.
@@ -77,7 +76,7 @@ func (c *hlClock) Next() pclock.HLTimestamp {
 }
 
 // Update updates the last time if another is greater, increments the sequence number.
-func (c *hlClock) Update(t pclock.HLTimestamp) (pclock.HLTimestamp, status.Status) {
+func (c *hlClock) Update(t pclock.HLTimestamp) pclock.HLTimestamp {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -91,7 +90,7 @@ func (c *hlClock) Update(t pclock.HLTimestamp) (pclock.HLTimestamp, status.Statu
 	}
 
 	t1 := pclock.HLTimestamp{Wall: c.wall, Seq: c.seq}
-	return t1, status.OK
+	return t1
 }
 
 // private
