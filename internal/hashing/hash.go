@@ -68,7 +68,14 @@ func Hash[K any](key K) uint32 {
 		return v.Hash32()
 	case bin.Bin256:
 		return v.Hash32()
+
+	case Hasher:
+		return v.Hash32()
 	}
 
 	panic(fmt.Sprintf("unsupported type %T", key))
+}
+
+type Hasher interface {
+	Hash32() uint32
 }
