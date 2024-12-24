@@ -30,8 +30,8 @@ var (
 // HLTimestamp
 
 type HLTimestamp struct {
-	Wall int64  `json:"Wall"`
-	Seq  uint32 `json:"Seq"`
+	Wall  int64  `json:"Wall"`
+	Logic uint32 `json:"Logic"`
 }
 
 func OpenHLTimestamp(b []byte) HLTimestamp {
@@ -60,7 +60,7 @@ func (s *HLTimestamp) Decode(b []byte) (size int, err error) {
 
 	// Decode in reverse order
 
-	s.Seq, n, err = spec.DecodeUint32(b[:off])
+	s.Logic, n, err = spec.DecodeUint32(b[:off])
 	if err != nil {
 		return
 	}
@@ -85,7 +85,7 @@ func (s HLTimestamp) EncodeTo(b buffer.Buffer) (int, error) {
 	}
 	dataSize += n
 
-	n, err = spec.EncodeUint32(b, s.Seq)
+	n, err = spec.EncodeUint32(b, s.Logic)
 	if err != nil {
 		return 0, err
 	}

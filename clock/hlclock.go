@@ -37,9 +37,9 @@ func NewHLClock() HLClock {
 var _ HLClock = (*hlClock)(nil)
 
 type hlClock struct {
-	mu   sync.RWMutex
-	wall int64 // can be accessed atomically by readers
-	seq  uint32
+	mu    sync.RWMutex
+	wall  int64 // can be accessed atomically by readers
+	logic uint32
 }
 
 func newHLClock() *hlClock {
@@ -66,13 +66,13 @@ func (c *hlClock) Next() pclock.HLTimestamp {
 
 	next := time.Now().UnixNano()
 	if next > c.wall {
-		c.seq = 0
+		c.logic = 0
 		c.storeWall(next)
 	} else {
-		c.seq++
+		c.logic++
 	}
 
-	return pclock.HLTimestamp{Wall: c.wall, Seq: c.seq}
+	return pclock.HLTimestamp{Wall: c.wall, Logic: c.logic}
 }
 
 // Update updates the last time if another is greater, increments the sequence number.
@@ -82,14 +82,14 @@ func (c *hlClock) Update(t pclock.HLTimestamp) pclock.HLTimestamp {
 
 	switch {
 	case t.Wall == c.wall:
-		c.seq = max(t.Seq, c.seq) + 1
+		c.logic = max(t.Logic, c.logic) + 1
 
 	case t.Wall > c.wall:
-		c.seq = t.Seq + 1
+		c.logic = t.Logic + 1
 		c.wall = t.Wall
 	}
 
-	t1 := pclock.HLTimestamp{Wall: c.wall, Seq: c.seq}
+	t1 := pclock.HLTimestamp{Wall: c.wall, Logic: c.logic}
 	return t1
 }
 
@@ -99,7 +99,7 @@ func (c *hlClock) load() pclock.HLTimestamp {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	return pclock.HLTimestamp{Wall: c.wall, Seq: c.seq}
+	return pclock.HLTimestamp{Wall: c.wall, Logic: c.logic}
 }
 
 func (c *hlClock) loadWall() int64 {

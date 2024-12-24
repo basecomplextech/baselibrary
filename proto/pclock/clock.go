@@ -17,9 +17,9 @@ func (t HLTimestamp) Compare(t1 HLTimestamp) int {
 	switch {
 	case t.Wall == t1.Wall:
 		switch {
-		case t.Seq == t1.Seq:
+		case t.Logic == t1.Logic:
 			return 0
-		case t.Seq < t1.Seq:
+		case t.Logic < t1.Logic:
 			return -1
 		default:
 			return 1
@@ -61,7 +61,7 @@ func (t HLTimestamp) Max(t1 HLTimestamp) HLTimestamp {
 
 // String
 
-// String returns a "wall.seq" string.
+// String returns a "wall.logic" string.
 func (t HLTimestamp) String() string {
-	return fmt.Sprintf("%d.%d", t.Wall, t.Seq)
+	return fmt.Sprintf("%d.%d", t.Wall, t.Logic)
 }

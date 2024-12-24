@@ -6,5 +6,5 @@ options (
 // HLTimestamp is a hybrid logical timestamp.
 struct HLTimestamp {
     Wall    int64;  // physical time in unix nanoseconds
-    Seq     uint32; // logical sequence number
+    Logic   uint32; // logical sequence number
 }
