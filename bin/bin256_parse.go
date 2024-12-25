@@ -5,7 +5,6 @@
 package bin
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"errors"
 )
@@ -22,10 +21,10 @@ func Parse256(b []byte) (Bin256, error) {
 	}
 
 	v := Bin256{}
-	v[0] = Bin64(binary.BigEndian.Uint64(b))
-	v[1] = Bin64(binary.BigEndian.Uint64(b[8:]))
-	v[2] = Bin64(binary.BigEndian.Uint64(b[16:]))
-	v[3] = Bin64(binary.BigEndian.Uint64(b[24:]))
+	copy(v[0][:], b[:8])
+	copy(v[1][:], b[8:16])
+	copy(v[2][:], b[16:24])
+	copy(v[3][:], b[24:])
 	return v, nil
 }
 

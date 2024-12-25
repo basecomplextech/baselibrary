@@ -6,7 +6,6 @@
 package bin
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"regexp"
@@ -29,10 +28,10 @@ type Bin256 [4]Bin64
 // New256 returns a bin256 from a byte array.
 func New256(p [Len256]byte) Bin256 {
 	b := Bin256{}
-	b[0] = Bin64(binary.BigEndian.Uint64(p[:8]))
-	b[1] = Bin64(binary.BigEndian.Uint64(p[8:16]))
-	b[2] = Bin64(binary.BigEndian.Uint64(p[16:24]))
-	b[3] = Bin64(binary.BigEndian.Uint64(p[24:]))
+	copy(b[0][:], p[:8])
+	copy(b[1][:], p[8:16])
+	copy(b[2][:], p[16:24])
+	copy(b[3][:], p[24:])
 	return b
 }
 
@@ -60,24 +59,35 @@ func (b Bin256) Size() int {
 //	-1 if a < b
 //	 0 if a == b
 //	 1 if a > b
-func (b0 Bin256) Compare(b1 Bin256) int {
-	for i := 0; i < 4; i++ {
-		cmp := b0[i].Compare(b1[i])
-		if cmp != 0 {
-			return cmp
-		}
+func (b Bin256) Compare(b1 Bin256) int {
+	c := b[0].Compare(b1[0])
+	if c != 0 {
+		return c
 	}
-	return 0
+	c = b[1].Compare(b1[1])
+	if c != 0 {
+		return c
+	}
+	c = b[2].Compare(b1[2])
+	if c != 0 {
+		return c
+	}
+	return b[3].Compare(b1[3])
 }
 
 // Equal returns whether two values are equal.
-func (b0 Bin256) Equal(b1 Bin256) bool {
-	return b0 == b1
+func (b Bin256) Equal(b1 Bin256) bool {
+	return b == b1
 }
 
 // Less returns whether the current value is less than another.
-func (b0 Bin256) Less(b1 Bin256) bool {
-	return b0.Compare(b1) < 0
+func (b Bin256) Less(b1 Bin256) bool {
+	return b.Compare(b1) < 0
+}
+
+// IsZero returns whether the value is zero.
+func (b Bin256) IsZero() bool {
+	return b == Bin256{}
 }
 
 // Ints

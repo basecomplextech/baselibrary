@@ -6,6 +6,27 @@ package bin
 
 import "testing"
 
+func BenchmarkBin64_Compare(b *testing.B) {
+	v := Random64()
+	v1 := Random64()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	var c int
+	for i := 0; i < b.N; i++ {
+		c = v.Compare(v1)
+	}
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+
+	b.ReportMetric(ops/1000_000, "mops")
+	_ = c
+}
+
+// String
+
 func BenchmarkBin64_String(b *testing.B) {
 	v := Random64()
 

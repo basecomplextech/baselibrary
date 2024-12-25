@@ -29,7 +29,7 @@ func TestParseString64(t *testing.T) {
 }
 
 func TestRegexp64__should_match_string(t *testing.T) {
-	s0 := (Bin64(0)).String()
+	s0 := (Bin64{}).String()
 	s1 := Random64().String()
 	s2 := " 341a7d60bc5893a6 "
 	s3 := "341a7d60-bc5893a6"

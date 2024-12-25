@@ -5,7 +5,6 @@
 package bin
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"errors"
 )
@@ -22,8 +21,8 @@ func Parse128(b []byte) (Bin128, error) {
 	}
 
 	v := Bin128{}
-	v[0] = Bin64(binary.BigEndian.Uint64(b))
-	v[1] = Bin64(binary.BigEndian.Uint64(b[8:]))
+	copy(v[0][:], b[:8])
+	copy(v[1][:], b[8:])
 	return v, nil
 }
 
@@ -39,17 +38,17 @@ func ParseString128(s string) (Bin128, error) {
 	}
 
 	b := unsafeByteString(s)
-	p := [Len128]byte{}
+	p := Bin128{}
 
-	_, err := hex.Decode(p[:8], b[:16])
+	_, err := hex.Decode(p[0][:], b[:16])
 	if err != nil {
 		return Bin128{}, err
 	}
-	_, err = hex.Decode(p[8:], b[17:])
+	_, err = hex.Decode(p[1][:], b[17:])
 	if err != nil {
 		return Bin128{}, err
 	}
-	return Parse128(p[:])
+	return p, nil
 }
 
 // MustParseString128 parses a bin128 from 33-char string or panics.

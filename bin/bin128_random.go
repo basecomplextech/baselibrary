@@ -14,8 +14,8 @@ func Random128() Bin128 {
 	p := random.read128()
 
 	b := Bin128{}
-	b[0] = Bin64(binary.BigEndian.Uint64(p[:8]))
-	b[1] = Bin64(binary.BigEndian.Uint64(p[8:]))
+	copy(b[0][:], p[:8])
+	copy(b[1][:], p[8:])
 	return b
 }
 
@@ -24,6 +24,6 @@ func TimeRandom128() Bin128 {
 	now := time.Now().UnixNano() / int64(time.Millisecond)
 
 	b := Random128()
-	b[0] = Bin64(uint64(now))
+	binary.BigEndian.PutUint64(b[0][:], uint64(now))
 	return b
 }

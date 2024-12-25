@@ -5,7 +5,6 @@
 package bin
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"regexp"
@@ -28,8 +27,8 @@ type Bin128 [2]Bin64
 // New128 returns a bin128 from a byte array.
 func New128(b [Len128]byte) Bin128 {
 	v := Bin128{}
-	v[0] = Bin64(binary.BigEndian.Uint64(b[0:]))
-	v[1] = Bin64(binary.BigEndian.Uint64(b[8:]))
+	copy(v[0][:], b[:8])
+	copy(v[1][:], b[8:])
 	return v
 }
 
@@ -55,38 +54,43 @@ func (b Bin128) Size() int {
 //	-1 if a < b
 //	 0 if a == b
 //	 1 if a > b
-func (b0 Bin128) Compare(b1 Bin128) int {
-	cmp := b0[0].Compare(b1[0])
-	if cmp != 0 {
-		return cmp
+func (b Bin128) Compare(b1 Bin128) int {
+	c := b[0].Compare(b1[0])
+	if c != 0 {
+		return c
 	}
-	return b0[1].Compare(b1[1])
+	return b[1].Compare(b1[1])
 }
 
 // Equal returns whether two values are equal.
-func (b0 Bin128) Equal(b1 Bin128) bool {
-	return b0 == b1
+func (b Bin128) Equal(b1 Bin128) bool {
+	return b == b1
 }
 
 // Less returns whether the current value is less than another.
-func (b0 Bin128) Less(b1 Bin128) bool {
-	return b0.Compare(b1) < 0
+func (b Bin128) Less(b1 Bin128) bool {
+	return b.Compare(b1) < 0
+}
+
+// IsZero returns whether the value is zero.
+func (b Bin128) IsZero() bool {
+	return b == Bin128{}
 }
 
 // Ints
 
 // Int64 returns two int64 decoded as big-endian.
 func (b Bin128) Int64() (int64, int64) {
-	v0 := b[0].Int64()
-	v1 := b[1].Int64()
-	return v0, v1
+	i0 := b[0].Int64()
+	i1 := b[1].Int64()
+	return i0, i1
 }
 
 // Uint64 returns two uint64 decoded as big-endian.
 func (b Bin128) Uint64() (uint64, uint64) {
-	v0 := b[0].Uint64()
-	v1 := b[1].Uint64()
-	return v0, v1
+	u0 := b[0].Uint64()
+	u1 := b[1].Uint64()
+	return u0, u1
 }
 
 // Hash
@@ -94,22 +98,22 @@ func (b Bin128) Uint64() (uint64, uint64) {
 // Hash32 returns a 32-bit hash.
 // The method decodes the value as two big-endian uint64s and then xors their halves.
 func (b Bin128) Hash32() uint32 {
-	v0 := b[0].Uint64()
-	v1 := b[1].Uint64()
+	u0 := b[0].Uint64()
+	u1 := b[1].Uint64()
 
-	v0 = v0 ^ (v0 >> 32)
-	v1 = v1 ^ (v1 >> 32)
+	u0 = u0 ^ (u0 >> 32)
+	u1 = u1 ^ (u1 >> 32)
 
-	v := v0 ^ v1
+	v := u0 ^ u1
 	return uint32(v)
 }
 
 // Hash64 returns a 64-bit hash.
 // The method decodes the value as two big-endian uint64s and then xors them.
 func (b Bin128) Hash64() uint64 {
-	v0 := b[0].Uint64()
-	v1 := b[1].Uint64()
-	return v0 ^ v1
+	u0 := b[0].Uint64()
+	u1 := b[1].Uint64()
+	return u0 ^ u1
 }
 
 // String/Hex
