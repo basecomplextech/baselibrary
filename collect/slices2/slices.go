@@ -26,20 +26,6 @@ func Insert[S ~[]T, T any](s S, index int, item T) []T {
 	return s
 }
 
-// LeftShift shifts the slice left by n, and returns the truncated slice.
-func LeftShift[S ~[]T, T any](s S, n int) S {
-	copy(s, s[n:])
-
-	// Clear n last elements for GC
-	var zero T
-	for i := len(s) - n; i < len(s); i++ {
-		s[i] = zero
-	}
-
-	// Truncate slice
-	return s[:len(s)-n]
-}
-
 // Random returns a random item from the slice, panics if the slice is empty.
 // Internally uses math/rand.Intn to generate a random index.
 func Random[S ~[]T, T any](s S) T {
@@ -63,6 +49,20 @@ func RemoveAt[S ~[]T, T any](s S, index int, n int) S {
 	// Clear n last elements for GC
 	for i := len(s) - n; i < len(s); i++ {
 		var zero T
+		s[i] = zero
+	}
+
+	// Truncate slice
+	return s[:len(s)-n]
+}
+
+// ShiftLeft shifts the slice left by n, and returns the truncated slice.
+func ShiftLeft[S ~[]T, T any](s S, n int) S {
+	copy(s, s[n:])
+
+	// Clear n last elements for GC
+	var zero T
+	for i := len(s) - n; i < len(s); i++ {
 		s[i] = zero
 	}
 
