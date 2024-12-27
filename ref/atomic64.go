@@ -45,17 +45,27 @@ func (r *Atomic64) Acquire() (acquired bool) {
 	return true
 }
 
+// Retain increments the refcount, panics if the reference has been released already.
+func (r *Atomic64) Retain() {
+	v := r.refs.Add(1)
+
+	_, released := unpackAtomic64(v)
+	if released {
+		panic("retain of already released reference")
+	}
+}
+
 // Release decrements the refcount and returns true if the reference has been released,
 // or false if the reference is still alive.
 func (r *Atomic64) Release() (released bool) {
 	v := r.refs.Add(-1)
 
 	// Check alive or released already
-	refs, releasedAlready := unpackAtomic64(v)
+	refs, released := unpackAtomic64(v)
 	switch {
 	case refs < 0:
 		panic("release of already released reference")
-	case refs > 0 || releasedAlready:
+	case refs > 0 || released:
 		return false
 	}
 
