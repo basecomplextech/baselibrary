@@ -34,14 +34,14 @@ func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
 		return struct{}{}, fn(ctx)
 	}
 
-	r := newRoutine[struct{}](fn1)
+	r := newRoutine(fn1)
 	go r.Run()
 	return r
 }
 
 // Run runs a function in a new routine, and returns the result, recovers on panics.
 func Run[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
-	r := newRoutine[T](fn)
+	r := newRoutine(fn)
 	go r.Run()
 	return r
 }

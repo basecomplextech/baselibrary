@@ -36,6 +36,16 @@ func (g RoutineGroup[T]) AwaitResults(ctx Context) ([]Result[T], status.Status) 
 	return awaitResults(ctx, g...)
 }
 
+// Values returns the values of all results in the group.
+func (g RoutineGroup[T]) Values() []T {
+	values := make([]T, 0, len(g))
+	for _, r := range g {
+		value, _ := r.Result()
+		values = append(values, value)
+	}
+	return values
+}
+
 // Results returns the results of all routines in the group.
 func (g RoutineGroup[T]) Results() []Result[T] {
 	results := make([]Result[T], 0, len(g))
