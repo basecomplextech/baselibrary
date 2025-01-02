@@ -7,7 +7,7 @@ package pclock
 import "time"
 
 func TestHLTimestamp() HLTimestamp {
-	now := time.Now().Nanosecond()
+	now := time.Now().UnixNano()
 
 	return HLTimestamp{
 		Wall: int64(now),
