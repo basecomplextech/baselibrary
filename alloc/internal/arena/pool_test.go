@@ -6,6 +6,7 @@ package arena
 
 import (
 	"math"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -114,4 +115,28 @@ func TestPool_Put__should_swap_head_item(t *testing.T) {
 
 	m1 := m.next.Load()
 	assert.Same(t, v0, &m1.obj)
+}
+
+// Race
+
+func TestPool__should_have_no_race_conditions(t *testing.T) {
+	a := TestMutex()
+	p := newPool[int64](a)
+
+	num := 1000
+	wg := sync.WaitGroup{}
+	wg.Add(num)
+
+	for i := 0; i < 1000; i++ {
+		go func() {
+			defer wg.Done()
+
+			for j := 0; j < 1000; j++ {
+				v, _ := p.Get()
+				p.Put(v)
+			}
+		}()
+	}
+
+	wg.Wait()
 }

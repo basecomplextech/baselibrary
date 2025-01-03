@@ -10,12 +10,13 @@ import (
 )
 
 // Pool is a pool of objects allocated in the arena.
+// It is thread-safe but only if backed by [MutexArena].
 // The pool itself is allocated in the arena.
 type Pool[T any] interface {
 	// Get acquires an object and returns true, or allocates a new one and returns false.
 	Get() (*T, bool)
 
-	// Put puts an object back into the pool.
+	// Put puts an object back into the pool, does not zero it.
 	// The object must be allocated in this pool.
 	Put(obj *T)
 }
@@ -67,7 +68,7 @@ func (p *pool[T]) Get() (_ *T, ok bool) {
 			continue
 		}
 
-		// Reset and return object
+		// Return object
 		item.next.Store(nil)
 		return &item.obj, true
 	}
@@ -77,7 +78,7 @@ func (p *pool[T]) Get() (_ *T, ok bool) {
 	return &m.obj, false
 }
 
-// Put puts an object back into the pool.
+// Put puts an object back into the pool, does not zero it.
 // The object must be allocated in this pool.
 func (p *pool[T]) Put(obj *T) {
 	// Compute item address

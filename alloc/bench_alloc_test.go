@@ -174,9 +174,9 @@ func Benchmark_Alloc(b *testing.B) {
 	b.ReportMetric(float64(capacity), "cap,mb")
 }
 
-func Benchmark_FreeList_Get_Put(b *testing.B) {
+func Benchmark_Pool(b *testing.B) {
 	a := arena.Test()
-	list := NewFreeList[int64](a)
+	p := NewPool[int64](a)
 	size := 8
 
 	b.ResetTimer()
@@ -184,8 +184,8 @@ func Benchmark_FreeList_Get_Put(b *testing.B) {
 	b.SetBytes(int64(size))
 
 	for i := 0; i < b.N; i++ {
-		v := list.Get()
-		list.Put(v)
+		v, _ := p.Get()
+		p.Put(v)
 	}
 
 	sec := b.Elapsed().Seconds()

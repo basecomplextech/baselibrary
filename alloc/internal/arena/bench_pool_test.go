@@ -6,7 +6,7 @@ package arena
 
 import "testing"
 
-func BenchmarkPool_GetPut(b *testing.B) {
+func BenchmarkPool(b *testing.B) {
 	a := Test()
 	p := NewPool[int64](a)
 

@@ -7,6 +7,7 @@ package alloc
 import "github.com/basecomplextech/baselibrary/alloc/internal/arena"
 
 // Pool is a pool of objects allocated in the arena.
+// It is thread-safe but only if backed by [MutexArena].
 // The pool itself is allocated in the arena.
 type Pool[T any] interface {
 	// Get acquires an object and returns true, or allocates a new one and returns false.
