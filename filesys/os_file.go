@@ -83,6 +83,7 @@ func (f *file) Size() (int64, error) {
 
 // Sync syncs the file to disk.
 func (f *file) Sync() error {
+	return nil
 	fd := f.Fd()
 	return syscall.Fsync(int(fd))
 }
