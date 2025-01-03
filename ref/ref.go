@@ -14,9 +14,6 @@ type R[T any] interface {
 	// Refcount returns the number of current references.
 	Refcount() int64
 
-	// Acquire tries to increment refcount and returns true, or false if already released.
-	Acquire() bool
-
 	// Retain increments refcount, panics when count is <= 0.
 	Retain()
 

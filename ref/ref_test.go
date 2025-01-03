@@ -28,8 +28,8 @@ func TestRef(t *testing.T) {
 	ref.Release()
 	require.True(t, freed)
 
-	ok := ref.Acquire()
-	require.False(t, ok)
+	refs := ref.Refcount()
+	require.Equal(t, int64(0), refs)
 }
 
 // Freer
@@ -52,8 +52,8 @@ func TestRefFreer(t *testing.T) {
 	ref.Release()
 	require.True(t, freed)
 
-	ok := ref.Acquire()
-	require.False(t, ok)
+	refs := ref.Refcount()
+	require.Equal(t, int64(0), refs)
 }
 
 func TestRefFreerPooled(t *testing.T) {
@@ -75,8 +75,8 @@ func TestRefFreerPooled(t *testing.T) {
 	ref.Release()
 	require.True(t, freed)
 
-	ok := ref.Acquire()
-	require.False(t, ok)
+	refs := ref.Refcount()
+	require.Equal(t, int64(0), refs)
 }
 
 // Next
@@ -98,8 +98,8 @@ func TestRefNext(t *testing.T) {
 	ref1.Release()
 	assert.Equal(t, int64(1), ref.Refcount())
 
-	ok := ref1.Acquire()
-	require.False(t, ok)
+	refs := ref.Refcount()
+	require.Equal(t, int64(0), refs)
 }
 
 func TestRefNextPooled(t *testing.T) {
@@ -121,8 +121,8 @@ func TestRefNextPooled(t *testing.T) {
 	ref1.Release()
 	assert.Equal(t, int64(1), ref.Refcount())
 
-	ok := ref1.Acquire()
-	require.False(t, ok)
+	refs := ref.Refcount()
+	require.Equal(t, int64(0), refs)
 }
 
 // Noop
