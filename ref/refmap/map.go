@@ -53,6 +53,9 @@ type Map[K, V any] interface {
 	// SetRetain adds an item reference to the map, and retains it.
 	SetRetain(key K, value ref.R[V])
 
+	// SetNoRetain adds an item reference to the map, does not retain it.
+	SetNoRetain(key K, value ref.R[V])
+
 	// Delete deletes an item by a key, releases its value.
 	Delete(key K)
 
@@ -239,6 +242,12 @@ func (t *btree[K, V]) SetRetain(key K, value ref.R[V]) {
 	// Increment length
 	t.mod++
 	t.length++
+}
+
+// SetNoRetain adds an item reference to the map, does not retain it.
+func (t *btree[K, V]) SetNoRetain(key K, value ref.R[V]) {
+	t.SetRetain(key, value)
+	value.Release()
 }
 
 // Delete deletes an item by a key, releases its value.
