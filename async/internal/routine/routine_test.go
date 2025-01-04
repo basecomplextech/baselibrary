@@ -2,12 +2,13 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package routine
 
 import (
 	"testing"
 	"time"
 
+	"github.com/basecomplextech/baselibrary/async/internal/context"
 	"github.com/basecomplextech/baselibrary/panics"
 	"github.com/basecomplextech/baselibrary/status"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ import (
 // Go
 
 func TestGo__should_return_on_on_success(t *testing.T) {
-	p := Go(func(Context) status.Status {
+	p := Go(func(context.Context) status.Status {
 		return status.OK
 	})
 	p.Stop()
@@ -36,7 +37,7 @@ func TestGo__should_return_on_on_success(t *testing.T) {
 
 func TestGo__should_return_status_on_error(t *testing.T) {
 	st := status.Test("test")
-	p := Go(func(Context) status.Status {
+	p := Go(func(context.Context) status.Status {
 		return st
 	})
 	p.Stop()
@@ -52,7 +53,7 @@ func TestGo__should_return_status_on_error(t *testing.T) {
 }
 
 func TestGo__should_return_recover_on_panic(t *testing.T) {
-	p := Go(func(Context) status.Status {
+	p := Go(func(context.Context) status.Status {
 		panic("test")
 	})
 	p.Stop()
@@ -69,7 +70,7 @@ func TestGo__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestGo__should_stop_on_request(t *testing.T) {
-	p := Go(func(ctx Context) status.Status {
+	p := Go(func(ctx context.Context) status.Status {
 		<-ctx.Wait()
 		return ctx.Status()
 	})
@@ -87,7 +88,7 @@ func TestGo__should_stop_on_request(t *testing.T) {
 // Run
 
 func TestRun__should_return_result_on_success(t *testing.T) {
-	p := Run(func(Context) (string, status.Status) {
+	p := Run(func(context.Context) (string, status.Status) {
 		return "hello, world", status.OK
 	})
 	p.Stop()
@@ -107,7 +108,7 @@ func TestRun__should_return_result_on_success(t *testing.T) {
 
 func TestRun__should_return_status_on_error(t *testing.T) {
 	st := status.Test("test")
-	p := Run(func(Context) (string, status.Status) {
+	p := Run(func(context.Context) (string, status.Status) {
 		return "", st
 	})
 	p.Stop()
@@ -123,7 +124,7 @@ func TestRun__should_return_status_on_error(t *testing.T) {
 }
 
 func TestRun__should_return_recover_on_panic(t *testing.T) {
-	p := Run(func(Context) (string, status.Status) {
+	p := Run(func(context.Context) (string, status.Status) {
 		panic("test")
 	})
 	p.Stop()
@@ -140,7 +141,7 @@ func TestRun__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestRun__should_stop_on_request(t *testing.T) {
-	p := Run(func(ctx Context) (string, status.Status) {
+	p := Run(func(ctx context.Context) (string, status.Status) {
 		<-ctx.Wait()
 		return "", ctx.Status()
 	})

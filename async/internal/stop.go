@@ -2,8 +2,9 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package internal
 
+// Stopper stops a routine and awaits its stop.
 type Stopper interface {
 	// Wait returns a channel which is closed when the future is complete.
 	Wait() <-chan struct{}

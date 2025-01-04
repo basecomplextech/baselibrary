@@ -1,69 +1,19 @@
-// Copyright 2024 Ivan Korobkov. All rights reserved.
+// Copyright 2025 Ivan Korobkov. All rights reserved.
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package future
 
 import (
 	"reflect"
 
+	"github.com/basecomplextech/baselibrary/async/internal/context"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-// FutureGroup is a group of futures of the same type.
-// Use [FutureGroupDyn] for a group of futures of different types.
-type FutureGroup[T any] []Future[T]
-
-// Await waits for the completion of all futures in the group.
-// The method returns the context status if the context is cancelled.
-func (g FutureGroup[T]) Await(ctx Context) status.Status {
-	return awaitAll(ctx, g...)
-}
-
-// AwaitAny waits for the completion of any future in the group, and returns its result.
-// The method returns -1 and the context status if the context is cancelled.
-func (g FutureGroup[T]) AwaitAny(ctx Context) (T, int, status.Status) {
-	return awaitAny(ctx, g...)
-}
-
-// AwaitError waits for any failure of the futures in the group, and returns the error.
-// The method returns ok if all futures are successful.
-func (g FutureGroup[T]) AwaitError(ctx Context) (int, status.Status) {
-	return awaitError(ctx, g...)
-}
-
-// AwaitResults waits for the completion of all futures in the group, and returns the results.
-// The method returns nil and the context status if the context is cancelled.
-func (g FutureGroup[T]) AwaitResults(ctx Context) ([]Result[T], status.Status) {
-	return awaitResults(ctx, g...)
-}
-
-// Results returns the results of all futures in the group.
-func (g FutureGroup[T]) Results() []Result[T] {
-	results := make([]Result[T], 0, len(g))
-	for _, f := range g {
-		value, st := f.Result()
-		result := Result[T]{value, st}
-		results = append(results, result)
-	}
-	return results
-}
-
-// Statuses returns the statuses of all futures in the group.
-func (g FutureGroup[T]) Statuses() []status.Status {
-	result := make([]status.Status, 0, len(g))
-	for _, f := range g {
-		st := f.Status()
-		result = append(result, st)
-	}
-	return result
-}
-
-// internal
-
-// awaitAll waits for the completion of all futures.
+// AwaitAll waits for the completion of all futures.
 // The method the context status if the context is cancelled.
-func awaitAll[F FutureDyn](ctx Context, futures ...F) status.Status {
+func AwaitAll[F FutureDyn](ctx context.Context, futures ...F) status.Status {
 	for _, f := range futures {
 		select {
 		case <-f.Wait():
@@ -74,9 +24,9 @@ func awaitAll[F FutureDyn](ctx Context, futures ...F) status.Status {
 	return status.OK
 }
 
-// awaitResults waits for the completion of all futures, and returns the results.
+// AwaitResults waits for the completion of all futures, and returns the results.
 // The method returns nil and the context status if the context is cancelled.
-func awaitResults[F Future[T], T any](ctx Context, futures ...F) ([]Result[T], status.Status) {
+func AwaitResults[F Future[T], T any](ctx context.Context, futures ...F) ([]Result[T], status.Status) {
 	results := make([]Result[T], 0, len(futures))
 
 	for _, f := range futures {
@@ -94,9 +44,9 @@ func awaitResults[F Future[T], T any](ctx Context, futures ...F) ([]Result[T], s
 	return results, status.OK
 }
 
-// awaitAny waits for the completion of any future, and returns its result.
+// AwaitAny waits for the completion of any future, and returns its result.
 // The method returns -1 and the context status if the context is cancelled.
-func awaitAny[F Future[T], T any](ctx Context, futures ...F) (T, int, status.Status) {
+func AwaitAny[F Future[T], T any](ctx context.Context, futures ...F) (T, int, status.Status) {
 	var zero T
 
 	// Special cases
@@ -149,9 +99,9 @@ func awaitAny[F Future[T], T any](ctx Context, futures ...F) (T, int, status.Sta
 	return result, j - 1, st
 }
 
-// awaitError awaits failure of any future, and returns its error.
+// AwaitError awaits failure of any future, and returns its error.
 // The method returns -1 and the context status if the context is cancelled.
-func awaitError[F FutureDyn](ctx Context, futures ...F) (int, status.Status) {
+func AwaitError[F FutureDyn](ctx context.Context, futures ...F) (int, status.Status) {
 	// Special cases
 	switch len(futures) {
 	case 0:

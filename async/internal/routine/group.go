@@ -2,9 +2,12 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package routine
 
 import (
+	"github.com/basecomplextech/baselibrary/async/internal"
+	"github.com/basecomplextech/baselibrary/async/internal/context"
+	"github.com/basecomplextech/baselibrary/async/internal/future"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -14,26 +17,26 @@ type RoutineGroup[T any] []Routine[T]
 
 // Await waits for the completion of all routines in the group.
 // The method returns the context status if the context is cancelled.
-func (g RoutineGroup[T]) Await(ctx Context) status.Status {
-	return awaitAll(ctx, g...)
+func (g RoutineGroup[T]) Await(ctx context.Context) status.Status {
+	return future.AwaitAll(ctx, g...)
 }
 
 // AwaitAny waits for the completion of any routine in the group, and returns its result.
 // The method returns -1 and the context status if the context is cancelled.
-func (g RoutineGroup[T]) AwaitAny(ctx Context) (T, int, status.Status) {
-	return awaitAny(ctx, g...)
+func (g RoutineGroup[T]) AwaitAny(ctx context.Context) (T, int, status.Status) {
+	return future.AwaitAny(ctx, g...)
 }
 
 // AwaitError waits for any failure of the routines in the group, and returns the error.
 // The method returns ok if all routines are successful.
-func (g RoutineGroup[T]) AwaitError(ctx Context) (int, status.Status) {
-	return awaitError(ctx, g...)
+func (g RoutineGroup[T]) AwaitError(ctx context.Context) (int, status.Status) {
+	return future.AwaitError(ctx, g...)
 }
 
 // AwaitResults waits for the completion of all routines in the group, and returns the results.
 // The method returns nil and the context status if the context is cancelled.
-func (g RoutineGroup[T]) AwaitResults(ctx Context) ([]Result[T], status.Status) {
-	return awaitResults(ctx, g...)
+func (g RoutineGroup[T]) AwaitResults(ctx context.Context) ([]future.Result[T], status.Status) {
+	return future.AwaitResults(ctx, g...)
 }
 
 // Values returns the values of all results in the group.
@@ -47,11 +50,11 @@ func (g RoutineGroup[T]) Values() []T {
 }
 
 // Results returns the results of all routines in the group.
-func (g RoutineGroup[T]) Results() []Result[T] {
-	results := make([]Result[T], 0, len(g))
+func (g RoutineGroup[T]) Results() []future.Result[T] {
+	results := make([]future.Result[T], 0, len(g))
 	for _, r := range g {
 		value, st := r.Result()
-		result := Result[T]{value, st}
+		result := future.Result[T]{value, st}
 		results = append(results, result)
 	}
 	return results
@@ -69,10 +72,10 @@ func (g RoutineGroup[T]) Statuses() []status.Status {
 
 // Stop stops all routines in the group.
 func (g RoutineGroup[T]) Stop() {
-	StopAll(g...)
+	internal.StopAll(g...)
 }
 
 // StopWait stops and awaits all routines in the group.
 func (g RoutineGroup[T]) StopWait() {
-	StopWaitAll(g...)
+	internal.StopWaitAll(g...)
 }

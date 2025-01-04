@@ -2,20 +2,22 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package async
+package thread
 
 import (
 	"testing"
 	"time"
 
+	"github.com/basecomplextech/baselibrary/async/internal/context"
+	"github.com/basecomplextech/baselibrary/async/internal/flag"
 	"github.com/basecomplextech/baselibrary/status"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestThread_Start__should_start_thread(t *testing.T) {
-	done := UnsetFlag()
+	done := flag.UnsetFlag()
 
-	th := NewThreadDyn(func(ctx Context) status.Status {
+	th := NewThreadDyn(func(ctx context.Context) status.Status {
 		done.Set()
 		return status.OK
 	})
@@ -29,7 +31,7 @@ func TestThread_Start__should_start_thread(t *testing.T) {
 }
 
 func TestThread_Start__should_stop_start_thread_when_stopped(t *testing.T) {
-	th := NewThreadDyn(func(ctx Context) status.Status {
+	th := NewThreadDyn(func(ctx context.Context) status.Status {
 		return status.OK
 	})
 	th.Stop()
