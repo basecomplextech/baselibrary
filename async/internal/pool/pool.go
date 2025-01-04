@@ -2,14 +2,14 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package routinepool
+package pool
 
 import (
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
-// RoutinePool allows to reuse goroutines with preallocated big stacks.
-type RoutinePool interface {
+// Pool allows to reuse goroutines with preallocated big stacks.
+type Pool interface {
 	// Go runs a function in the pool.
 	Go(fn func())
 
@@ -18,13 +18,13 @@ type RoutinePool interface {
 }
 
 // New returns a new goroutine pool.
-func New() RoutinePool {
+func New() Pool {
 	return newPool()
 }
 
 // internal
 
-var _ RoutinePool = (*pool)(nil)
+var _ Pool = (*pool)(nil)
 
 type pool struct {
 	pool pools.Pool[*worker]
