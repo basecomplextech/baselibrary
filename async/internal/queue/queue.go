@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package asyncqueue
+package queue
 
 import (
 	"sync"
