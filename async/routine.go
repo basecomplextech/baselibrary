@@ -16,18 +16,25 @@ type (
 
 	// RoutineDyn is a routine interface without generics, i.e. Routine[?].
 	RoutineDyn = routine.RoutineDyn
+
+	// RoutineVoid is a routine which has no result.
+	RoutineVoid = routine.RoutineVoid
 )
 
 type (
 	// RoutineGroup is a group of routines of the same type.
 	// Use [RoutineGroupDyn] for a group of routines of different types.
 	RoutineGroup[T any] = routine.RoutineGroup[T]
+
+	// RoutineGroupDyn is a group of routines of different types.
+	// Use [RoutineGroup] for a group of routines of the same type.
+	RoutineGroupDyn = routine.RoutineGroupDyn
 )
 
 // Go
 
 // Go runs a function in a new routine, recovers on panics.
-func Go(fn func(ctx Context) status.Status) Routine[struct{}] {
+func Go(fn func(ctx Context) status.Status) RoutineVoid {
 	return routine.Go(fn)
 }
 

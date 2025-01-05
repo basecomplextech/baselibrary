@@ -40,6 +40,11 @@ func (s Set[T]) RemoveMany(items ...T) {
 	}
 }
 
+// Clear clears the set.
+func (s Set[T]) Clear() {
+	clear(s)
+}
+
 // Contains returns whether a value is present in the set.
 func (s Set[T]) Contains(item T) bool {
 	_, ok := s[item]

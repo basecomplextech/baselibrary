@@ -34,7 +34,7 @@ type Service interface {
 	// Methods
 
 	// Start starts the service if not running and returns its routine.
-	Start() (routine.Routine[struct{}], status.Status)
+	Start() (routine.RoutineVoid, status.Status)
 
 	// Stop requests the service to stop and returns its routine or a stopped routine.
 	Stop() <-chan struct{}
@@ -56,7 +56,7 @@ type service struct {
 	stopped flag.MutFlag
 
 	mu      sync.Mutex
-	routine opt.Opt[routine.Routine[struct{}]]
+	routine opt.Opt[routine.RoutineVoid]
 }
 
 func newService(fn func(ctx context.Context) status.Status) *service {
@@ -106,7 +106,7 @@ func (s *service) Stopped() flag.Flag {
 // Methods
 
 // Start starts the service and returns its routine.
-func (s *service) Start() (routine.Routine[struct{}], status.Status) {
+func (s *service) Start() (routine.RoutineVoid, status.Status) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
