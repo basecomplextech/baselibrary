@@ -70,6 +70,7 @@ func TestWorker_Run__should_stop_on_error(t *testing.T) {
 	w.Push(3)
 
 	wg.Wait()
+
 	select {
 	case <-w.Stopped().Wait():
 	case <-time.After(time.Second):
@@ -155,7 +156,7 @@ func TestWorker__should_not_have_race_conditions(t *testing.T) {
 
 	for i := 0; i < taskNum; i++ {
 		go func() {
-			for !w.running.IsSet() {
+			for !w.handling.Load() {
 				time.Sleep(time.Millisecond)
 			}
 

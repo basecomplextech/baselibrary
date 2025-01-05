@@ -17,9 +17,6 @@ import (
 
 // Service is a service which can be started and stopped.
 type Service interface {
-	// Wait returns a channel which is closed when the service is stopped.
-	Wait() <-chan struct{}
-
 	// Status returns the exit status or none.
 	Status() status.Status
 
@@ -38,6 +35,9 @@ type Service interface {
 
 	// Stop requests the service to stop and returns its routine or a stopped routine.
 	Stop() <-chan struct{}
+
+	// Wait returns a channel which is closed when the service is stopped.
+	Wait() <-chan struct{}
 }
 
 // New returns a new stopped service.
@@ -65,18 +65,6 @@ func newService(fn func(ctx context.Context) status.Status) *service {
 		running: flag.UnsetFlag(),
 		stopped: flag.SetFlag(),
 	}
-}
-
-// Wait returns a channel which is closed when the service is stopped.
-func (s *service) Wait() <-chan struct{} {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	r, ok := s.routine.Unwrap()
-	if !ok {
-		return chans.Closed()
-	}
-	return r.Wait()
 }
 
 // Status returns the exit status or none.
@@ -135,6 +123,18 @@ func (s *service) Stop() <-chan struct{} {
 		return chans.Closed()
 	}
 	return r.Stop()
+}
+
+// Wait returns a channel which is closed when the service is stopped.
+func (s *service) Wait() <-chan struct{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	r, ok := s.routine.Unwrap()
+	if !ok {
+		return chans.Closed()
+	}
+	return r.Wait()
 }
 
 // private

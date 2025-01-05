@@ -13,7 +13,7 @@ import (
 	"github.com/basecomplextech/baselibrary/collect/sets"
 )
 
-type routineGroup interface {
+type routines interface {
 	// len returns the number of active routines.
 	len() int
 
@@ -27,8 +27,8 @@ type routineGroup interface {
 
 	// methods
 
-	// add adds a routine to the group, or returns false if the group is stopped.
-	add(r routine.RoutineVoid) bool
+	// add adds a routine to the group, or panics if the group is stopped.
+	add(r routine.RoutineVoid)
 
 	// poll returns the next stopped routine or false.
 	poll() (routine.RoutineVoid, bool)
@@ -39,22 +39,20 @@ type routineGroup interface {
 
 // internal
 
-var _ routineGroup = (*group)(nil)
+var _ routines = (*group)(nil)
 
 type group struct {
 	// guards start/stop
 	mainMu sync.Mutex
 
-	// guards running and state
-	runMu   sync.Mutex
-	running bool
-
-	// state can be accessed only when running is true
-	active  sets.Set[routine.RoutineVoid]
-	stopped queue.Queue[routine.RoutineVoid]
+	// state can be accessed only when handling is true
+	mu       sync.Mutex
+	handling bool
+	active   sets.Set[routine.RoutineVoid]
+	stopped  queue.Queue[routine.RoutineVoid]
 }
 
-func newRoutineGroup() *group {
+func newRoutines() *group {
 	return &group{
 		active:  sets.New[routine.RoutineVoid](),
 		stopped: queue.New[routine.RoutineVoid](),
@@ -63,13 +61,12 @@ func newRoutineGroup() *group {
 
 // len returns the number of active routines.
 func (g *group) len() int {
-	g.runMu.Lock()
-	defer g.runMu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-	if !g.running {
+	if !g.handling {
 		return 0
 	}
-
 	return len(g.active)
 }
 
@@ -80,10 +77,10 @@ func (g *group) start() {
 	g.mainMu.Lock()
 	defer g.mainMu.Unlock()
 
-	g.runMu.Lock()
-	defer g.runMu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-	g.running = true
+	g.handling = true
 }
 
 // stop stops all routines, waits for them to stop and clears the group.
@@ -91,10 +88,10 @@ func (g *group) stop() {
 	g.mainMu.Lock()
 	defer g.mainMu.Unlock()
 
-	// Disable running
-	g.runMu.Lock()
-	g.running = false
-	g.runMu.Unlock()
+	// Disable handling
+	g.mu.Lock()
+	g.handling = false
+	g.mu.Unlock()
 
 	// From now on, active and stopped cannot be
 	// accessed concurrently by other threads.
@@ -116,13 +113,13 @@ func (g *group) stop() {
 
 // methods
 
-// add adds a routine to the group, or returns false if the group is stopped.
-func (g *group) add(r routine.RoutineVoid) bool {
-	g.runMu.Lock()
-	defer g.runMu.Unlock()
+// add adds a routine to the group, or panics if the group is stopped.
+func (g *group) add(r routine.RoutineVoid) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-	// Check running
-	if !g.running {
+	// Check handling
+	if !g.handling {
 		panic("worker group is stopped")
 	}
 
@@ -130,20 +127,19 @@ func (g *group) add(r routine.RoutineVoid) bool {
 	ok := r.OnStop(g.onStop)
 	if !ok {
 		g.stopped.Push(r)
-		return false
+		return
 	}
 
 	// Add to active
 	g.active.Add(r)
-	return true
 }
 
 // poll returns the next stopped routine or false.
 func (g *group) poll() (routine.RoutineVoid, bool) {
-	g.runMu.Lock()
-	defer g.runMu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-	if !g.running {
+	if !g.handling {
 		return nil, false
 	}
 
@@ -152,10 +148,10 @@ func (g *group) poll() (routine.RoutineVoid, bool) {
 
 // wait waits for the next stopped routine.
 func (g *group) wait() <-chan struct{} {
-	g.runMu.Lock()
-	defer g.runMu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-	if !g.running {
+	if !g.handling {
 		return chans.Closed()
 	}
 
@@ -166,10 +162,10 @@ func (g *group) wait() <-chan struct{} {
 
 // onStop moves a routine from active to stopped.
 func (g *group) onStop(r routine.RoutineVoid) {
-	g.runMu.Lock()
-	defer g.runMu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-	if !g.running {
+	if !g.handling {
 		return
 	}
 

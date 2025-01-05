@@ -7,38 +7,16 @@ package worker
 import (
 	"runtime"
 	"sync"
+	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/async"
 	"github.com/basecomplextech/baselibrary/async/internal/queue"
-	"github.com/basecomplextech/baselibrary/collect/chans"
-	"github.com/basecomplextech/baselibrary/opt"
+	"github.com/basecomplextech/baselibrary/async/internal/service"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
 type Worker[T any] interface {
-	// Status returns the exit status or none.
-	Status() status.Status
-
-	// Flags
-
-	// Running indicates that the worker is running.
-	Running() async.Flag
-
-	// Stopped indicates that the worker is stopped.
-	Stopped() async.Flag
-
-	// Lifecycle
-
-	// Start starts the worker if not running.
-	Start()
-
-	// Stop requests the worker to stop and returns a stopped channel.
-	Stop() <-chan struct{}
-
-	// Wait returns a channel which is closed when the worker is stopped.
-	Wait() <-chan struct{}
-
-	// Tasks
+	service.Service
 
 	// Clear clears the task queue.
 	Clear()
@@ -68,18 +46,12 @@ type worker[T any] struct {
 	fn    Func[T]
 	max   int
 	queue queue.Queue[T]
+	service.Service
 
-	// flags
-	stopped async.MutFlag
-
-	// main routine
-	mainMu sync.Mutex
-	main   opt.Opt[async.RoutineDyn]
-
-	// state can be accessed only when running is true
-	runMu    sync.Mutex
-	running  async.MutFlag
-	routines routineGroup
+	// routines can be accessed only when handling is true
+	mu       sync.Mutex
+	handling atomic.Bool
+	routines routines
 }
 
 func newWorker[T any](fn Func[T]) *worker[T] {
@@ -88,92 +60,19 @@ func newWorker[T any](fn Func[T]) *worker[T] {
 }
 
 func newWorkerMax[T any](fn Func[T], max int) *worker[T] {
-	return &worker[T]{
+	w := &worker[T]{
 		fn:    fn,
 		max:   max,
 		queue: queue.New[T](),
 
-		stopped: async.UnsetFlag(),
-
-		running:  async.UnsetFlag(),
-		routines: newRoutineGroup(),
+		routines: newRoutines(),
 	}
+	w.Service = service.New(w.run)
+	return w
 }
-
-// Status returns the exit status or none.
-func (w *worker[T]) Status() status.Status {
-	w.mainMu.Lock()
-	defer w.mainMu.Unlock()
-
-	r, ok := w.main.Unwrap()
-	if !ok {
-		return status.Unavailable("worker is stopped")
-	}
-	return r.Status()
-}
-
-// Flags
-
-// Running indicates that the worker is running.
-func (w *worker[T]) Running() async.Flag {
-	return w.running
-}
-
-// Stopped indicates that the worker is stopped.
-func (w *worker[T]) Stopped() async.Flag {
-	return w.stopped
-}
-
-// Lifecycle
-
-// Start starts the worker if not running.
-func (w *worker[T]) Start() {
-	w.mainMu.Lock()
-	defer w.mainMu.Unlock()
-
-	// Check routine
-	main, ok := w.main.Unwrap()
-	if ok && !main.Done() {
-		return
-	}
-
-	// Start main
-	main = async.Go(w.run)
-	w.main.Set(main)
-	return
-}
-
-// Stop requests the worker to stop and returns a stopped channel.
-func (w *worker[T]) Stop() <-chan struct{} {
-	w.mainMu.Lock()
-	defer w.mainMu.Unlock()
-
-	main, ok := w.main.Unwrap()
-	if !ok {
-		return chans.Closed()
-	}
-	return main.Stop()
-}
-
-// Wait returns a channel which is closed when the worker is stopped.
-func (w *worker[T]) Wait() <-chan struct{} {
-	w.mainMu.Lock()
-	defer w.mainMu.Unlock()
-
-	main, ok := w.main.Unwrap()
-	if !ok {
-		return chans.Closed()
-	}
-	return main.Wait()
-}
-
-// Tasks
 
 // Clear clears the task queue.
 func (w *worker[T]) Clear() {
-	w.runMu.Lock()
-	defer w.runMu.Unlock()
-
 	w.queue.Clear()
 }
 
@@ -185,7 +84,7 @@ func (w *worker[T]) Push(task T) {
 	w.startRoutine()
 }
 
-// main
+// run
 
 func (w *worker[T]) run(ctx async.Context) status.Status {
 	w.start()
@@ -217,21 +116,18 @@ func (w *worker[T]) run(ctx async.Context) status.Status {
 }
 
 func (w *worker[T]) start() {
-	w.runMu.Lock()
-	defer w.runMu.Unlock()
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	w.running.Set()
-	w.stopped.Unset()
+	w.handling.Store(true)
 	w.routines.start()
 }
 
 func (w *worker[T]) stop() {
-	defer w.stopped.Set()
-
-	// Disable running
-	w.runMu.Lock()
-	w.running.Unset()
-	w.runMu.Unlock()
+	// Disable handling
+	w.mu.Lock()
+	w.handling.Store(false)
+	w.mu.Unlock()
 
 	// From now on, routines cannot be accessed,
 	// and started concurrently by other threads.
@@ -243,22 +139,22 @@ func (w *worker[T]) stop() {
 // routine
 
 func (w *worker[T]) startRoutine() bool {
-	w.runMu.Lock()
-	defer w.runMu.Unlock()
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	// Check running
-	if !w.running.IsSet() {
+	// Check handling
+	if !w.handling.Load() {
 		return false
 	}
 
-	// Check need routine
+	// Check need more
 	num := w.routines.len()
 	need := num == 0 || w.queue.Len() > 1
 	if !need {
 		return false
 	}
 
-	// Check max routines
+	// Check max reached
 	maxed := (w.max > 0) && (num >= w.max)
 	if maxed {
 		return false
