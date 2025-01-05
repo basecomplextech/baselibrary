@@ -18,14 +18,14 @@ import (
 // Go
 
 func TestGo__should_return_on_on_success(t *testing.T) {
-	p := Go(func(context.Context) status.Status {
+	r := Go(func(context.Context) status.Status {
 		return status.OK
 	})
-	p.Stop()
+	r.Stop()
 
 	select {
-	case <-p.Wait():
-		_, st := p.Result()
+	case <-r.Wait():
+		_, st := r.Result()
 		if !st.OK() {
 			t.Fatal(st)
 		}
@@ -37,14 +37,14 @@ func TestGo__should_return_on_on_success(t *testing.T) {
 
 func TestGo__should_return_status_on_error(t *testing.T) {
 	st := status.Test("test")
-	p := Go(func(context.Context) status.Status {
+	r := Go(func(context.Context) status.Status {
 		return st
 	})
-	p.Stop()
+	r.Stop()
 
 	select {
-	case <-p.Wait():
-		_, st1 := p.Result()
+	case <-r.Wait():
+		_, st1 := r.Result()
 		assert.Equal(t, st, st1)
 
 	case <-time.After(100 * time.Millisecond):
@@ -53,14 +53,14 @@ func TestGo__should_return_status_on_error(t *testing.T) {
 }
 
 func TestGo__should_return_recover_on_panic(t *testing.T) {
-	p := Go(func(context.Context) status.Status {
+	r := Go(func(context.Context) status.Status {
 		panic("test")
 	})
-	p.Stop()
+	r.Stop()
 
 	select {
-	case <-p.Wait():
-		_, st := p.Result()
+	case <-r.Wait():
+		_, st := r.Result()
 		require.IsType(t, &panics.Error{}, st.Error)
 		assert.EqualValues(t, "test", st.Error.(*panics.Error).E)
 
@@ -70,15 +70,15 @@ func TestGo__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestGo__should_stop_on_request(t *testing.T) {
-	p := Go(func(ctx context.Context) status.Status {
+	r := Go(func(ctx context.Context) status.Status {
 		<-ctx.Wait()
 		return ctx.Status()
 	})
 
-	p.Stop()
+	r.Stop()
 	select {
-	case <-p.Wait():
-		st := p.Status()
+	case <-r.Wait():
+		st := r.Status()
 		assert.Equal(t, status.Cancelled, st)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("timeout")
@@ -88,14 +88,14 @@ func TestGo__should_stop_on_request(t *testing.T) {
 // Run
 
 func TestRun__should_return_result_on_success(t *testing.T) {
-	p := Run(func(context.Context) (string, status.Status) {
+	r := Run(func(context.Context) (string, status.Status) {
 		return "hello, world", status.OK
 	})
-	p.Stop()
+	r.Stop()
 
 	select {
-	case <-p.Wait():
-		v, st := p.Result()
+	case <-r.Wait():
+		v, st := r.Result()
 		if !st.OK() {
 			t.Fatal(st)
 		}
@@ -108,14 +108,14 @@ func TestRun__should_return_result_on_success(t *testing.T) {
 
 func TestRun__should_return_status_on_error(t *testing.T) {
 	st := status.Test("test")
-	p := Run(func(context.Context) (string, status.Status) {
+	r := Run(func(context.Context) (string, status.Status) {
 		return "", st
 	})
-	p.Stop()
+	r.Stop()
 
 	select {
-	case <-p.Wait():
-		_, st1 := p.Result()
+	case <-r.Wait():
+		_, st1 := r.Result()
 		assert.Equal(t, st, st1)
 
 	case <-time.After(100 * time.Millisecond):
@@ -124,14 +124,14 @@ func TestRun__should_return_status_on_error(t *testing.T) {
 }
 
 func TestRun__should_return_recover_on_panic(t *testing.T) {
-	p := Run(func(context.Context) (string, status.Status) {
+	r := Run(func(context.Context) (string, status.Status) {
 		panic("test")
 	})
-	p.Stop()
+	r.Stop()
 
 	select {
-	case <-p.Wait():
-		_, st := p.Result()
+	case <-r.Wait():
+		_, st := r.Result()
 		require.IsType(t, &panics.Error{}, st.Error)
 		assert.EqualValues(t, "test", st.Error.(*panics.Error).E)
 
@@ -141,14 +141,14 @@ func TestRun__should_return_recover_on_panic(t *testing.T) {
 }
 
 func TestRun__should_stop_on_request(t *testing.T) {
-	p := Run(func(ctx context.Context) (string, status.Status) {
+	r := Run(func(ctx context.Context) (string, status.Status) {
 		<-ctx.Wait()
 		return "", ctx.Status()
 	})
 
 	select {
-	case <-p.Stop():
-		st := p.Status()
+	case <-r.Stop():
+		st := r.Status()
 		assert.Equal(t, status.Cancelled, st)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("timeout")
