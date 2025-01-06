@@ -130,6 +130,13 @@ func Stopped[T any](result T, st status.Status) Routine[T] {
 	return r
 }
 
+// StoppedVoid returns a routine without a result which has stopped with the given status.
+func StoppedVoid(st status.Status) RoutineVoid {
+	r := newRoutine[struct{}](nil)
+	r.complete(struct{}{}, st)
+	return r
+}
+
 // internal
 
 var _ Routine[any] = (*routine1[any])(nil)

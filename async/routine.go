@@ -80,3 +80,15 @@ func RunVoid(fn FuncVoid) RoutineVoid {
 func RunVoid1[A any](fn FuncVoid1[A], arg A) RoutineVoid {
 	return routine.RunVoid1(fn, arg)
 }
+
+// Stopped
+
+// Stopped returns a stopped routine with the given result.
+func Stopped[T any](result T, st status.Status) Routine[T] {
+	return routine.Stopped(result, st)
+}
+
+// StoppedVoid returns a routine without a result which has stopped with the given status.
+func StoppedVoid(st status.Status) RoutineVoid {
+	return routine.StoppedVoid(st)
+}

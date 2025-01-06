@@ -31,7 +31,7 @@ type Service interface {
 	// Methods
 
 	// Start starts the service if not running.
-	Start()
+	Start() status.Status
 
 	// Stop requests the service to stop and returns its routine or a stopped routine.
 	Stop() <-chan struct{}
@@ -96,7 +96,7 @@ func (s *service) Stopped() flag.Flag {
 // Methods
 
 // Start starts the service if not running.
-func (s *service) Start() {
+func (s *service) Start() status.Status {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -104,7 +104,7 @@ func (s *service) Start() {
 	r, ok := s.routine.Unwrap()
 	if ok {
 		if !r.Done() {
-			return
+			return status.OK
 		}
 	}
 
@@ -118,6 +118,7 @@ func (s *service) Start() {
 
 	// Start routine
 	r.Start()
+	return status.OK
 }
 
 // Stop requests the service to stop.
