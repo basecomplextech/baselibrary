@@ -22,12 +22,12 @@ func NewStream[T any](next StreamNextFunc[T]) Stream[T] {
 	return stream.New(next)
 }
 
-// NewFree returns a new stream with a free function.
-func NewFree[T any](next StreamNextFunc[T], free func()) Stream[T] {
+// NewStreamFree returns a new stream with a free function.
+func NewStreamFree[T any](next StreamNextFunc[T], free func()) Stream[T] {
 	return stream.NewFree(next, free)
 }
 
-// NewFreer returns a new stream with a freer.
-func NewFreer[T any](next StreamNextFunc[T], freer ref.Freer) Stream[T] {
+// NewStreamFreer returns a new stream with a freer.
+func NewStreamFreer[T any](next StreamNextFunc[T], freer ref.Freer) Stream[T] {
 	return stream.NewFreer(next, freer)
 }
