@@ -6,10 +6,12 @@ package asynccol
 
 import "github.com/basecomplextech/baselibrary/async/asynccol/internal/queue"
 
-// Queue is an unbounded FIFO queue.
-type Queue[T any] = queue.Queue[T]
+type (
+	// Queue is an unbounded FIFO queue.
+	Queue[T any] = queue.Queue[T]
+)
 
 // NewQueue returns an empty queue.
-func NewQueue[T any]() Queue[T] {
-	return queue.New[T]()
+func NewQueue[T any](items ...T) Queue[T] {
+	return queue.New[T](items...)
 }

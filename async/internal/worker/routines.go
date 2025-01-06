@@ -7,7 +7,7 @@ package worker
 import (
 	"sync"
 
-	"github.com/basecomplextech/baselibrary/async/internal/queue"
+	"github.com/basecomplextech/baselibrary/async/asynccol"
 	"github.com/basecomplextech/baselibrary/async/internal/routine"
 	"github.com/basecomplextech/baselibrary/collect/chans"
 	"github.com/basecomplextech/baselibrary/collect/sets"
@@ -49,13 +49,13 @@ type group struct {
 	mu       sync.Mutex
 	handling bool
 	active   sets.Set[routine.RoutineVoid]
-	stopped  queue.Queue[routine.RoutineVoid]
+	stopped  asynccol.Queue[routine.RoutineVoid]
 }
 
 func newRoutines() *group {
 	return &group{
 		active:  sets.New[routine.RoutineVoid](),
-		stopped: queue.New[routine.RoutineVoid](),
+		stopped: asynccol.NewQueue[routine.RoutineVoid](),
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/async"
-	"github.com/basecomplextech/baselibrary/async/internal/queue"
+	"github.com/basecomplextech/baselibrary/async/asynccol"
 	"github.com/basecomplextech/baselibrary/async/internal/service"
 	"github.com/basecomplextech/baselibrary/status"
 )
@@ -45,7 +45,7 @@ var _ Worker[any] = (*worker[any])(nil)
 type worker[T any] struct {
 	fn    Func[T]
 	max   int
-	queue queue.Queue[T]
+	queue asynccol.Queue[T]
 	service.Service
 
 	// routines can be accessed only when handling is true
@@ -63,7 +63,7 @@ func newWorkerMax[T any](fn Func[T], max int) *worker[T] {
 	w := &worker[T]{
 		fn:    fn,
 		max:   max,
-		queue: queue.New[T](),
+		queue: asynccol.NewQueue[T](),
 
 		routines: newRoutines(),
 	}
