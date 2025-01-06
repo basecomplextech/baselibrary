@@ -7,8 +7,8 @@ package collect
 // Set is a collection of unique items implemented as a map[T]struct{}.
 type Set[T comparable] map[T]struct{}
 
-// New returns a new set.
-func New[T comparable](items ...T) Set[T] {
+// NewSet returns a new set.
+func NewSet[T comparable](items ...T) Set[T] {
 	set := make(Set[T], len(items))
 	for _, item := range items {
 		set.Add(item)
