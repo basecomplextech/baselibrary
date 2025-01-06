@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package sets
+package collect
 
 // Set is a collection of unique items implemented as a map[T]struct{}.
 type Set[T comparable] map[T]struct{}
