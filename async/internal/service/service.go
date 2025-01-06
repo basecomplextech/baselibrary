@@ -17,12 +17,12 @@ import (
 
 // Service is a service which can be started and stopped.
 type Service interface {
-	// Status returns the exit status or none.
+	// Status returns the stop status or none.
 	Status() status.Status
 
 	// Flags
 
-	// Running indicates that the service is running.
+	// Running indicates that the service routine is running.
 	Running() flag.Flag
 
 	// Stopped indicates that the service is stopped.
@@ -30,8 +30,8 @@ type Service interface {
 
 	// Methods
 
-	// Start starts the service if not running and returns its routine.
-	Start() (routine.RoutineVoid, status.Status)
+	// Start starts the service if not running.
+	Start()
 
 	// Stop requests the service to stop and returns its routine or a stopped routine.
 	Stop() <-chan struct{}
@@ -52,9 +52,11 @@ var _ Service = (*service)(nil)
 type service struct {
 	fn func(ctx context.Context) status.Status
 
+	// flags
 	running flag.MutFlag
 	stopped flag.MutFlag
 
+	// routine
 	mu      sync.Mutex
 	routine opt.Opt[routine.RoutineVoid]
 }
@@ -67,7 +69,7 @@ func newService(fn func(ctx context.Context) status.Status) *service {
 	}
 }
 
-// Status returns the exit status or none.
+// Status returns the stop status or none.
 func (s *service) Status() status.Status {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -93,24 +95,29 @@ func (s *service) Stopped() flag.Flag {
 
 // Methods
 
-// Start starts the service and returns its routine.
-func (s *service) Start() (routine.RoutineVoid, status.Status) {
+// Start starts the service if not running.
+func (s *service) Start() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Return if running
 	r, ok := s.routine.Unwrap()
 	if ok {
 		if !r.Done() {
-			return r, status.OK
+			return
 		}
 	}
 
-	s.running.Set()
+	// Reset stopped
 	s.stopped.Unset()
 
-	r = routine.Go(s.run)
+	// Make routine
+	r = routine.NewVoid(s.run)
+	r.OnStop(s.onStop)
 	s.routine.Set(r)
-	return r, status.OK
+
+	// Start routine
+	r.Start()
 }
 
 // Stop requests the service to stop.
@@ -141,7 +148,11 @@ func (s *service) Wait() <-chan struct{} {
 
 func (s *service) run(ctx context.Context) status.Status {
 	defer s.running.Unset()
-	defer s.stopped.Set()
+	s.running.Set()
 
 	return s.fn(ctx)
+}
+
+func (s *service) onStop(r routine.RoutineVoid) {
+	s.stopped.Set()
 }

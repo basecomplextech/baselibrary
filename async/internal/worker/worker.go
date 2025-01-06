@@ -161,8 +161,7 @@ func (w *worker[T]) startRoutine() bool {
 	}
 
 	// Start routine
-	r := async.Go(w.routine)
-	w.routines.add(r)
+	w.routines.run(w.routine)
 	return true
 }
 

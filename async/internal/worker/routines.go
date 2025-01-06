@@ -27,8 +27,8 @@ type routines interface {
 
 	// methods
 
-	// add adds a routine to the group, or panics if the group is stopped.
-	add(r routine.RoutineVoid)
+	// run adds a new routine, or panics if the group is stopped.
+	run(fn routine.FuncVoid)
 
 	// poll returns the next stopped routine or false.
 	poll() (routine.RoutineVoid, bool)
@@ -113,8 +113,8 @@ func (g *group) stop() {
 
 // methods
 
-// add adds a routine to the group, or panics if the group is stopped.
-func (g *group) add(r routine.RoutineVoid) {
+// run adds a new routine, or panics if the group is stopped.
+func (g *group) run(fn routine.FuncVoid) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -123,15 +123,13 @@ func (g *group) add(r routine.RoutineVoid) {
 		panic("worker group is stopped")
 	}
 
-	// Add callback
-	ok := r.OnStop(g.onStop)
-	if !ok {
-		g.stopped.Push(r)
-		return
-	}
-
-	// Add to active
+	// Add routine
+	r := routine.NewVoid(fn)
+	r.OnStop(g.onStop)
 	g.active.Add(r)
+
+	// Start routine
+	r.Start()
 }
 
 // poll returns the next stopped routine or false.

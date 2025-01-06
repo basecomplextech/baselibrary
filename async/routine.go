@@ -31,19 +31,52 @@ type (
 	RoutineGroupDyn = routine.RoutineGroupDyn
 )
 
-// Go
+type (
+	// Func is a function which returns the result.
+	Func[T any] = func(ctx Context) (T, status.Status)
 
-// Go runs a function in a new routine, recovers on panics.
-func Go(fn func(ctx Context) status.Status) RoutineVoid {
-	return routine.Go(fn)
+	// Func1 is a single argument function which returns the result.
+	Func1[T any, A any] = func(ctx Context, arg A) (T, status.Status)
+
+	// FuncVoid is a function which returns no result.
+	FuncVoid = func(ctx Context) status.Status
+
+	// FuncVoid1 is a single argument function which returns no result
+	FuncVoid1[A any] = func(ctx Context, arg A) status.Status
+)
+
+// New
+
+// NewRoutine returns a new routine, but does not start it.
+func NewRoutine[T any](fn Func[T]) Routine[T] {
+	return routine.New(fn)
 }
 
+// NewRoutineVoid returns a new routine, but does not start it.
+func NewRoutineVoid(fn FuncVoid) RoutineVoid {
+	return routine.NewVoid(fn)
+}
+
+// Run
+
 // Run runs a function in a new routine, and returns the result, recovers on panics.
-func Run[T any](fn func(ctx Context) (T, status.Status)) Routine[T] {
+func Run[T any](fn Func[T]) Routine[T] {
 	return routine.Run(fn)
 }
 
-// Exited returns a routine which has exited with the given result and status.
-func Exited[T any](result T, st status.Status) Routine[T] {
-	return routine.Exited(result, st)
+// Run1 runs a function in a new routine, and returns the result, recovers on panics.
+func Run1[T any, A any](fn Func1[T, A], arg A) Routine[T] {
+	return routine.Run1(fn, arg)
+}
+
+// RunVoid
+
+// RunVoid runs a procedure in a new routine, recovers on panics.
+func RunVoid(fn FuncVoid) RoutineVoid {
+	return routine.RunVoid(fn)
+}
+
+// RunVoid1 runs a procedure in a new routine, recovers on panics.
+func RunVoid1[A any](fn FuncVoid1[A], arg A) RoutineVoid {
+	return routine.RunVoid1(fn, arg)
 }
