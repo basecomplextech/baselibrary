@@ -2,13 +2,13 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package collect
+package sets
 
 // Set is a collection of unique items implemented as a map[T]struct{}.
 type Set[T comparable] map[T]struct{}
 
-// NewSet returns a new set.
-func NewSet[T comparable](items ...T) Set[T] {
+// New returns a new set.
+func New[T comparable](items ...T) Set[T] {
 	set := make(Set[T], len(items))
 	for _, item := range items {
 		set.Add(item)
