@@ -19,7 +19,7 @@ type Queue[T any] interface {
 	// Clear clears the queue.
 	Clear()
 
-	// Push adds an element to the queue, panics if the queue is closed.
+	// Push adds an element to the queue.
 	Push(v T)
 
 	// Poll removes an element from the queue, returns false if the queue is empty.
@@ -44,9 +44,7 @@ func New[T any](items ...T) Queue[T] {
 var _ Queue[int] = (*queue[int])(nil)
 
 type queue[T any] struct {
-	mu     sync.RWMutex
-	closed bool
-
+	mu   sync.RWMutex
 	list []T
 	wait chan struct{}
 }
@@ -67,67 +65,27 @@ func (q *queue[T]) Len() int {
 	return len(q.list)
 }
 
-// Poll removes an element from the queue, returns false if the queue is empty.
-func (q *queue[T]) Poll() (v T, ok bool) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	q.assertOpen()
-
-	if len(q.list) == 0 {
-		return
-	}
-
-	// Get value
-	v = q.list[0]
-
-	// Move remaining to front
-	copy(q.list, q.list[1:])
-	q.list = q.list[:len(q.list)-1]
-	return v, true
-}
-
-// Wait returns a channel which is notified on new elements.
-func (q *queue[T]) Wait() <-chan struct{} {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
-	q.assertOpen()
-
-	if len(q.list) > 0 {
-		return chans.Closed()
-	}
-	return q.wait
-}
-
-// Write
-
 // Clear clears the queue.
 func (q *queue[T]) Clear() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	q.assertOpen()
 
 	q.list = slices2.Truncate(q.list)
-}
 
-// Close clears and closes the queue.
-func (q *queue[T]) Close() {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	if q.closed {
-		return
+	// Notify all
+	for len(q.wait) > 0 {
+		select {
+		case <-q.wait:
+		default:
+			break
+		}
 	}
-
-	q.list = nil
-	q.closed = true
-	close(q.wait)
 }
 
-// Push adds an element to the queue, panics if the queue is closed.
+// Push adds an element to the queue.
 func (q *queue[T]) Push(v T) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	q.assertOpen()
 
 	q.list = append(q.list, v)
 	select {
@@ -136,10 +94,30 @@ func (q *queue[T]) Push(v T) {
 	}
 }
 
-// private
+// Poll removes an element from the queue, returns false if the queue is empty.
+func (q *queue[T]) Poll() (v T, ok bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
-func (q *queue[T]) assertOpen() {
-	if q.closed {
-		panic("queue is closed")
+	if len(q.list) == 0 {
+		return
 	}
+
+	// Get value
+	v = q.list[0]
+
+	// Shift remaining left
+	q.list = slices2.ShiftLeft(q.list, 1)
+	return v, true
+}
+
+// Wait returns a channel which is notified on new elements.
+func (q *queue[T]) Wait() <-chan struct{} {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
+	if len(q.list) > 0 {
+		return chans.Closed()
+	}
+	return q.wait
 }
