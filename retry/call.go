@@ -67,13 +67,6 @@ func (c call) logError(err status.Status, attempt int) {
 }
 
 func (c call) sleep(ctx async.Context, attempt int) status.Status {
-	// Check max retries
-	if c.opts.MaxRetries != 0 {
-		if attempt >= c.opts.MaxRetries {
-			return status.Errorf("failed to retry function, max retries reached")
-		}
-	}
-
 	// Sleep before retry
 	delay := delay(attempt, c.opts.MinDelay, c.opts.MaxDelay)
 	timer := time.NewTimer(delay)

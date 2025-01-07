@@ -58,6 +58,13 @@ func (c Call) Run(ctx async.Context) status.Status {
 			return st
 		}
 
+		// Check max retries
+		if c.opts.MaxRetries != 0 {
+			if attempt >= c.opts.MaxRetries {
+				return st
+			}
+		}
+
 		// Log error
 		c.logError(st, attempt)
 
@@ -76,6 +83,13 @@ func (c Call1[A]) Run(ctx async.Context, arg A) status.Status {
 		switch st.Code {
 		case status.CodeOK, status.CodeCancelled:
 			return st
+		}
+
+		// Check max retries
+		if c.opts.MaxRetries != 0 {
+			if attempt >= c.opts.MaxRetries {
+				return st
+			}
 		}
 
 		// Log error

@@ -64,6 +64,13 @@ func (c FuncCall[T]) Run(ctx async.Context) (T, status.Status) {
 			return result, st
 		}
 
+		// Check max retries
+		if c.opts.MaxRetries != 0 {
+			if attempt >= c.opts.MaxRetries {
+				return result, st
+			}
+		}
+
 		// Log error
 		c.logError(st, attempt)
 
@@ -82,6 +89,13 @@ func (c Func1Call[T, A]) Run(ctx async.Context, arg A) (T, status.Status) {
 		switch st.Code {
 		case status.CodeOK, status.CodeCancelled:
 			return result, st
+		}
+
+		// Check max retries
+		if c.opts.MaxRetries != 0 {
+			if attempt >= c.opts.MaxRetries {
+				return result, st
+			}
 		}
 
 		// Log error
@@ -150,9 +164,21 @@ func (c Func1Call[T, A]) ErrorLogger(logger ErrorLogger) Func1Call[T, A] {
 	return c
 }
 
+// ErrorFunc sets the error logger function.
+func (c Func1Call[T, A]) ErrorFunc(fn RetryErrorFunc) Func1Call[T, A] {
+	c.opts.ErrorLogger = errorLoggerFunc(fn)
+	return c
+}
+
 // Logger sets the default logger.
 func (c Func1Call[T, A]) Logger(logger logging.Logger) Func1Call[T, A] {
 	c.opts.Logger = logger
+	return c
+}
+
+// MinDelay sets the min delay.
+func (c Func1Call[T, A]) MinDelay(minDelay time.Duration) Func1Call[T, A] {
+	c.opts.MinDelay = minDelay
 	return c
 }
 
