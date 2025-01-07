@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package service
+package async
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ import (
 // Start
 
 func TestService_Start__should_set_running_after_start(t *testing.T) {
-	s := New(func(ctx context.Context) status.Status {
+	s := NewService(func(ctx context.Context) status.Status {
 		<-ctx.Wait()
 		return status.OK
 	})
@@ -33,7 +33,7 @@ func TestService_Start__should_set_running_after_start(t *testing.T) {
 
 func TestService_Start__should_restart_service(t *testing.T) {
 	done := make(chan struct{}, 1)
-	s := New(func(ctx context.Context) status.Status {
+	s := NewService(func(ctx context.Context) status.Status {
 		done <- struct{}{}
 		<-ctx.Wait()
 		return status.OK
@@ -51,7 +51,7 @@ func TestService_Start__should_restart_service(t *testing.T) {
 // Stop
 
 func TestService_Stop__should_stop_service(t *testing.T) {
-	s := New(func(ctx context.Context) status.Status {
+	s := NewService(func(ctx context.Context) status.Status {
 		<-ctx.Wait()
 		return status.OK
 	})
@@ -67,7 +67,7 @@ func TestService_Stop__should_stop_service(t *testing.T) {
 }
 
 func TestService_Stop__should_set_stopped_after_status(t *testing.T) {
-	s := New(func(ctx context.Context) status.Status {
+	s := NewService(func(ctx context.Context) status.Status {
 		return status.Error("test")
 	})
 

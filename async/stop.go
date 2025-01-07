@@ -4,14 +4,20 @@
 
 package async
 
-import "github.com/basecomplextech/baselibrary/async/internal"
-
 // Stopper stops a routine and awaits its stop.
-type Stopper = internal.Stopper
+type Stopper interface {
+	// Wait returns a channel which is closed when the future is complete.
+	Wait() <-chan struct{}
+
+	// Stop requests the routine to stop and returns a wait channel.
+	Stop() <-chan struct{}
+}
 
 // StopAll stops all routines, but does not await their stop.
 func StopAll[R Stopper](routines ...R) {
-	internal.StopAll(routines...)
+	for _, r := range routines {
+		r.Stop()
+	}
 }
 
 // StopWait stops a routine and awaits it stop.
@@ -32,5 +38,11 @@ func StopWait[R Stopper](r R) {
 //	w1 := runWorker()
 //	defer StopWaitAll(w0, w1)
 func StopWaitAll[R Stopper](routines ...R) {
-	internal.StopWaitAll(routines...)
+	for _, r := range routines {
+		r.Stop()
+	}
+
+	for _, r := range routines {
+		<-r.Wait()
+	}
 }

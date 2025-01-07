@@ -5,90 +5,281 @@
 package async
 
 import (
-	"github.com/basecomplextech/baselibrary/async/internal/routine"
+	"sync"
+
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-type (
-	// Routine is an async routine which returns the result as a future, recovers on panics,
-	// and can be cancelled.
-	Routine[T any] = routine.Routine[T]
+// Routine is an async routine which returns the result as a future, recovers on panics,
+// and can be cancelled.
+type Routine[T any] interface {
+	Future[T]
 
-	// RoutineDyn is a routine interface without generics, i.e. Routine[?].
-	RoutineDyn = routine.RoutineDyn
+	// Start start the routine, if not started or stopped yet.
+	Start()
 
-	// RoutineVoid is a routine which has no result.
-	RoutineVoid = routine.RoutineVoid
-)
+	// Stop requests the routine to stop and returns a wait channel.
+	// The method does not call the on-stop callbacks if the routine has not started.
+	Stop() <-chan struct{}
 
-type (
-	// RoutineGroup is a group of routines of the same type.
-	// Use [RoutineGroupDyn] for a group of routines of different types.
-	RoutineGroup[T any] = routine.RoutineGroup[T]
+	// OnStop adds a callback which is called when the routine stops.
+	// The callback is called by the routine goroutine, and is not called
+	// if the routine has not started.
+	OnStop(fn func(Routine[T])) bool
+}
 
-	// RoutineGroupDyn is a group of routines of different types.
-	// Use [RoutineGroup] for a group of routines of the same type.
-	RoutineGroupDyn = routine.RoutineGroupDyn
-)
+// RoutineDyn is a routine interface without generics, i.e. Routine[?].
+type RoutineDyn interface {
+	FutureDyn
+
+	// Start starts the routine, if not stopped already.
+	Start()
+
+	// Stop requests the routine to stop and returns a wait channel.
+	Stop() <-chan struct{}
+}
+
+// RoutineVoid is a routine which has no result.
+type RoutineVoid = Routine[struct{}]
+
+// Func
 
 type (
 	// Func is a function which returns the result.
-	Func[T any] = func(ctx Context) (T, status.Status)
+	Func[T any] func(ctx Context) (T, status.Status)
 
 	// Func1 is a single argument function which returns the result.
-	Func1[T any, A any] = func(ctx Context, arg A) (T, status.Status)
+	Func1[T any, A any] func(ctx Context, arg A) (T, status.Status)
 
 	// FuncVoid is a function which returns no result.
 	FuncVoid = func(ctx Context) status.Status
 
 	// FuncVoid1 is a single argument function which returns no result
-	FuncVoid1[A any] = func(ctx Context, arg A) status.Status
+	FuncVoid1[A any] func(ctx Context, arg A) status.Status
 )
 
 // New
 
 // NewRoutine returns a new routine, but does not start it.
 func NewRoutine[T any](fn Func[T]) Routine[T] {
-	return routine.New(fn)
+	return newRoutine(fn)
 }
 
-// NewRoutineVoid returns a new routine, but does not start it.
-func NewRoutineVoid(fn FuncVoid) RoutineVoid {
-	return routine.NewVoid(fn)
+// NewRoutineVoid returns a new routine without a result, but does not start it.
+func NewRoutineVoid(fn func(ctx Context) status.Status) RoutineVoid {
+	fn1 := func(ctx Context) (struct{}, status.Status) {
+		return struct{}{}, fn(ctx)
+	}
+
+	return newRoutine(fn1)
 }
 
 // Run
 
 // Run runs a function in a new routine, and returns the result, recovers on panics.
 func Run[T any](fn Func[T]) Routine[T] {
-	return routine.Run(fn)
+	r := newRoutine(fn)
+	r.Start()
+	return r
 }
 
 // Run1 runs a function in a new routine, and returns the result, recovers on panics.
 func Run1[T any, A any](fn Func1[T, A], arg A) Routine[T] {
-	return routine.Run1(fn, arg)
+	fn1 := func(ctx Context) (T, status.Status) {
+		return fn(ctx, arg)
+	}
+
+	r := newRoutine(fn1)
+	r.Start()
+	return r
 }
 
 // RunVoid
 
 // RunVoid runs a procedure in a new routine, recovers on panics.
 func RunVoid(fn FuncVoid) RoutineVoid {
-	return routine.RunVoid(fn)
+	fn1 := func(ctx Context) (struct{}, status.Status) {
+		return struct{}{}, fn(ctx)
+	}
+
+	r := newRoutine(fn1)
+	r.Start()
+	return r
 }
 
 // RunVoid1 runs a procedure in a new routine, recovers on panics.
 func RunVoid1[A any](fn FuncVoid1[A], arg A) RoutineVoid {
-	return routine.RunVoid1(fn, arg)
+	fn1 := func(ctx Context) (struct{}, status.Status) {
+		return struct{}{}, fn(ctx, arg)
+	}
+
+	r := newRoutine(fn1)
+	r.Start()
+	return r
 }
 
 // Stopped
 
-// Stopped returns a stopped routine with the given result.
+// Stopped returns a routine which has stopped with the given result and status.
 func Stopped[T any](result T, st status.Status) Routine[T] {
-	return routine.Stopped(result, st)
+	r := newRoutine[T](nil)
+	r.complete(result, st)
+	return r
 }
 
 // StoppedVoid returns a routine without a result which has stopped with the given status.
 func StoppedVoid(st status.Status) RoutineVoid {
-	return routine.StoppedVoid(st)
+	r := newRoutine[struct{}](nil)
+	r.complete(struct{}{}, st)
+	return r
+}
+
+// internal
+
+var _ Routine[any] = (*routine1[any])(nil)
+
+type routine1[T any] struct {
+	ctx CancelContext
+	fn  Func[T]
+
+	mu       sync.Mutex
+	promise  Promise[T]
+	callback func(Routine[T]) // maybe nil
+
+	start bool // start has been called
+	stop  bool // stop has been called
+}
+
+func newRoutine[T any](fn Func[T]) *routine1[T] {
+	ctx := NewContext()
+	promise := newPromise[T]()
+
+	return &routine1[T]{
+		ctx:     ctx,
+		fn:      fn,
+		promise: promise,
+	}
+}
+
+// Future
+
+// Done returns true if the future is complete.
+func (r *routine1[T]) Done() bool {
+	return r.promise.Done()
+}
+
+// Wait returns a channel which is closed when the future is complete.
+func (r *routine1[T]) Wait() <-chan struct{} {
+	return r.promise.Wait()
+}
+
+// Result returns a value and a status.
+func (r *routine1[T]) Result() (T, status.Status) {
+	return r.promise.Result()
+}
+
+// Status returns a status or none.
+func (r *routine1[T]) Status() status.Status {
+	return r.promise.Status()
+}
+
+// Routine
+
+// Start start the routine, if not started or stopped yet.
+func (r *routine1[T]) Start() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.start || r.stop {
+		return
+	}
+
+	r.start = true
+	go r.run()
+}
+
+// Stop requests the routine to stop and returns a wait channel.
+// The method does not call the on-stop callbacks if the routine has not started.
+func (r *routine1[T]) Stop() <-chan struct{} {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Stop already requested
+	if r.stop {
+		return r.promise.Wait()
+	}
+
+	// Reject if not started
+	if !r.start {
+		r.promise.Reject(status.Cancelled)
+		return r.promise.Wait()
+	}
+
+	// Cancel context and return wait
+	r.ctx.Cancel()
+	r.stop = true
+	return r.promise.Wait()
+}
+
+// OnStop adds a callback which is called when the routine stops.
+// The callback is called by the routine goroutine, and is not called
+// if the routine has not started.
+func (r *routine1[T]) OnStop(fn func(Routine[T])) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Return false if done
+	if r.promise.Done() {
+		return false
+	}
+
+	// First callback
+	if r.callback == nil {
+		r.callback = fn
+		return true
+	}
+
+	// Chain callbacks
+	last := r.callback
+	r.callback = func(r Routine[T]) {
+		defer fn(r)
+		last(r)
+	}
+	return true
+}
+
+// private
+
+func (r *routine1[T]) run() {
+	defer r.ctx.Free()
+	defer func() {
+		if e := recover(); e != nil {
+			st := status.Recover(e)
+			r.reject(st)
+		}
+	}()
+
+	result, st := r.fn(r.ctx)
+	r.complete(result, st)
+}
+
+func (r *routine1[T]) reject(st status.Status) {
+	var zero T
+	r.complete(zero, st)
+}
+
+func (r *routine1[T]) complete(result T, st status.Status) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Complete promise
+	ok := r.promise.Complete(result, st)
+	if !ok {
+		return
+	}
+
+	// Notify callback
+	if r.callback != nil {
+		r.callback(r)
+	}
 }

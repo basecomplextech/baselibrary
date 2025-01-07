@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package queue
+package async
 
 import (
 	"slices"
@@ -30,8 +30,8 @@ type Queue[T any] interface {
 	Wait() <-chan struct{}
 }
 
-// New returns an empty queue.
-func New[T any](items ...T) Queue[T] {
+// NewQueue returns a new queue.
+func NewQueue[T any](items ...T) Queue[T] {
 	return newQueue[T](items...)
 }
 

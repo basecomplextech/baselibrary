@@ -1,30 +1,36 @@
-// Copyright 2025 Ivan Korobkov. All rights reserved.
+// Copyright 2021 Ivan Korobkov. All rights reserved.
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
 package async
 
-import "github.com/basecomplextech/baselibrary/async/internal/future"
-
-type (
-	// Future represents a result available in the future.
-	Future[T any] = future.Future[T]
-
-	// FutureDyn is a future interface without generics, i.e. Future[?].
-	FutureDyn = future.FutureDyn
+import (
+	"github.com/basecomplextech/baselibrary/status"
 )
 
-type (
-	// FutureGroup is a group of futures of the same type.
-	// Use [FutureGroupDyn] for a group of futures of different types.
-	FutureGroup[T any] = future.FutureGroup[T]
+// Future represents a result available in the future.
+type Future[T any] interface {
+	// Done returns true if the future is complete.
+	Done() bool
 
-	// FutureGroupDyn is a group of futures of different types.
-	// Use [FutureGroup] for a group of futures of the same type.
-	FutureGroupDyn = future.FutureGroupDyn
-)
+	// Wait returns a channel which is closed when the future is complete.
+	Wait() <-chan struct{}
 
-type (
-	// Result is an async result which combines a value and a status.
-	Result[T any] = future.Result[T]
-)
+	// Result returns a value and a status.
+	Result() (T, status.Status)
+
+	// Status returns a status or none.
+	Status() status.Status
+}
+
+// FutureDyn is a future interface without generics, i.e. Future[?].
+type FutureDyn interface {
+	// Done returns true if the future is complete.
+	Done() bool
+
+	// Wait returns a channel which is closed when the future is complete.
+	Wait() <-chan struct{}
+
+	// Status returns a status or none.
+	Status() status.Status
+}

@@ -2,12 +2,9 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package routine
+package async
 
 import (
-	"github.com/basecomplextech/baselibrary/async/internal"
-	"github.com/basecomplextech/baselibrary/async/internal/context"
-	"github.com/basecomplextech/baselibrary/async/internal/future"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -17,20 +14,20 @@ type RoutineGroupDyn []RoutineDyn
 
 // Await waits for the completion of all routines in the group.
 // The method returns the context status if the context is cancelled.
-func (g RoutineGroupDyn) Await(ctx context.Context) status.Status {
-	return future.AwaitAll(ctx, g...)
+func (g RoutineGroupDyn) Await(ctx Context) status.Status {
+	return AwaitAll(ctx, g...)
 }
 
 // AwaitAny waits for the completion of any routine in the group, and returns its result.
 // The method returns -1 and the context status if the context is cancelled.
-func (g RoutineGroupDyn) AwaitAny(ctx context.Context) (int, status.Status) {
-	return future.AwaitAnyDyn(ctx, g...)
+func (g RoutineGroupDyn) AwaitAny(ctx Context) (int, status.Status) {
+	return AwaitAnyDyn(ctx, g...)
 }
 
 // AwaitError waits for any failure of the routines in the group, and returns the error.
 // The method returns ok if all routines are successful.
-func (g RoutineGroupDyn) AwaitError(ctx context.Context) (int, status.Status) {
-	return future.AwaitError(ctx, g...)
+func (g RoutineGroupDyn) AwaitError(ctx Context) (int, status.Status) {
+	return AwaitError(ctx, g...)
 }
 
 // Statuses returns the statuses of all routines in the group.
@@ -45,10 +42,10 @@ func (g RoutineGroupDyn) Statuses() []status.Status {
 
 // Stop stops all routines in the group.
 func (g RoutineGroupDyn) Stop() {
-	internal.StopAll(g...)
+	StopAll(g...)
 }
 
 // StopWait stops and awaits all routines in the group.
 func (g RoutineGroupDyn) StopWait() {
-	internal.StopWaitAll(g...)
+	StopWaitAll(g...)
 }

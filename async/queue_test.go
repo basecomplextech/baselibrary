@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package queue
+package async
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestQueue(t *testing.T) {
-	q := New[int]()
+	q := NewQueue[int]()
 	q.Push(1)
 	q.Push(2)
 

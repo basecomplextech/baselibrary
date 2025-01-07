@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package routine
+package async
 
 import (
 	"testing"
@@ -130,7 +130,7 @@ func TestRunVoid__should_return_recover_on_panic(t *testing.T) {
 func TestRoutine_Start__should_start_routine(t *testing.T) {
 	done := flag.UnsetFlag()
 
-	r := NewVoid(func(ctx context.Context) status.Status {
+	r := NewRoutineVoid(func(ctx context.Context) status.Status {
 		done.Set()
 		return status.OK
 	})
@@ -144,7 +144,7 @@ func TestRoutine_Start__should_start_routine(t *testing.T) {
 }
 
 func TestRoutine_Start__should_not_start_when_already_stopped(t *testing.T) {
-	r := NewVoid(func(ctx context.Context) status.Status {
+	r := NewRoutineVoid(func(ctx context.Context) status.Status {
 		return status.OK
 	})
 	r.Stop()
@@ -173,7 +173,7 @@ func TestRoutine_Stop__should_request_stop_cancel_context(t *testing.T) {
 }
 
 func TestRoutine_Stop__should_reject_not_started_routine(t *testing.T) {
-	r := NewVoid(func(context.Context) status.Status {
+	r := NewRoutineVoid(func(context.Context) status.Status {
 		return status.OK
 	})
 	r.Stop()
@@ -193,7 +193,7 @@ func TestRoutine__should_call_stop_callbacks_on_stop(t *testing.T) {
 	done0 := flag.UnsetFlag()
 	done1 := flag.UnsetFlag()
 
-	r := NewVoid(func(ctx context.Context) status.Status {
+	r := NewRoutineVoid(func(ctx context.Context) status.Status {
 		return status.OK
 	})
 
