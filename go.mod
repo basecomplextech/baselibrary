@@ -1,6 +1,6 @@
 module github.com/basecomplextech/baselibrary
 
-go 1.24
+go 1.23
 
 require (
 	github.com/basecomplextech/spec v0.0.0-20241225125236-5acff5e17fff
@@ -8,6 +8,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/stretchr/testify v1.8.2
 	github.com/zeebo/xxh3 v1.0.2
+	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
