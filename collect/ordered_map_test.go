@@ -1,8 +1,8 @@
-// Copyright 2023 Ivan Korobkov. All rights reserved.
+// Copyright 2025 Ivan Korobkov. All rights reserved.
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package orderedmap
+package collect
 
 import (
 	"testing"
@@ -10,18 +10,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew__should_create_new_map(t *testing.T) {
-	items := []Item[int, int]{
+func TestNewOrderedMap__should_create_new_map(t *testing.T) {
+	items := []OrderedMapItem[int, int]{
 		{3, 3},
 		{2, 2},
 		{1, 1},
 	}
 
-	m := New[int, int](items...)
+	m := NewOrderedMap[int, int](items...)
 
-	items1 := []Item[int, int]{}
+	items1 := []OrderedMapItem[int, int]{}
 	m.Iterate(func(key int, value int) bool {
-		item := Item[int, int]{key, value}
+		item := OrderedMapItem[int, int]{key, value}
 		items1 = append(items1, item)
 		return true
 	})
@@ -32,13 +32,13 @@ func TestNew__should_create_new_map(t *testing.T) {
 // Index
 
 func TestMap_Index__should_return_index_of_key(t *testing.T) {
-	items := []Item[int, int]{
+	items := []OrderedMapItem[int, int]{
 		{3, 3},
 		{2, 2},
 		{1, 1},
 	}
 
-	m := New[int, int](items...)
+	m := NewOrderedMap[int, int](items...)
 	assert.Equal(t, 0, m.Index(3))
 	assert.Equal(t, 1, m.Index(2))
 	assert.Equal(t, 2, m.Index(1))
@@ -47,13 +47,13 @@ func TestMap_Index__should_return_index_of_key(t *testing.T) {
 // Get
 
 func TestMap_Get__should_return_value_for_key(t *testing.T) {
-	items := []Item[int, int]{
+	items := []OrderedMapItem[int, int]{
 		{3, 3},
 		{2, 2},
 		{1, 1},
 	}
 
-	m := New[int, int](items...)
+	m := NewOrderedMap[int, int](items...)
 	value, ok := m.Get(2)
 	assert.True(t, ok)
 	assert.Equal(t, 2, value)
@@ -66,13 +66,13 @@ func TestMap_Get__should_return_value_for_key(t *testing.T) {
 // Put
 
 func TestMap_Put__should_add_new_key_value_pair(t *testing.T) {
-	items := []Item[int, int]{
+	items := []OrderedMapItem[int, int]{
 		{3, 3},
 		{2, 2},
 		{1, 1},
 	}
 
-	m := New[int, int](items...)
+	m := NewOrderedMap[int, int](items...)
 	m.Put(4, 4)
 
 	value, ok := m.Get(4)
@@ -81,26 +81,26 @@ func TestMap_Put__should_add_new_key_value_pair(t *testing.T) {
 }
 
 func TestMap_Put__should_update_existing_key_value_pair(t *testing.T) {
-	items := []Item[int, int]{
+	items := []OrderedMapItem[int, int]{
 		{3, 3},
 		{2, 2},
 		{1, 1},
 	}
 
-	m := New[int, int](items...)
+	m := NewOrderedMap[int, int](items...)
 	m.Put(1, 3)
 	m.Put(2, 2)
 	m.Put(3, 1)
 
-	items1 := []Item[int, int]{
+	items1 := []OrderedMapItem[int, int]{
 		{3, 1},
 		{2, 2},
 		{1, 3},
 	}
 
-	items2 := []Item[int, int]{}
+	items2 := []OrderedMapItem[int, int]{}
 	m.Iterate(func(key int, value int) bool {
-		item := Item[int, int]{key, value}
+		item := OrderedMapItem[int, int]{key, value}
 		items2 = append(items2, item)
 		return true
 	})
@@ -110,23 +110,23 @@ func TestMap_Put__should_update_existing_key_value_pair(t *testing.T) {
 // Delete
 
 func TestMap_Delete__should_delete_key_value_pair(t *testing.T) {
-	items := []Item[int, int]{
+	items := []OrderedMapItem[int, int]{
 		{3, 3},
 		{2, 2},
 		{1, 1},
 	}
 
-	m := New[int, int](items...)
+	m := NewOrderedMap[int, int](items...)
 	m.Delete(2)
 
-	items1 := []Item[int, int]{
+	items1 := []OrderedMapItem[int, int]{
 		{3, 3},
 		{1, 1},
 	}
 
-	items2 := []Item[int, int]{}
+	items2 := []OrderedMapItem[int, int]{}
 	m.Iterate(func(key int, value int) bool {
-		item := Item[int, int]{key, value}
+		item := OrderedMapItem[int, int]{key, value}
 		items2 = append(items2, item)
 		return true
 	})
@@ -136,13 +136,13 @@ func TestMap_Delete__should_delete_key_value_pair(t *testing.T) {
 // Keys
 
 func TestMap_Keys__should_return_keys(t *testing.T) {
-	items := []Item[int, int]{
+	items := []OrderedMapItem[int, int]{
 		{3, 3},
 		{2, 2},
 		{1, 1},
 	}
 
-	m := New[int, int](items...)
+	m := NewOrderedMap[int, int](items...)
 	keys := m.Keys()
 
 	assert.Equal(t, []int{3, 2, 1}, keys)
@@ -151,13 +151,13 @@ func TestMap_Keys__should_return_keys(t *testing.T) {
 // Values
 
 func TestMap_Values__should_return_values(t *testing.T) {
-	items := []Item[int, int]{
+	items := []OrderedMapItem[int, int]{
 		{3, 3},
 		{2, 2},
 		{1, 1},
 	}
 
-	m := New[int, int](items...)
+	m := NewOrderedMap[int, int](items...)
 	values := m.Values()
 
 	assert.Equal(t, []int{3, 2, 1}, values)

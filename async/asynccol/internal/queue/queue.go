@@ -5,15 +5,26 @@
 package queue
 
 import (
+	"slices"
 	"sync"
 
-	"github.com/basecomplextech/baselibrary/collect"
 	"github.com/basecomplextech/baselibrary/collect/chans"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 )
 
 // Queue is an unbounded FIFO queue guarded by a mutex.
 type Queue[T any] interface {
-	collect.Queue[T]
+	// Len returns the number of elements in the queue.
+	Len() int
+
+	// Clear clears the queue.
+	Clear()
+
+	// Push adds an element to the queue.
+	Push(v T)
+
+	// Poll removes an element from the queue, returns false if the queue is empty.
+	Poll() (T, bool)
 
 	// Wait returns a channel which is notified on new elements.
 	Wait() <-chan struct{}
@@ -29,15 +40,15 @@ func New[T any](items ...T) Queue[T] {
 var _ Queue[int] = (*queue[int])(nil)
 
 type queue[T any] struct {
-	mu      sync.RWMutex
-	collect collect.Queue[T]
-	wait    chan struct{}
+	mu   sync.RWMutex
+	list []T
+	wait chan struct{}
 }
 
 func newQueue[T any](items ...T) *queue[T] {
 	return &queue[T]{
-		collect: collect.NewQueue[T](items...),
-		wait:    make(chan struct{}, 1),
+		list: slices.Clone(items),
+		wait: make(chan struct{}, 1),
 	}
 }
 
@@ -48,7 +59,7 @@ func (q *queue[T]) Len() int {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 
-	return q.collect.Len()
+	return len(q.list)
 }
 
 // Clear clears the queue.
@@ -57,7 +68,7 @@ func (q *queue[T]) Clear() {
 	defer q.mu.Unlock()
 
 	// Clear queue
-	q.collect.Clear()
+	q.list = slices2.Truncate(q.list)
 
 	// Notify waiters
 	for len(q.wait) > 0 {
@@ -75,7 +86,7 @@ func (q *queue[T]) Push(v T) {
 	defer q.mu.Unlock()
 
 	// Push item
-	q.collect.Push(v)
+	q.list = append(q.list, v)
 
 	// Notify waiter
 	select {
@@ -89,7 +100,16 @@ func (q *queue[T]) Poll() (v T, ok bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	return q.collect.Poll()
+	if len(q.list) == 0 {
+		return
+	}
+
+	// Get value
+	v = q.list[0]
+
+	// Shift remaining left
+	q.list = slices2.ShiftLeft(q.list, 1)
+	return v, true
 }
 
 // Wait returns a channel which is notified on new elements.
@@ -97,7 +117,7 @@ func (q *queue[T]) Wait() <-chan struct{} {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 
-	if q.collect.Len() > 0 {
+	if len(q.list) > 0 {
 		return chans.Closed()
 	}
 	return q.wait
