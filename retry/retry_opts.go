@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/basecomplextech/baselibrary/logging"
-	"github.com/basecomplextech/baselibrary/status"
 )
 
 // Options specifies the options for a retrier.
@@ -40,23 +39,4 @@ func Default() Options {
 		MinDelay: 25 * time.Millisecond,
 		MaxDelay: 1 * time.Second,
 	}
-}
-
-// ErrorLogger
-
-// ErrorLogger specifies an interface for logging retry errors.
-type ErrorLogger interface {
-	// RetryError is called on an error, the attempt is zero-based.
-	RetryError(msg string, err status.Status, attempt int)
-}
-
-// RetryErrorFunc logs a retry error.
-type RetryErrorFunc func(msg string, err status.Status, attempt int)
-
-// private
-
-type errorLoggerFunc func(msg string, err status.Status, attempt int)
-
-func (f errorLoggerFunc) RetryError(msg string, err status.Status, attempt int) {
-	f(msg, err, attempt)
 }

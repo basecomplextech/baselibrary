@@ -8,32 +8,8 @@ import (
 	"time"
 
 	"github.com/basecomplextech/baselibrary/async"
-	"github.com/basecomplextech/baselibrary/logging"
 	"github.com/basecomplextech/baselibrary/status"
 )
-
-// builder provides chained methods for building a call.
-type builder[C any] interface {
-	// Error sets the error message.
-	Error(message string) C
-
-	// ErrorLogger sets the error logger.
-	ErrorLogger(logger ErrorLogger) C
-
-	// Logger sets the default logger.
-	Logger(logger logging.Logger) C
-
-	// MaxDelay sets the max delay.
-	MaxDelay(maxDelay time.Duration) C
-
-	// MaxRetries sets the max retries.
-	MaxRetries(maxRetries int) C
-
-	// Options overrides all options.
-	Options(opts Options) C
-}
-
-// call
 
 type call struct {
 	opts Options

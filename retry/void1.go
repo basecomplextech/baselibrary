@@ -13,88 +13,85 @@ import (
 )
 
 type (
-	// Func is a function that returns the result.
-	Func[T any] func(ctx async.Context) (T, status.Status)
+	// VoidFunc1 is a procedure which accepts one argument.
+	VoidFunc1[A any] func(ctx async.Context, arg A) status.Status
 
-	// FuncCall retries a function and returns the result.
-	FuncCall[T any] struct {
+	// VoidCall1 retries a single argument procedure.
+	VoidCall1[A any] struct {
 		call
-		fn Func[T]
+		proc VoidFunc1[A]
 	}
 )
 
-// Retry returns a function call.
-func Retry[T any](fn Func[T]) FuncCall[T] {
-	return FuncCall[T]{
-		call: newCall(),
-		fn:   fn,
-	}
+// RetryVoid1 returns a new procedure call.
+func RetryVoid1[A any](fn VoidFunc1[A]) VoidCall1[A] {
+	return VoidCall1[A]{proc: fn}
 }
 
-var _ builder[FuncCall[any]] = (*FuncCall[any])(nil)
+var _ builder[VoidCall1[any]] = (*VoidCall1[any])(nil)
 
 // Error sets the error message.
-func (c FuncCall[T]) Error(message string) FuncCall[T] {
+func (c VoidCall1[A]) Error(message string) VoidCall1[A] {
 	c.opts.Error = message
 	return c
 }
 
 // ErrorFunc sets the error function.
-func (c FuncCall[T]) ErrorFunc(fn ErrorFunc) FuncCall[T] {
+func (c VoidCall1[A]) ErrorFunc(fn ErrorFunc) VoidCall1[A] {
 	c.opts.ErrorLogger = errorLoggerFunc(fn)
 	return c
 }
 
 // ErrorLogger sets the error logger.
-func (c FuncCall[T]) ErrorLogger(logger ErrorLogger) FuncCall[T] {
+func (c VoidCall1[A]) ErrorLogger(logger ErrorLogger) VoidCall1[A] {
 	c.opts.ErrorLogger = logger
 	return c
 }
 
 // Logger sets the default logger.
-func (c FuncCall[T]) Logger(logger logging.Logger) FuncCall[T] {
+func (c VoidCall1[A]) Logger(logger logging.Logger) VoidCall1[A] {
 	c.opts.Logger = logger
 	return c
 }
 
 // MinDelay sets the min delay.
-func (c FuncCall[T]) MinDelay(minDelay time.Duration) FuncCall[T] {
+func (c VoidCall1[A]) MinDelay(minDelay time.Duration) VoidCall1[A] {
 	c.opts.MinDelay = minDelay
 	return c
 }
 
 // MaxDelay sets the max delay.
-func (c FuncCall[T]) MaxDelay(maxDelay time.Duration) FuncCall[T] {
+func (c VoidCall1[A]) MaxDelay(maxDelay time.Duration) VoidCall1[A] {
 	c.opts.MaxDelay = maxDelay
 	return c
 }
 
 // MaxRetries sets the max retries.
-func (c FuncCall[T]) MaxRetries(maxRetries int) FuncCall[T] {
+func (c VoidCall1[A]) MaxRetries(maxRetries int) VoidCall1[A] {
 	c.opts.MaxRetries = maxRetries
 	return c
 }
 
 // Options overrides all options.
-func (c FuncCall[T]) Options(opts Options) FuncCall[T] {
+func (c VoidCall1[A]) Options(opts Options) VoidCall1[A] {
 	c.opts = opts
 	return c
 }
 
-// Run retries the function and returns the result.
-func (c FuncCall[T]) Run(ctx async.Context) (T, status.Status) {
+// Run retries the procedure.
+func (c VoidCall1[A]) Run(ctx async.Context, arg A) status.Status {
 	for attempt := 0; ; attempt++ {
 		// Call function
-		result, st := c.run(ctx)
+		st := c.run(ctx, arg)
 		switch st.Code {
 		case status.CodeOK, status.CodeCancelled:
-			return result, st
+			return st
 		}
 
 		// Check max retries
 		if c.opts.MaxRetries != 0 {
 			if attempt >= c.opts.MaxRetries {
-				return result, st
+				return st
 			}
 		}
 
@@ -103,19 +100,19 @@ func (c FuncCall[T]) Run(ctx async.Context) (T, status.Status) {
 
 		// Sleep
 		if st := c.sleep(ctx, attempt); !st.OK() {
-			return result, st
+			return st
 		}
 	}
 }
 
 // private
 
-func (c FuncCall[T]) run(ctx async.Context) (_ T, st status.Status) {
+func (c VoidCall1[A]) run(ctx async.Context, arg A) (st status.Status) {
 	defer func() {
 		if e := recover(); e != nil {
 			st = status.Recover(e)
 		}
 	}()
 
-	return c.fn(ctx)
+	return c.proc(ctx, arg)
 }
