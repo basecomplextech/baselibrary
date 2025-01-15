@@ -6,6 +6,12 @@ package retry
 
 import "time"
 
+const (
+	MinDelay       = 25 * time.Millisecond
+	MinDelayMedium = 250 * time.Millisecond
+	MaxDelay       = 1 * time.Second
+)
+
 // Delay returns a delay for retrying, uses an exponential backoff.
 func Delay(attempt int) time.Duration {
 	return delay(attempt, 0, 0)
@@ -18,11 +24,6 @@ func DelayOpts(attempt int, minDelay, maxDelay time.Duration) time.Duration {
 
 // private
 
-const (
-	defaultMinDelay = time.Millisecond * 25
-	defaultMaxDelay = time.Second
-)
-
 // delay returns a delay for retrying, uses an exponential backoff.
 func delay(attempt int, minDelay, maxDelay time.Duration) time.Duration {
 	if attempt == 0 {
@@ -30,10 +31,10 @@ func delay(attempt int, minDelay, maxDelay time.Duration) time.Duration {
 	}
 
 	if minDelay == 0 {
-		minDelay = defaultMinDelay
+		minDelay = MinDelay
 	}
 	if maxDelay == 0 {
-		maxDelay = defaultMaxDelay
+		maxDelay = MaxDelay
 	}
 
 	multi := uint16(1<<attempt - 1)
