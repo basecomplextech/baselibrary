@@ -15,10 +15,10 @@ type Options struct {
 	// Error is the error message.
 	Error string
 
-	// ErrorLogger is a logger for retry errors.
-	ErrorLogger ErrorLogger
+	// ErrorHandler handles retry errors.
+	ErrorHandler ErrorHandler
 
-	// Logger is the default logger if the error logger is not set.
+	// Logger is the default logger if the error handler is not set.
 	Logger logging.Logger
 
 	// MinDelay is the min delay between retries.

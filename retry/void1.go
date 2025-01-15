@@ -36,15 +36,15 @@ func (c VoidCall1[A]) Error(message string) VoidCall1[A] {
 	return c
 }
 
-// ErrorFunc sets the error function.
+// ErrorFunc sets the error handler.
 func (c VoidCall1[A]) ErrorFunc(fn ErrorFunc) VoidCall1[A] {
-	c.opts.ErrorLogger = errorLoggerFunc(fn)
+	c.opts.ErrorHandler = fn
 	return c
 }
 
-// ErrorLogger sets the error logger.
-func (c VoidCall1[A]) ErrorLogger(logger ErrorLogger) VoidCall1[A] {
-	c.opts.ErrorLogger = logger
+// ErrorHandler sets the error handler.
+func (c VoidCall1[A]) ErrorHandler(handler ErrorHandler) VoidCall1[A] {
+	c.opts.ErrorHandler = handler
 	return c
 }
 
@@ -95,8 +95,10 @@ func (c VoidCall1[A]) Run(ctx async.Context, arg A) status.Status {
 			}
 		}
 
-		// Log error
-		c.logError(st, attempt)
+		// Handle error
+		if st := c.handleError(st, attempt); !st.OK() {
+			return st
+		}
 
 		// Sleep
 		if st := c.sleep(ctx, attempt); !st.OK() {

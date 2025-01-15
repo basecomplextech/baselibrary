@@ -50,9 +50,11 @@ func (c LoopCall) Run(ctx async.Context) status.Status {
 			return st
 		}
 
-		// Log error
+		// Handle error
 		if !st.OK() {
-			c.logError(st, attempt)
+			if st := c.handleError(st, attempt); !st.OK() {
+				return st
+			}
 		}
 
 		// Sleep before retry
@@ -68,15 +70,15 @@ func (c LoopCall) Error(message string) LoopCall {
 	return c
 }
 
-// ErrorFunc sets the error function.
+// ErrorFunc sets the error handler.
 func (c LoopCall) ErrorFunc(fn ErrorFunc) LoopCall {
-	c.opts.ErrorLogger = errorLoggerFunc(fn)
+	c.opts.ErrorHandler = fn
 	return c
 }
 
-// ErrorLogger sets the error logger.
-func (c LoopCall) ErrorLogger(logger ErrorLogger) LoopCall {
-	c.opts.ErrorLogger = logger
+// ErrorHandler sets the error handler.
+func (c LoopCall) ErrorHandler(handler ErrorHandler) LoopCall {
+	c.opts.ErrorHandler = handler
 	return c
 }
 

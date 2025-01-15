@@ -39,15 +39,15 @@ func (c Loop1Call[A]) Error(message string) Loop1Call[A] {
 	return c
 }
 
-// ErrorFunc sets the error function.
+// ErrorFunc sets the error handler.
 func (c Loop1Call[A]) ErrorFunc(fn ErrorFunc) Loop1Call[A] {
-	c.opts.ErrorLogger = errorLoggerFunc(fn)
+	c.opts.ErrorHandler = fn
 	return c
 }
 
-// ErrorLogger sets the error logger.
-func (c Loop1Call[A]) ErrorLogger(logger ErrorLogger) Loop1Call[A] {
-	c.opts.ErrorLogger = logger
+// ErrorHandler sets the error handler.
+func (c Loop1Call[A]) ErrorHandler(handler ErrorHandler) Loop1Call[A] {
+	c.opts.ErrorHandler = handler
 	return c
 }
 
@@ -98,9 +98,11 @@ func (c Loop1Call[A]) Run(ctx async.Context, arg A) status.Status {
 			return st
 		}
 
-		// Log error
+		// Handler error
 		if !st.OK() {
-			c.logError(st, attempt)
+			if st := c.handleError(st, attempt); !st.OK() {
+				return st
+			}
 		}
 
 		// Sleep before retry

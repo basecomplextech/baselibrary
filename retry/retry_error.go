@@ -6,19 +6,18 @@ package retry
 
 import "github.com/basecomplextech/baselibrary/status"
 
-// ErrorFunc logs a retry error, attempt is zero-based.
-type ErrorFunc func(msg string, err status.Status, attempt int)
-
-// ErrorLogger specifies an interface for logging retry errors.
-type ErrorLogger interface {
-	// RetryError is called on an error, attempt is zero-based.
-	RetryError(msg string, err status.Status, attempt int)
+// ErrorHandler handles retry errors.
+type ErrorHandler interface {
+	// RetryError handles an error, attempt is zero-based.
+	RetryError(msg string, err status.Status, attempt int) status.Status
 }
 
-// private
+// Func
 
-type errorLoggerFunc func(msg string, err status.Status, attempt int)
+// ErrorFunc handles retry errors, attempt is zero-based.
+type ErrorFunc func(msg string, err status.Status, attempt int) status.Status
 
-func (f errorLoggerFunc) RetryError(msg string, err status.Status, attempt int) {
-	f(msg, err, attempt)
+// RetryError handles an error, attempt is zero-based.
+func (f ErrorFunc) RetryError(msg string, err status.Status, attempt int) status.Status {
+	return f(msg, err, attempt)
 }

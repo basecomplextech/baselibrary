@@ -15,11 +15,11 @@ type builder[C any] interface {
 	// Error sets the error message.
 	Error(message string) C
 
-	// ErrorFunc sets the error function.
+	// ErrorFunc sets the error handler.
 	ErrorFunc(fn ErrorFunc) C
 
-	// ErrorLogger sets the error logger.
-	ErrorLogger(logger ErrorLogger) C
+	// ErrorHandler sets the error handler.
+	ErrorHandler(handler ErrorHandler) C
 
 	// Logger sets the default logger.
 	Logger(logger logging.Logger) C

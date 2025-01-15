@@ -39,15 +39,15 @@ func (c FuncCall[T]) Error(message string) FuncCall[T] {
 	return c
 }
 
-// ErrorFunc sets the error function.
+// ErrorFunc sets the error handler.
 func (c FuncCall[T]) ErrorFunc(fn ErrorFunc) FuncCall[T] {
-	c.opts.ErrorLogger = errorLoggerFunc(fn)
+	c.opts.ErrorHandler = fn
 	return c
 }
 
-// ErrorLogger sets the error logger.
-func (c FuncCall[T]) ErrorLogger(logger ErrorLogger) FuncCall[T] {
-	c.opts.ErrorLogger = logger
+// ErrorHandler sets the error handler.
+func (c FuncCall[T]) ErrorHandler(handler ErrorHandler) FuncCall[T] {
+	c.opts.ErrorHandler = handler
 	return c
 }
 
@@ -98,8 +98,10 @@ func (c FuncCall[T]) Run(ctx async.Context) (T, status.Status) {
 			}
 		}
 
-		// Log error
-		c.logError(st, attempt)
+		// Handle error
+		if st := c.handleError(st, attempt); !st.OK() {
+			return result, st
+		}
 
 		// Sleep
 		if st := c.sleep(ctx, attempt); !st.OK() {

@@ -19,19 +19,18 @@ func newCall() call {
 	return call{opts: Default()}
 }
 
-func (c call) logError(err status.Status, attempt int) {
+func (c call) handleError(err status.Status, attempt int) status.Status {
 	msg := c.opts.Error
 
-	// Use error logger if set
-	if logger := c.opts.ErrorLogger; logger != nil {
-		logger.RetryError(msg, err, attempt)
-		return
+	// Maybe use error handler
+	if handler := c.opts.ErrorHandler; handler != nil {
+		return handler.RetryError(msg, err, attempt)
 	}
 
 	// Skip logging if no logger
 	logger := c.opts.Logger
 	if logger == nil {
-		return
+		return status.OK
 	}
 
 	// Log error
@@ -40,6 +39,7 @@ func (c call) logError(err status.Status, attempt int) {
 	} else {
 		logger.DebugStatus(msg, err)
 	}
+	return status.OK
 }
 
 func (c call) sleep(ctx async.Context, attempt int) status.Status {
