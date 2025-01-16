@@ -215,6 +215,11 @@ func (x *context) RemoveCallback(c Callback) {
 	}
 	defer x.release()
 
+	ok, _ = s.result.get()
+	if ok {
+		return
+	}
+
 	s.callbacks.remove(c)
 }
 

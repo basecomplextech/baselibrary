@@ -126,3 +126,17 @@ func TestNextContext__should_not_deadlock_when_parent_cancelled_already(t *testi
 	ctx1 := Next(ctx)
 	ctx1.Done()
 }
+
+// NextTimeout
+
+func TestNextTimeout__should_not_deadlock(t *testing.T) {
+	ctx := New()
+	defer ctx.Free()
+
+	ctx1 := NextTimeout(ctx, time.Second)
+	defer ctx1.Free()
+
+	ctx.Cancel()
+
+	assert.True(t, ctx1.Done())
+}
