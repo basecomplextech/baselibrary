@@ -166,8 +166,8 @@ func (n *leafNode[K, V]) insert(key K, value ref.R[V], compare CompareFunc[K]) b
 	return true
 }
 
-// delete deletes an item by key, returns true if deleted.
-func (n *leafNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
+// delete deletes an item and returns the value, or false if not found.
+func (n *leafNode[K, V]) delete(key K, compare CompareFunc[K]) (ref.R[V], bool) {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -177,15 +177,15 @@ func (n *leafNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
 
 	// Return if not found
 	if index >= len(n.items) {
-		return false
+		return nil, false
 	}
 	if compare(n.items[index].key, key) != 0 {
-		return false
+		return nil, false
 	}
 
-	// Release item
+	// Get value
 	item := n.items[index]
-	item.value.Release()
+	value := item.value
 
 	// Shift greater items left
 	copy(n.items[index:], n.items[index+1:])
@@ -193,7 +193,7 @@ func (n *leafNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
 
 	// Truncate items
 	n.items = n.items[:len(n.items)-1]
-	return true
+	return value, true
 }
 
 // contains/indexOf

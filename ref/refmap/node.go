@@ -29,8 +29,8 @@ type node[K, V any] interface {
 	// insert inserts or updates an item, returns true if inserted.
 	insert(key K, value ref.R[V], cmp CompareFunc[K]) bool
 
-	// delete deletes an item by key, returns true if deleted.
-	delete(key K, cmp CompareFunc[K]) bool
+	// delete deletes an item and returns the value, or false if not found.
+	delete(key K, cmp CompareFunc[K]) (ref.R[V], bool)
 
 	// contains/indexOf
 

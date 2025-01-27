@@ -58,7 +58,7 @@ func sortItems(items []Item[int, *Value]) {
 	})
 }
 
-func testPut(t tests.T, btree *btree[int, *Value], items ...Item[int, *Value]) {
+func testInsert(t tests.T, btree *btree[int, *Value], items ...Item[int, *Value]) {
 	for _, item := range items {
 		btree.SetRetain(item.Key, item.Value)
 	}
@@ -127,7 +127,7 @@ func TestMap_Clone__should_allow_clone_mutation(t *testing.T) {
 	btree.Freeze()
 
 	btree1 := testUnwrap(btree.Clone())
-	testPut(t, btree1, itemsRight...)
+	testInsert(t, btree1, itemsRight...)
 
 	items0 := btree.items()
 	items1 := btree1.items()
@@ -223,7 +223,7 @@ func TestMap_Get__should_not_retain_value(t *testing.T) {
 
 // Set
 
-func TestMap_Put__should_insert_items_in_correct_order(t *testing.T) {
+func TestMap_Set__should_insert_items_in_correct_order(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
 	slices2.Shuffle(items)
@@ -237,7 +237,7 @@ func TestMap_Put__should_insert_items_in_correct_order(t *testing.T) {
 	assert.Equal(t, items, items1)
 }
 
-func TestMap_Put__should_retain_value(t *testing.T) {
+func TestMap_Set__should_retain_value(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t)
 
@@ -255,7 +255,7 @@ func TestMap_Put__should_retain_value(t *testing.T) {
 	}
 }
 
-func TestMap_Put__should_retain_release_item_on_replace(t *testing.T) {
+func TestMap_Set__should_retain_release_item_on_replace(t *testing.T) {
 	items0 := testItems()
 	items1 := testItems()
 	btree := testBtree(t, items0...)
@@ -279,7 +279,7 @@ func TestMap_Delete__should_delete_items(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
 	slices2.Shuffle(items)
-	testPut(t, btree, items...)
+	testInsert(t, btree, items...)
 
 	for _, item := range items {
 		btree.Delete(item.Key)
@@ -298,6 +298,84 @@ func TestMap_Delete__should_release_values(t *testing.T) {
 
 		require.Equal(t, int64(1), item.Value.Refcount())
 	}
+}
+
+// Move
+
+func TestMap_Move__should_move_item_to_another_key(t *testing.T) {
+	btree := testBtree(t)
+	items := testItems()
+
+	item0 := items[0]
+	item1 := items[1]
+	key0 := item0.Key
+	key1 := item1.Key
+	testInsert(t, btree, item0)
+
+	// Move item
+	ok := btree.Move(key0, key1)
+	require.True(t, ok)
+
+	// Check item
+	value, ok := btree.Get(key1)
+	assert.True(t, ok)
+	assert.Equal(t, item0.Value, value)
+
+	_, ok = btree.Get(key0)
+	assert.False(t, ok)
+}
+
+func TestMap_Move__should_not_change_refcount(t *testing.T) {
+	btree := testBtree(t)
+	items := testItems()
+
+	item0 := items[0]
+	item1 := items[1]
+	key0 := item0.Key
+	key1 := item1.Key
+
+	testInsert(t, btree, item0)
+	require.Equal(t, int64(2), item0.Value.Refcount())
+
+	// Move item
+	ok := btree.Move(key0, key1)
+	require.True(t, ok)
+
+	// Check item
+	value, ok := btree.Get(key1)
+	assert.True(t, ok)
+	assert.Equal(t, int64(2), value.Refcount())
+}
+
+func TestMap_Move__should_release_overwritten_value(t *testing.T) {
+	btree := testBtree(t)
+	items := testItems()
+
+	item0 := items[0]
+	item1 := items[1]
+	key0 := item0.Key
+	key1 := item1.Key
+
+	testInsert(t, btree, item0, item1)
+	require.Equal(t, int64(2), item0.Value.Refcount())
+	require.Equal(t, int64(2), item1.Value.Refcount())
+
+	ok := btree.Move(key0, key1)
+	require.True(t, ok)
+
+	require.Equal(t, int64(2), item0.Value.Refcount())
+	require.Equal(t, int64(1), item1.Value.Refcount())
+}
+
+func TestMap_Move__should_return_false_if_not_found(t *testing.T) {
+	btree := testBtree(t)
+	items := testItems()
+
+	key0 := items[0].Key
+	key1 := items[1].Key
+
+	ok := btree.Move(key0, key1)
+	assert.False(t, ok)
 }
 
 // Contains
@@ -321,7 +399,7 @@ func TestMap_items__should_returns_items_as_slice(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
 	slices2.Shuffle(items)
-	testPut(t, btree, items...)
+	testInsert(t, btree, items...)
 
 	sortItems(items)
 	items1 := btree.items()
@@ -333,7 +411,7 @@ func TestMap_items__should_returns_items_as_slice(t *testing.T) {
 func TestMap_keys__should_return_keys_as_slice(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
-	testPut(t, btree, items...)
+	testInsert(t, btree, items...)
 
 	keys := make([]int, 0, len(items))
 	for _, item := range items {
@@ -351,7 +429,7 @@ func TestMap_values__should_return_values_as_slice(t *testing.T) {
 	btree := testBtree(t)
 	items := testItems()
 	slices2.Shuffle(items)
-	testPut(t, btree, items...)
+	testInsert(t, btree, items...)
 
 	values := make([]ref.R[*Value], 0, len(items))
 	for _, item := range items {

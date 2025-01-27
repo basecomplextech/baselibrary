@@ -56,6 +56,9 @@ type Map[K, V any] interface {
 	// SetNoRetain adds an item reference to the map, does not retain it.
 	SetNoRetain(key K, value ref.R[V])
 
+	// Move moves an item from one key to another, or returns false if the key does not exist.
+	Move(key K, newKey K) bool
+
 	// Delete deletes an item by a key, releases its value.
 	Delete(key K)
 
@@ -250,6 +253,27 @@ func (t *btree[K, V]) SetNoRetain(key K, value ref.R[V]) {
 	value.Release()
 }
 
+// Move moves an item from one key to another, or returns false if the key does not exist.
+func (t *btree[K, V]) Move(key K, newKey K) bool {
+	if !t.mutable {
+		panic("operation on immutable refmap")
+	}
+
+	// Mutate root
+	node := t.mutateRoot()
+
+	// Delete item
+	value, mod := node.delete(key, t.compare)
+	if !mod {
+		return false
+	}
+
+	// Insert item
+	node.insert(newKey, value, t.compare)
+	value.Release()
+	return true
+}
+
 // Delete deletes an item by a key, releases its value.
 func (t *btree[K, V]) Delete(key K) {
 	if !t.mutable {
@@ -260,10 +284,11 @@ func (t *btree[K, V]) Delete(key K) {
 	node := t.mutateRoot()
 
 	// Delete item
-	mod := node.delete(key, t.compare)
+	value, mod := node.delete(key, t.compare)
 	if !mod {
 		return
 	}
+	value.Release()
 
 	// Decrement length
 	t.mod++

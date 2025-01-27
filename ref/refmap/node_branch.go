@@ -137,8 +137,8 @@ func (n *branchNode[K, V]) insert(key K, value ref.R[V], compare CompareFunc[K])
 	return mod
 }
 
-// remove removes an item by key, returns true if removed.
-func (n *branchNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
+// delete deletes an item and returns the value, or false if not found.
+func (n *branchNode[K, V]) delete(key K, compare CompareFunc[K]) (ref.R[V], bool) {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -148,20 +148,20 @@ func (n *branchNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
 	node := n.mutateChild(index)
 
 	// Delete item
-	mod := node.delete(key, compare)
+	value, mod := node.delete(key, compare)
 	if !mod {
-		return false
+		return nil, false
 	}
 
 	// Delete child if empty
 	if node.length() == 0 {
 		n.deleteChild(index)
-		return true
+		return value, true
 	}
 
 	// Update min key
 	n.items[index].minKey = node.minKey()
-	return true
+	return value, true
 }
 
 // contains/indexOf
