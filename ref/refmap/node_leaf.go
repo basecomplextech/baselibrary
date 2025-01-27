@@ -81,85 +81,29 @@ func nextLeafNode[K, V any](items []leafItem[K, V]) *leafNode[K, V] {
 	return n
 }
 
-// state
-
-func (n *leafNode[K, V]) reset() {
-	n.items = slices2.Truncate(n.items)
-
-	*n = leafNode[K, V]{}
-}
-
-// retain/release
-
-func (n *leafNode[K, V]) retain() {
-	v := atomic.AddInt64(&n.refs, 1)
-	if v == 1 {
-		panic("retained already released node")
-	}
-}
-
-func (n *leafNode[K, V]) release() {
-	v := atomic.AddInt64(&n.refs, -1)
-	switch {
-	case v < 0:
-		panic("released already released node")
-	case v > 0:
-		return
-	}
-
-	// Release and clear items
-	for _, item := range n.items {
-		item.value.Release()
-	}
-	n.items = slices2.Truncate(n.items)
-
-	// Release node
-	releaseLeaf[K, V](n)
-}
-
-func (n *leafNode[K, V]) refcount() int64 {
-	return n.refs
-}
-
-// attrs
-
+// length returns the number of items in the node.
 func (n *leafNode[K, V]) length() int {
 	return len(n.items)
 }
 
+// minKey returns the minimum key in the node.
 func (n *leafNode[K, V]) minKey() K {
 	return n.items[0].key
 }
 
+// maxKey returns the maximum key in the node.
 func (n *leafNode[K, V]) maxKey() K {
 	return n.items[len(n.items)-1].key
 }
 
-// mutate
-
-func (n *leafNode[K, V]) clone() node[K, V] {
-	return cloneLeafNode(n)
-}
-
-func (n *leafNode[K, V]) freeze() {
-	n.mut = false
-}
-
+// mutable returns true if the node is mutable.
 func (n *leafNode[K, V]) mutable() bool {
 	return n.mut
 }
 
-// methods
+// get/insert/delete
 
-// indexOf returns an index of an item with key >= key.
-func (n *leafNode[K, V]) indexOf(key K, compare CompareFunc[K]) int {
-	return sort.Search(len(n.items), func(i int) bool {
-		key0 := n.items[i].key
-		cmp := compare(key0, key)
-		return cmp >= 0
-	})
-}
-
+// get returns for an item by key, or false if not found.
 func (n *leafNode[K, V]) get(key K, compare CompareFunc[K]) (v ref.R[V], ok bool) {
 	index := n.indexOf(key, compare)
 
@@ -175,7 +119,8 @@ func (n *leafNode[K, V]) get(key K, compare CompareFunc[K]) (v ref.R[V], ok bool
 	return item.value, true
 }
 
-func (n *leafNode[K, V]) put(key K, value ref.R[V], compare CompareFunc[K]) bool {
+// insert inserts or updates an item, returns true if inserted.
+func (n *leafNode[K, V]) insert(key K, value ref.R[V], compare CompareFunc[K]) bool {
 	if !n.mut {
 		panic("operation on immutable node")
 	}
@@ -221,6 +166,7 @@ func (n *leafNode[K, V]) put(key K, value ref.R[V], compare CompareFunc[K]) bool
 	return true
 }
 
+// delete deletes an item by key, returns true if deleted.
 func (n *leafNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
 	if !n.mut {
 		panic("operation on immutable node")
@@ -250,6 +196,9 @@ func (n *leafNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
 	return true
 }
 
+// contains/indexOf
+
+// contains returns true if the key exists.
 func (n *leafNode[K, V]) contains(key K, compare CompareFunc[K]) bool {
 	index := n.indexOf(key, compare)
 	if index >= len(n.items) {
@@ -260,6 +209,30 @@ func (n *leafNode[K, V]) contains(key K, compare CompareFunc[K]) bool {
 	return cmp == 0
 }
 
+// indexOf returns an index of an item with key >= key, or -1 if not found.
+func (n *leafNode[K, V]) indexOf(key K, compare CompareFunc[K]) int {
+	return sort.Search(len(n.items), func(i int) bool {
+		key0 := n.items[i].key
+		cmp := compare(key0, key)
+		return cmp >= 0
+	})
+}
+
+// clone
+
+// clone returns a mutable copy, retains the children.
+func (n *leafNode[K, V]) clone() node[K, V] {
+	return cloneLeafNode(n)
+}
+
+// freeze makes the node immutable.
+func (n *leafNode[K, V]) freeze() {
+	n.mut = false
+}
+
+// split
+
+// split splits the node, and returns the new node, or false if no split required.
 func (n *leafNode[K, V]) split() (node[K, V], bool) {
 	if !n.mut {
 		panic("operation on immutable node")
@@ -283,7 +256,42 @@ func (n *leafNode[K, V]) split() (node[K, V], bool) {
 	return next, true
 }
 
-// leaf state pool
+// refs
+
+// retain increments the reference count.
+func (n *leafNode[K, V]) retain() {
+	v := atomic.AddInt64(&n.refs, 1)
+	if v == 1 {
+		panic("retained already released node")
+	}
+}
+
+// release decrements the reference count and frees the node if the count is zero.
+func (n *leafNode[K, V]) release() {
+	v := atomic.AddInt64(&n.refs, -1)
+	switch {
+	case v < 0:
+		panic("released already released node")
+	case v > 0:
+		return
+	}
+
+	// Release and clear items
+	for _, item := range n.items {
+		item.value.Release()
+	}
+	n.items = slices2.Truncate(n.items)
+
+	// Release node
+	releaseLeaf[K, V](n)
+}
+
+// refcount returns the reference count.
+func (n *leafNode[K, V]) refcount() int64 {
+	return n.refs
+}
+
+// pool
 
 var leafNodePools = pools.NewPools()
 
@@ -298,4 +306,10 @@ func acquireLeaf[K, V any]() *leafNode[K, V] {
 func releaseLeaf[K, V any](n *leafNode[K, V]) {
 	n.reset()
 	pools.Release(leafNodePools, n)
+}
+
+func (n *leafNode[K, V]) reset() {
+	n.items = slices2.Truncate(n.items)
+
+	*n = leafNode[K, V]{}
 }

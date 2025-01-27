@@ -81,14 +81,164 @@ func nextBranchNode[K, V any](items []branchItem[K, V]) *branchNode[K, V] {
 	return n
 }
 
-// reset
-
-func (n *branchNode[K, V]) reset() {
-	n.items = slices2.Truncate(n.items)
-	*n = branchNode[K, V]{}
+// length returns the number of items in the node.
+func (n *branchNode[K, V]) length() int {
+	return len(n.items)
 }
 
-// retain/release
+// minKey returns the minimum key in the node.
+func (n *branchNode[K, V]) minKey() K {
+	return n.items[0].minKey
+}
+
+// maxKey returns the maximum key in the node.
+func (n *branchNode[K, V]) maxKey() K {
+	last := n.items[len(n.items)-1]
+	return last.node.maxKey()
+}
+
+// mutable returns true if the node is mutable.
+func (n *branchNode[K, V]) mutable() bool {
+	return n.mut
+}
+
+// get/insert/delete
+
+// get returns for an item by key, or false if not found.
+func (n *branchNode[K, V]) get(key K, compare CompareFunc[K]) (ref.R[V], bool) {
+	index := n.indexOf(key, compare)
+	node := n.child(index)
+	return node.get(key, compare)
+}
+
+// insert inserts or updates an item, returns true if inserted.
+func (n *branchNode[K, V]) insert(key K, value ref.R[V], compare CompareFunc[K]) bool {
+	if !n.mut {
+		panic("operation on immutable node")
+	}
+
+	// Find child node with key
+	index := n.indexOf(key, compare)
+	node := n.mutateChild(index)
+
+	// Split node if full
+	if node.length() >= maxItems {
+		n.splitChild(index)
+
+		index = n.indexOf(key, compare)
+		node = n.mutateChild(index)
+	}
+
+	// Insert item
+	mod := node.insert(key, value, compare)
+
+	// Update min key
+	n.items[index].minKey = node.minKey()
+	return mod
+}
+
+// remove removes an item by key, returns true if removed.
+func (n *branchNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
+	if !n.mut {
+		panic("operation on immutable node")
+	}
+
+	// Find child node with key
+	index := n.indexOf(key, compare)
+	node := n.mutateChild(index)
+
+	// Delete item
+	mod := node.delete(key, compare)
+	if !mod {
+		return false
+	}
+
+	// Delete child if empty
+	if node.length() == 0 {
+		n.deleteChild(index)
+		return true
+	}
+
+	// Update min key
+	n.items[index].minKey = node.minKey()
+	return true
+}
+
+// contains/indexOf
+
+// contains returns true if the key exists.
+func (n *branchNode[K, V]) contains(key K, compare CompareFunc[K]) bool {
+	index := n.indexOf(key, compare)
+	if index >= len(n.items) {
+		return false
+	}
+
+	node := n.child(index)
+	return node.contains(key, compare)
+}
+
+// indexOf returns a child node index which range contains a key.
+// indexOf finds the first node after a key and return the previous node.
+func (n *branchNode[K, V]) indexOf(key K, compare CompareFunc[K]) int {
+	index := sort.Search(len(n.items), func(i int) bool {
+		minKey := n.items[i].minKey
+		cmp := compare(minKey, key)
+		return cmp > 0
+	})
+	if index > 0 {
+		return index - 1
+	}
+	return 0
+}
+
+// clone
+
+// clone returns a mutable copy, retains the children.
+func (n *branchNode[K, V]) clone() node[K, V] {
+	return cloneBranchNode(n)
+}
+
+// freeze makes the node immutable.
+func (n *branchNode[K, V]) freeze() {
+	if !n.mut {
+		return
+	}
+
+	for _, child := range n.items {
+		child.node.freeze()
+	}
+
+	n.mut = false
+}
+
+// split
+
+// split splits the node, and returns the new node, or false if no split required.
+func (n *branchNode[K, V]) split() (node[K, V], bool) {
+	if !n.mut {
+		panic("operation on immutable node")
+	}
+
+	if len(n.items) < maxItems {
+		return nil, false
+	}
+
+	// Calc middle index
+	middle := len(n.items) / 2
+
+	// Move items to next node
+	next := nextBranchNode(n.items[middle:])
+
+	// Clear and truncate moved items,
+	// Do not release them, we have moved them to the new node
+	for i := middle; i < len(n.items); i++ {
+		n.items[i] = branchItem[K, V]{}
+	}
+	n.items = n.items[:middle]
+	return next, true
+}
+
+// refs
 
 func (n *branchNode[K, V]) retain() {
 	v := atomic.AddInt64(&n.refs, 1)
@@ -120,151 +270,7 @@ func (n *branchNode[K, V]) refcount() int64 {
 	return n.refs
 }
 
-// attrs
-
-func (n *branchNode[K, V]) length() int {
-	return len(n.items)
-}
-
-func (n *branchNode[K, V]) minKey() K {
-	return n.items[0].minKey
-}
-
-func (n *branchNode[K, V]) maxKey() K {
-	last := n.items[len(n.items)-1]
-	return last.node.maxKey()
-}
-
-// mutate
-
-func (n *branchNode[K, V]) clone() node[K, V] {
-	return cloneBranchNode(n)
-}
-
-func (n *branchNode[K, V]) freeze() {
-	if !n.mut {
-		return
-	}
-
-	for _, child := range n.items {
-		child.node.freeze()
-	}
-
-	n.mut = false
-}
-
-func (n *branchNode[K, V]) mutable() bool {
-	return n.mut
-}
-
-// methods
-
-// indexOf returns a child node index which range contains a key.
-// indexOf finds the first node after a key and return  theprevious node.
-func (n *branchNode[K, V]) indexOf(key K, compare CompareFunc[K]) int {
-	index := sort.Search(len(n.items), func(i int) bool {
-		minKey := n.items[i].minKey
-		cmp := compare(minKey, key)
-		return cmp > 0
-	})
-	if index > 0 {
-		return index - 1
-	}
-	return 0
-}
-
-func (n *branchNode[K, V]) get(key K, compare CompareFunc[K]) (ref.R[V], bool) {
-	index := n.indexOf(key, compare)
-	node := n.child(index)
-	return node.get(key, compare)
-}
-
-func (n *branchNode[K, V]) put(key K, value ref.R[V], compare CompareFunc[K]) bool {
-	if !n.mut {
-		panic("operation on immutable node")
-	}
-
-	// Find child node with key
-	index := n.indexOf(key, compare)
-	node := n.mutateChild(index)
-
-	// Split node if full
-	if node.length() >= maxItems {
-		n.splitChild(index)
-
-		index = n.indexOf(key, compare)
-		node = n.mutateChild(index)
-	}
-
-	// Insert item
-	mod := node.put(key, value, compare)
-
-	// Update min key
-	n.items[index].minKey = node.minKey()
-	return mod
-}
-
-func (n *branchNode[K, V]) delete(key K, compare CompareFunc[K]) bool {
-	if !n.mut {
-		panic("operation on immutable node")
-	}
-
-	// Find child node with key
-	index := n.indexOf(key, compare)
-	node := n.mutateChild(index)
-
-	// Delete item
-	mod := node.delete(key, compare)
-	if !mod {
-		return false
-	}
-
-	// Delete child if empty
-	if node.length() == 0 {
-		n.deleteChild(index)
-		return true
-	}
-
-	// Update min key
-	n.items[index].minKey = node.minKey()
-	return true
-}
-
-func (n *branchNode[K, V]) contains(key K, compare CompareFunc[K]) bool {
-	index := n.indexOf(key, compare)
-	if index >= len(n.items) {
-		return false
-	}
-
-	node := n.child(index)
-	return node.contains(key, compare)
-}
-
-func (n *branchNode[K, V]) split() (node[K, V], bool) {
-	if !n.mut {
-		panic("operation on immutable node")
-	}
-
-	if len(n.items) < maxItems {
-		return nil, false
-	}
-
-	// Calc middle index
-	middle := len(n.items) / 2
-
-	// Move items to next node
-	next := nextBranchNode(n.items[middle:])
-
-	// Clear and truncate moved items,
-	// Do not release them, we have moved them to the new node
-	for i := middle; i < len(n.items); i++ {
-		n.items[i] = branchItem[K, V]{}
-	}
-	n.items = n.items[:middle]
-	return next, true
-}
-
-// children
+// private
 
 func (n *branchNode[K, V]) child(index int) node[K, V] {
 	if index >= len(n.items) {
@@ -364,4 +370,9 @@ func acquireBranch[K, V any]() *branchNode[K, V] {
 func releaseBranch[K, V any](n *branchNode[K, V]) {
 	n.reset()
 	pools.Release(branchPools, n)
+}
+
+func (n *branchNode[K, V]) reset() {
+	n.items = slices2.Truncate(n.items)
+	*n = branchNode[K, V]{}
 }

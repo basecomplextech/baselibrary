@@ -234,7 +234,7 @@ func (t *btree[K, V]) SetRetain(key K, value ref.R[V]) {
 	node := t.mutateRoot()
 
 	// Insert item
-	mod := node.put(key, value, t.compare)
+	mod := node.insert(key, value, t.compare)
 	if !mod {
 		return
 	}
