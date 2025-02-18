@@ -14,8 +14,7 @@ type StopGroup struct {
 	mu   sync.Mutex
 	done bool
 
-	routines []RoutineDyn
-	services []Service
+	stoppers []Stopper
 	timers   []*time.Timer
 	tickers  []*time.Ticker
 }
@@ -25,28 +24,8 @@ func NewStopGroup() *StopGroup {
 	return &StopGroup{}
 }
 
-// Add adds a routine to the group, or immediately stops it if the group is stopped.
-func (g *StopGroup) Add(r RoutineDyn) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-
-	if g.done {
-		r.Stop()
-		return
-	}
-
-	g.routines = append(g.routines, r)
-}
-
-// AddMany adds multiple routines to the group, or immediatelly stops them if the group is stopped.
-func (g *StopGroup) AddMany(routines ...RoutineDyn) {
-	for _, r := range routines {
-		g.Add(r)
-	}
-}
-
-// AddService adds a service to the group, or immediately stops it if the group is stopped.
-func (g *StopGroup) AddService(s Service) {
+// Add adds a stopper to the group, or immediately stops it if the group is stopped.
+func (g *StopGroup) Add(s Stopper) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -55,7 +34,19 @@ func (g *StopGroup) AddService(s Service) {
 		return
 	}
 
-	g.services = append(g.services, s)
+	g.stoppers = append(g.stoppers, s)
+}
+
+// AddMany adds multiple stoppers to the group, or immediatelly stops them if the group is stopped.
+func (g *StopGroup) AddMany(stoppers ...Stopper) {
+	for _, s := range stoppers {
+		g.Add(s)
+	}
+}
+
+// AddService adds a service to the group, or immediately stops it if the group is stopped.
+func (g *StopGroup) AddService(s Service) {
+	g.Add(s)
 }
 
 // AddTicker adds a ticker to the group, or immediately stops it if the group is stopped.
@@ -94,17 +85,14 @@ func (g *StopGroup) Stop() {
 	}
 	g.done = true
 
-	for _, s := range g.services {
-		s.Stop()
+	for _, w := range g.stoppers {
+		w.Stop()
 	}
 	for _, t := range g.tickers {
 		t.Stop()
 	}
 	for _, t := range g.timers {
 		t.Stop()
-	}
-	for _, w := range g.routines {
-		w.Stop()
 	}
 }
 
@@ -119,11 +107,7 @@ func (g *StopGroup) Wait() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	for _, s := range g.services {
-		<-s.Wait()
-	}
-
-	for _, w := range g.routines {
+	for _, w := range g.stoppers {
 		<-w.Wait()
 	}
 }
