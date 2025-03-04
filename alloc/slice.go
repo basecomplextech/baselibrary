@@ -85,7 +85,7 @@ func growSlice[S ~[]T, T any](a Arena, src []T, capacity int) S {
 	oldCap := cap(src)
 	newCap := growCapacity(oldCap, capacity)
 
-	dst := allocSlice[S](a, oldCap, newCap)
+	dst := allocSlice[S](a, len(src), newCap)
 	copy(dst, src)
 	return dst
 }
@@ -94,6 +94,7 @@ func growCapacity(oldCap int, capacity int) int {
 	var newCap int
 
 	if oldCap < 1024 {
+		// Double until 1024
 		newCap = oldCap + oldCap
 	} else {
 		// Grow by 25% after 1024

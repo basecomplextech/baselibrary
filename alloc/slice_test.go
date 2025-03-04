@@ -79,6 +79,16 @@ func TestGrow__should_grow_slice_capacity(t *testing.T) {
 	assert.NotSame(t, s0, s1)
 }
 
+func TestGrow__should_grow_slice_capacity_but_not_length(t *testing.T) {
+	a := arena.Test()
+
+	s0 := make([]int, 0, 2)
+	s1 := Grow[[]int](a, s0, 3)
+
+	assert.Equal(t, 0, len(s1))
+	assert.Equal(t, 4, cap(s1))
+}
+
 // Slice
 
 func TestSlice__should_allocate_slice(t *testing.T) {
