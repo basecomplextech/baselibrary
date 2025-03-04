@@ -33,6 +33,17 @@ func TestAppendN__should_append_items_to_slice(t *testing.T) {
 	assert.Equal(t, []int{1, 2, 3}, s)
 }
 
+func TestAppend__should_grow_slice_capacity(t *testing.T) {
+	a := arena.Test()
+
+	var s []int
+	for i := range 4096 {
+		s = Append[[]int](a, s, i)
+	}
+
+	assert.Equal(t, 4096, len(s))
+}
+
 // Copy
 
 func TestCopy__should_copy_existing_slice_into_arena(t *testing.T) {

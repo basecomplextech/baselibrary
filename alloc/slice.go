@@ -10,7 +10,7 @@ import (
 
 // Append appends a new item to a slice, grows the slice if required, and returns the modified slice.
 func Append[S ~[]T, T any](a Arena, s []T, item T) S {
-	dst := growSlice[S, T](a, s, len(s)+1)
+	dst := growSlice[S](a, s, len(s)+1)
 	dst = dst[:len(s)+1]
 	dst[len(s)] = item
 	return dst
@@ -18,7 +18,7 @@ func Append[S ~[]T, T any](a Arena, s []T, item T) S {
 
 // AppendN appends a new slice to a slice, grows the slice if required, and returns the modified slice.
 func AppendN[S ~[]T, T any](a Arena, s []T, items ...T) S {
-	dst := growSlice[S, T](a, s, len(s)+len(items))
+	dst := growSlice[S](a, s, len(s)+len(items))
 	dst = dst[:len(s)+len(items)]
 	copy(dst[len(s):], items)
 	return dst
@@ -27,14 +27,14 @@ func AppendN[S ~[]T, T any](a Arena, s []T, items ...T) S {
 // Copy allocates a new slice and copies items from src into it.
 // The slice capacity is len(src).
 func Copy[S ~[]T, T any](a Arena, src []T) S {
-	dst := allocSlice[[]T, T](a, len(src), len(src))
+	dst := allocSlice[[]T](a, len(src), len(src))
 	copy(dst, src)
 	return dst
 }
 
 // Grow grows the slice to at least the given capacity.
 func Grow[S ~[]T, T any](a Arena, s []T, capacity int) S {
-	return growSlice[S, T](a, s, capacity)
+	return growSlice[S](a, s, capacity)
 }
 
 // Slice allocates a new slice of a generic type.
@@ -43,7 +43,7 @@ func Grow[S ~[]T, T any](a Arena, s []T, capacity int) S {
 //
 //	s := Slice[[]MyStruct](arena, 0, 16)
 func Slice[S ~[]T, T any](a Arena, len int, cap int) S {
-	return allocSlice[S, T](a, len, cap)
+	return allocSlice[S](a, len, cap)
 }
 
 // Slice1 allocates a new slice with a single item.
@@ -53,7 +53,7 @@ func Slice[S ~[]T, T any](a Arena, len int, cap int) S {
 //	elem := 123
 //	s := Slice[[]int](arena, elem)
 func Slice1[S ~[]T, T any](a Arena, item T) S {
-	s := allocSlice[S, T](a, 1, 1)
+	s := allocSlice[S](a, 1, 1)
 	s[0] = item
 	return s
 }
@@ -65,7 +65,7 @@ func allocSlice[S ~[]T, T any](a Arena, len int, cap int) S {
 		panic("len > cap")
 	}
 	if cap == 0 {
-		return nil // TODO: Maybe return a zero-length slice
+		return nil
 	}
 
 	var zero T
@@ -85,7 +85,7 @@ func growSlice[S ~[]T, T any](a Arena, src []T, capacity int) S {
 	oldCap := cap(src)
 	newCap := growCapacity(oldCap, capacity)
 
-	dst := allocSlice[S, T](a, oldCap, newCap)
+	dst := allocSlice[S](a, oldCap, newCap)
 	copy(dst, src)
 	return dst
 }
