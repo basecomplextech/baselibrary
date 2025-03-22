@@ -7,9 +7,47 @@ package hashing
 import (
 	"fmt"
 	"math"
+	"unsafe"
 
 	"github.com/basecomplextech/baselibrary/bin"
 )
+
+// HashBool returns a hash of a bool value.
+func HashBool(b bool) uint32 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// HashBytes returns a hash of a byte slice value.
+func HashBytes(b []byte) uint32 {
+	h := uint32(0)
+	for _, c := range b {
+		h = h*31 + uint32(c)
+	}
+	return h
+}
+
+// HashString returns a hash of a string value.
+func HashString(s string) uint32 {
+	h := uint32(0)
+	for _, c := range s {
+		h = h*31 + uint32(c)
+	}
+	return h
+}
+
+// HashPointer returns a hash of a pointer value.
+func HashPointer(v any) uint32 {
+	if v == nil {
+		return 0
+	}
+
+	p := *(*unsafe.Pointer)(unsafe.Pointer(&v))
+	h := uintptr(p)
+	return uint32(h ^ (h >> 32)) // xor of two halves
+}
 
 // Hash returns a hash of a key, panics if the key type is not supported.
 // Add more types as needed.
@@ -49,18 +87,9 @@ func Hash[K any](key K) uint32 {
 		return uint32(v1 ^ (v1 >> 32)) // xor of two halves
 
 	case string:
-		h := uint32(0)
-		for _, c := range v {
-			h = h*31 + uint32(c)
-		}
-		return h
-
+		return HashString(v)
 	case []byte:
-		h := uint32(0)
-		for _, c := range v {
-			h = h*31 + uint32(c)
-		}
-		return h
+		return HashBytes(v)
 
 	case bin.Bin64:
 		return v.Hash32()
@@ -75,8 +104,4 @@ func Hash[K any](key K) uint32 {
 	}
 
 	panic(fmt.Sprintf("unsupported type %T", key))
-}
-
-type Hasher interface {
-	Hash32() uint32
 }

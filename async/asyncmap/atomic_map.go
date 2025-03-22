@@ -8,7 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/basecomplextech/baselibrary/internal/hashing"
+	"github.com/basecomplextech/baselibrary/hashing"
 	"github.com/basecomplextech/baselibrary/pools"
 )
 

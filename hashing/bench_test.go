@@ -13,7 +13,7 @@ import (
 func BenchmarkShard(b *testing.B) {
 	key := bin.Int128(0, 123)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		i := Shard(key, 10)
 		if i < 0 || i >= 10 {
 			b.Fatal(i)

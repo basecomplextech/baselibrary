@@ -7,7 +7,7 @@ package asyncmap
 import (
 	"runtime"
 
-	"github.com/basecomplextech/baselibrary/internal/hashing"
+	"github.com/basecomplextech/baselibrary/hashing"
 )
 
 // ShardedMap is a map which uses multiple hash maps each guarded by a separate mutex.
