@@ -13,6 +13,55 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
+// Bool
+
+func Bool(a, b bool) int {
+	switch {
+	case a == b:
+		return 0
+	case a:
+		return 1
+	default:
+		return -1
+	}
+}
+
+func BoolError(a, b bool) (int, error) {
+	switch {
+	case a == b:
+		return 0, nil
+	case a:
+		return 1, nil
+	default:
+		return -1, nil
+	}
+}
+
+func BoolStatus(a, b bool) (int, status.Status) {
+	switch {
+	case a == b:
+		return 0, status.OK
+	case a:
+		return 1, status.OK
+	default:
+		return -1, status.OK
+	}
+}
+
+// Byte
+
+func Byte(a, b byte) int {
+	return int(a - b)
+}
+
+func ByteError(a, b byte) (int, error) {
+	return int(a - b), nil
+}
+
+func ByteStatus(a, b byte) (int, status.Status) {
+	return int(a - b), status.OK
+}
+
 // Int
 
 func Int(a, b int) int {
