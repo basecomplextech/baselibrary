@@ -4,6 +4,8 @@
 
 package maps2
 
+import "maps"
+
 // Clone returns a map clone, skips nil maps.
 func Clone[M ~map[K]V, K comparable, V any](m M) M {
 	if m == nil {
@@ -11,17 +13,8 @@ func Clone[M ~map[K]V, K comparable, V any](m M) M {
 	}
 
 	m1 := make(map[K]V, len(m))
-	for k, v := range m {
-		m1[k] = v
-	}
+	maps.Copy(m1, m)
 	return m1
-}
-
-// Copy copies items from src to dst.
-func Copy[M ~map[K]V, K comparable, V any](dst, src M) {
-	for k, v := range src {
-		dst[k] = v
-	}
 }
 
 // Keys returns a slice of map keys, skips nil maps.
