@@ -55,8 +55,11 @@ func (c *hlClock) Read() pclock.HLTimestamp {
 		return pclock.HLTimestamp{Wall: now}
 	}
 
-	// Return the last time
-	return c.load()
+	// Return last time
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return pclock.HLTimestamp{Wall: c.wall, Logic: c.logic}
 }
 
 // Next returns a time for the next event, updates the last time.
@@ -64,14 +67,16 @@ func (c *hlClock) Next() pclock.HLTimestamp {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Update last time, or increment logic
 	next := time.Now().UnixNano()
 	if next > c.wall {
-		c.logic = 0
 		c.storeWall(next)
+		c.logic = 0
 	} else {
 		c.logic++
 	}
 
+	// Return last time
 	return pclock.HLTimestamp{Wall: c.wall, Logic: c.logic}
 }
 
@@ -85,22 +90,14 @@ func (c *hlClock) Update(t pclock.HLTimestamp) pclock.HLTimestamp {
 		c.logic = max(t.Logic, c.logic) + 1
 
 	case t.Wall > c.wall:
+		c.storeWall(t.Wall)
 		c.logic = t.Logic + 1
-		c.wall = t.Wall
 	}
-
-	t1 := pclock.HLTimestamp{Wall: c.wall, Logic: c.logic}
-	return t1
-}
-
-// private
-
-func (c *hlClock) load() pclock.HLTimestamp {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 
 	return pclock.HLTimestamp{Wall: c.wall, Logic: c.logic}
 }
+
+// private
 
 func (c *hlClock) loadWall() int64 {
 	return atomic.LoadInt64(&c.wall)

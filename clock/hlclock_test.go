@@ -66,7 +66,7 @@ func TestHLClock_Next__should_increment_logic_when_now_less_than_last_wall(t *te
 func TestHLClock_Next__should_update_last_time(t *testing.T) {
 	c := newHLClock()
 	a := c.Next()
-	b := c.load()
+	b := pclock.HLTimestamp{Wall: c.wall, Logic: c.logic}
 
 	assert.Equal(t, a, b)
 }
