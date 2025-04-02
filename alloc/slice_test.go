@@ -17,9 +17,9 @@ func TestAppend__should_append_item_to_slice(t *testing.T) {
 	a := arena.Test()
 
 	var s []int
-	s = Append[[]int](a, s, 1)
-	s = Append[[]int](a, s, 2)
-	s = Append[[]int](a, s, 3)
+	s = Append(a, s, 1)
+	s = Append(a, s, 2)
+	s = Append(a, s, 3)
 
 	assert.Equal(t, []int{1, 2, 3}, s)
 }
@@ -28,7 +28,7 @@ func TestAppendN__should_append_items_to_slice(t *testing.T) {
 	a := arena.Test()
 
 	var s []int
-	s = AppendN[[]int](a, s, 1, 2, 3)
+	s = AppendN(a, s, 1, 2, 3)
 
 	assert.Equal(t, []int{1, 2, 3}, s)
 }
@@ -38,7 +38,7 @@ func TestAppend__should_grow_slice_capacity(t *testing.T) {
 
 	var s []int
 	for i := range 4096 {
-		s = Append[[]int](a, s, i)
+		s = Append(a, s, i)
 	}
 
 	assert.Equal(t, 4096, len(s))
@@ -60,7 +60,7 @@ func TestCopy__should_copy_existing_slice_into_arena(t *testing.T) {
 	}
 
 	a := arena.Test()
-	v1 := Copy[[]Value](a, v0)
+	v1 := Copy(a, v0)
 
 	assert.Equal(t, v0, v1)
 }
@@ -71,7 +71,7 @@ func TestGrow__should_grow_slice_capacity(t *testing.T) {
 	a := arena.Test()
 
 	s0 := []int{1, 2, 3}
-	s1 := Grow[[]int](a, s0, 10)
+	s1 := Grow(a, s0, 10)
 
 	assert.Equal(t, 3, cap(s0))
 	assert.Equal(t, 10, cap(s1))
@@ -83,7 +83,7 @@ func TestGrow__should_grow_slice_capacity_but_not_length(t *testing.T) {
 	a := arena.Test()
 
 	s0 := make([]int, 0, 2)
-	s1 := Grow[[]int](a, s0, 3)
+	s1 := Grow(a, s0, 3)
 
 	assert.Equal(t, 0, len(s1))
 	assert.Equal(t, 4, cap(s1))

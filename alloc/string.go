@@ -93,10 +93,7 @@ func StringJoin2(a Arena, s1, s2, sep string) string {
 // StringFormat formats a string using fmt.Appendf and returns a new string allocated in the arena.
 func StringFormat(a Arena, format string, args ...any) string {
 	// Allocate scratch block
-	size := heap.MinBlockSize
-	if len(format) > size {
-		size = len(format)
-	}
+	size := max(len(format), heap.MinBlockSize)
 
 	block := heap.Global.Alloc(size)
 	defer heap.Global.Free(block)

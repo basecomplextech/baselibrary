@@ -9,16 +9,16 @@ import (
 )
 
 // Append appends a new item to a slice, grows the slice if required, and returns the modified slice.
-func Append[S ~[]T, T any](a Arena, s []T, item T) S {
-	dst := growSlice[S](a, s, len(s)+1)
+func Append[S ~[]T, T any](a Arena, s S, item T) S {
+	dst := growSlice(a, s, len(s)+1)
 	dst = dst[:len(s)+1]
 	dst[len(s)] = item
 	return dst
 }
 
 // AppendN appends a new slice to a slice, grows the slice if required, and returns the modified slice.
-func AppendN[S ~[]T, T any](a Arena, s []T, items ...T) S {
-	dst := growSlice[S](a, s, len(s)+len(items))
+func AppendN[S ~[]T, T any](a Arena, s S, items ...T) S {
+	dst := growSlice(a, s, len(s)+len(items))
 	dst = dst[:len(s)+len(items)]
 	copy(dst[len(s):], items)
 	return dst
@@ -26,15 +26,15 @@ func AppendN[S ~[]T, T any](a Arena, s []T, items ...T) S {
 
 // Copy allocates a new slice and copies items from src into it.
 // The slice capacity is len(src).
-func Copy[S ~[]T, T any](a Arena, src []T) S {
-	dst := allocSlice[[]T](a, len(src), len(src))
+func Copy[S ~[]T, T any](a Arena, src S) S {
+	dst := allocSlice[S](a, len(src), len(src))
 	copy(dst, src)
 	return dst
 }
 
 // Grow grows the slice to at least the given capacity.
-func Grow[S ~[]T, T any](a Arena, s []T, capacity int) S {
-	return growSlice[S](a, s, capacity)
+func Grow[S ~[]T, T any](a Arena, s S, capacity int) S {
+	return growSlice(a, s, capacity)
 }
 
 // Slice allocates a new slice of a generic type.
@@ -77,7 +77,7 @@ func allocSlice[S ~[]T, T any](a Arena, len int, cap int) S {
 	return s[:len]
 }
 
-func growSlice[S ~[]T, T any](a Arena, src []T, capacity int) S {
+func growSlice[S ~[]T, T any](a Arena, src S, capacity int) S {
 	if cap(src) >= capacity {
 		return src
 	}
