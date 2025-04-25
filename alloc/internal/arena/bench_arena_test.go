@@ -8,36 +8,44 @@ import "testing"
 
 func BenchmarkArena_Alloc(b *testing.B) {
 	a := Test()
-	num := 10
+	num := 10_000
+	size := 8
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		for j := 0; j < num; j++ {
-			a.Alloc(8)
+		a.Alloc(size)
+
+		if i%num == 0 {
+			a.Reset()
 		}
-		a.Reset()
 	}
 
 	sec := b.Elapsed().Seconds()
-	ops := float64(b.N*num) / sec
+	ops := float64(b.N) / sec
+
+	b.SetBytes(int64(size))
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
 func BenchmarkMutexArena_Alloc(b *testing.B) {
 	a := TestMutex()
-	num := 10
+	num := 10_000
+	size := 8
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		for j := 0; j < num; j++ {
-			a.Alloc(8)
+		a.Alloc(size)
+
+		if i%num == 0 {
+			a.Reset()
 		}
-		a.Reset()
 	}
 
 	sec := b.Elapsed().Seconds()
-	ops := float64(b.N*num) / sec
+	ops := float64(b.N) / sec
+
+	b.SetBytes(int64(size))
 	b.ReportMetric(ops/1000_000, "mops")
 }

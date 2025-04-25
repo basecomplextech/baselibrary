@@ -15,8 +15,8 @@ import (
 
 func Benchmark_AllocInt64(b *testing.B) {
 	a := arena.Test()
+	num := 10_000
 	size := unsafe.Sizeof(int64(0))
-	max := a.Cap() - 16
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -24,7 +24,7 @@ func Benchmark_AllocInt64(b *testing.B) {
 
 	var v *int64
 	for i := 0; i < b.N; i++ {
-		if a.Len() >= max {
+		if i%num == 0 {
 			a.Reset()
 		}
 
@@ -54,8 +54,8 @@ func Benchmark_AllocStruct(b *testing.B) {
 	}
 
 	a := arena.Test()
+	num := 10_000
 	size := unsafe.Sizeof(Struct{})
-	max := a.Cap() - 16
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -63,7 +63,7 @@ func Benchmark_AllocStruct(b *testing.B) {
 
 	var s *Struct
 	for i := 0; i < b.N; i++ {
-		if a.Len() >= max {
+		if i%num == 0 {
 			a.Reset()
 		}
 
@@ -85,8 +85,8 @@ func Benchmark_AllocStruct(b *testing.B) {
 
 func Benchmark_AllocBytes(b *testing.B) {
 	a := arena.Test()
+	num := 10_000
 	size := 16
-	max := a.Cap() - 16
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -94,7 +94,7 @@ func Benchmark_AllocBytes(b *testing.B) {
 
 	var v []byte
 	for i := 0; i < b.N; i++ {
-		if a.Len() >= max {
+		if i%num == 0 {
 			a.Reset()
 		}
 
@@ -116,8 +116,9 @@ func Benchmark_AllocBytes(b *testing.B) {
 func Benchmark_AllocSlice(b *testing.B) {
 	a := arena.Test()
 	n := 4
+
+	num := 10_000
 	size := n * 4
-	max := a.Cap() - 16
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -125,7 +126,7 @@ func Benchmark_AllocSlice(b *testing.B) {
 
 	var v []int32
 	for i := 0; i < b.N; i++ {
-		if a.Len() >= max {
+		if i%num == 0 {
 			a.Reset()
 		}
 
@@ -146,8 +147,8 @@ func Benchmark_AllocSlice(b *testing.B) {
 
 func Benchmark_Alloc(b *testing.B) {
 	a := arena.Test()
+	num := 10_000
 	size := 8
-	max := a.Cap() - 16
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -155,7 +156,7 @@ func Benchmark_Alloc(b *testing.B) {
 
 	var v unsafe.Pointer
 	for i := 0; i < b.N; i++ {
-		if a.Len() >= max {
+		if i%num == 0 {
 			a.Reset()
 		}
 
