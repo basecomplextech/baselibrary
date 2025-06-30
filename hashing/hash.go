@@ -39,13 +39,23 @@ func HashString(s string) uint32 {
 }
 
 // HashPointer returns a hash of a pointer value.
+// The method is unsafe and must be used only with actual pointers.
 func HashPointer(v any) uint32 {
+	type eface struct {
+		typ unsafe.Pointer
+		ptr unsafe.Pointer
+	}
+
 	if v == nil {
 		return 0
 	}
 
-	p := *(*unsafe.Pointer)(unsafe.Pointer(&v))
-	h := uintptr(p)
+	e := (*eface)(unsafe.Pointer(&v))
+	if e.typ == nil {
+		return 0
+	}
+
+	h := uintptr(e.ptr)
 	return uint32(h ^ (h >> 32)) // xor of two halves
 }
 
