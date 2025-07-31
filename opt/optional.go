@@ -37,6 +37,8 @@ func None[T any]() Opt[T] {
 	return Opt[T]{}
 }
 
+// Mutate
+
 // Clear clears the value and returns the previous one if any.
 func (o *Opt[T]) Clear() (v T, ok bool) {
 	v, ok = o.Value, o.Valid
@@ -50,6 +52,16 @@ func (o *Opt[T]) Set(value T) {
 		Valid: true,
 		Value: value,
 	}
+}
+
+// Unwrap
+
+// Or returns the value if set, otherwise returns the default value.
+func (o Opt[T]) Or(default_ T) T {
+	if o.Valid {
+		return o.Value
+	}
+	return default_
 }
 
 // Unwrap returns the value and true if set.
