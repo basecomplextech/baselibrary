@@ -26,6 +26,22 @@ func Insert[S ~[]T, T any](s S, index int, item T) []T {
 	return s
 }
 
+// Pop removes the last item from the slice and returns it.
+// If the slice is empty, it panics.
+// Internally uses slices.Pop to remove the last item.
+func Pop[S ~[]T, T any](sptr *S) T {
+	var zero T
+
+	s := *sptr
+	i := len(s) - 1
+
+	item := s[i]
+	s[i] = zero
+
+	*sptr = s[:i]
+	return item
+}
+
 // Random returns a random item from the slice, panics if the slice is empty.
 // Internally uses math/rand.Intn to generate a random index.
 func Random[S ~[]T, T any](s S) T {
