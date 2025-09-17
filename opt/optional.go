@@ -19,6 +19,17 @@ func New[T any](value T) Opt[T] {
 	}
 }
 
+// NewIf returns a new set value if the predicate is true, otherwise an unset value.
+func NewIf[T any](value T, pred bool) Opt[T] {
+	if !pred {
+		return Opt[T]{}
+	}
+	return Opt[T]{
+		Valid: true,
+		Value: value,
+	}
+}
+
 // Maybe returns a new set value if not zero, otherwise an unset value.
 func Maybe[T comparable](value T) Opt[T] {
 	var zero T
