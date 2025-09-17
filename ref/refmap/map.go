@@ -47,8 +47,8 @@ type Map[K, V any] interface {
 
 	// Write
 
-	// Set adds an item to the map, wraps into into a reference.
-	Set(key K, value V)
+	// SetNewRef adds an item to the map, wraps into into a reference.
+	SetNewRef(key K, value V)
 
 	// SetRetain adds an item reference to the map, and retains it.
 	SetRetain(key K, value ref.R[V])
@@ -209,8 +209,8 @@ func (t *btree[K, V]) Keys() []K {
 
 // Write
 
-// Set adds an item to the map, wraps into into a reference.
-func (t *btree[K, V]) Set(key K, value V) {
+// SetNewRef adds an item to the map, wraps into into a reference.
+func (t *btree[K, V]) SetNewRef(key K, value V) {
 	var r ref.R[V]
 
 	v, ok := (any)(value).(ref.Freer)
