@@ -16,6 +16,24 @@ func Clear[S ~[]T, T any](s S) S {
 	return s
 }
 
+// FilterInPlace filters the slice in place and returns the filtered slice.
+func FilterInPlace[S ~[]T, T any](s S, include func(T) bool) S {
+	j := 0
+	for _, v := range s {
+		if include(v) {
+			s[j] = v
+			j++
+		}
+	}
+
+	// Clear removed elements for GC
+	var zero T
+	for i := j; i < len(s); i++ {
+		s[i] = zero
+	}
+	return s[:j]
+}
+
 // Insert inserts an item at an index.
 func Insert[S ~[]T, T any](s S, index int, item T) []T {
 	var zero T
@@ -46,6 +64,17 @@ func Pop[S ~[]T, T any](sptr *S) T {
 // Internally uses math/rand.Intn to generate a random index.
 func Random[S ~[]T, T any](s S) T {
 	return s[rand.Intn(len(s))]
+}
+
+// Replace replaces the first occurrence of oldItem with newItem in the slice.
+// If oldItem is not found, the slice is returned unchanged.
+func Replace[S ~[]T, T comparable](s S, oldItem, newItem T) S {
+	index := slices.Index(s, oldItem)
+	if index == -1 {
+		return s
+	}
+	s[index] = newItem
+	return s
 }
 
 // Remove removes the first occurrence of the item from the slice.
