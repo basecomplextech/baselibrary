@@ -16,6 +16,11 @@ func New[T comparable](items ...T) Set[T] {
 	return set
 }
 
+// NewSize returns a new set with the given initial size.
+func NewSize[T comparable](size int) Set[T] {
+	return make(Set[T], size)
+}
+
 // Add adds items to the set.
 func (s Set[T]) Add(item T) {
 	s[item] = struct{}{}
