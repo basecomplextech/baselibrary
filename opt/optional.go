@@ -65,6 +65,19 @@ func (o *Opt[T]) Set(value T) {
 	}
 }
 
+// SetIf sets the value if the predicate is true.
+func (o *Opt[T]) SetIf(value T, predicate bool) {
+	if !predicate {
+		*o = Opt[T]{}
+		return
+	}
+
+	*o = Opt[T]{
+		Valid: true,
+		Value: value,
+	}
+}
+
 // Unwrap
 
 // Or returns the value if set, otherwise returns the default value.
