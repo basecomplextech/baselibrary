@@ -12,29 +12,41 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-type (
-	// LoopFunc is a loop function.
-	LoopFunc func(ctx async.Context, success *bool) status.Status
+// LoopFunc is a function without arguments that is retried in a loop.
+type LoopFunc func(ctx async.Context, success *bool) status.Status
 
-	// LoopCall retries a loop function.
-	LoopCall struct {
-		call
-		fn LoopFunc
-	}
-)
+// LoopRetrier retries a loop function.
+type LoopRetrier struct {
+	retrier
+	fn LoopFunc
+}
 
-// RetryLoop returns a loop call.
-func RetryLoop(fn LoopFunc) LoopCall {
-	return LoopCall{
-		call: newCall(),
-		fn:   fn,
+// RetryLoop returns a loop retrier.
+//
+// Example:
+//
+//	fn := func(ctx async.Context, success *bool) status.Status {
+//	    // ...
+//	}
+//
+//	st := retry.RetryLoop(fn).
+//		MaxRetries(5).
+//		MinDelay(time.Second).
+//		MaxDelay(10 * time.Second).
+//		Error("operation failed").
+//		ErrorHandler(myErrorHandler).
+//		Run(ctx)
+func RetryLoop(fn LoopFunc) LoopRetrier {
+	return LoopRetrier{
+		retrier: newRetrier(),
+		fn:      fn,
 	}
 }
 
-var _ builder[LoopCall] = (*LoopCall)(nil)
+var _ builder[LoopRetrier] = (*LoopRetrier)(nil)
 
 // Run retries the function in a loop.
-func (c LoopCall) Run(ctx async.Context) status.Status {
+func (r LoopRetrier) Run(ctx async.Context) status.Status {
 	success := new(bool)
 
 	for attempt := 0; ; attempt++ {
@@ -45,81 +57,81 @@ func (c LoopCall) Run(ctx async.Context) status.Status {
 		}
 
 		// Call function
-		st := c.run(ctx, success)
+		st := r.run(ctx, success)
 		if st.Code == status.CodeCancelled {
 			return st
 		}
 
 		// Handle error
 		if !st.OK() {
-			if st := c.handleError(st, attempt); !st.OK() {
+			if st := r.handleError(st, attempt); !st.OK() {
 				return st
 			}
 		}
 
 		// Sleep before retry
-		if st := c.sleep(ctx, attempt); !st.OK() {
+		if st := r.sleep(ctx, attempt); !st.OK() {
 			return st
 		}
 	}
 }
 
 // Error sets the error message.
-func (c LoopCall) Error(message string) LoopCall {
-	c.opts.Error = message
-	return c
+func (r LoopRetrier) Error(message string) LoopRetrier {
+	r.opts.Error = message
+	return r
 }
 
 // ErrorFunc sets the error handler.
-func (c LoopCall) ErrorFunc(fn ErrorFunc) LoopCall {
-	c.opts.ErrorHandler = fn
-	return c
+func (r LoopRetrier) ErrorFunc(fn ErrorFunc) LoopRetrier {
+	r.opts.ErrorHandler = fn
+	return r
 }
 
 // ErrorHandler sets the error handler.
-func (c LoopCall) ErrorHandler(handler ErrorHandler) LoopCall {
-	c.opts.ErrorHandler = handler
-	return c
+func (r LoopRetrier) ErrorHandler(handler ErrorHandler) LoopRetrier {
+	r.opts.ErrorHandler = handler
+	return r
 }
 
 // Logger sets the default logger.
-func (c LoopCall) Logger(logger logging.Logger) LoopCall {
-	c.opts.Logger = logger
-	return c
+func (r LoopRetrier) Logger(logger logging.Logger) LoopRetrier {
+	r.opts.Logger = logger
+	return r
 }
 
 // MinDelay sets the min delay.
-func (c LoopCall) MinDelay(minDelay time.Duration) LoopCall {
-	c.opts.MinDelay = minDelay
-	return c
+func (r LoopRetrier) MinDelay(minDelay time.Duration) LoopRetrier {
+	r.opts.MinDelay = minDelay
+	return r
 }
 
 // MaxDelay sets the max delay.
-func (c LoopCall) MaxDelay(maxDelay time.Duration) LoopCall {
-	c.opts.MaxDelay = maxDelay
-	return c
+func (r LoopRetrier) MaxDelay(maxDelay time.Duration) LoopRetrier {
+	r.opts.MaxDelay = maxDelay
+	return r
 }
 
 // MaxRetries sets the max retries.
-func (c LoopCall) MaxRetries(maxRetries int) LoopCall {
-	c.opts.MaxRetries = maxRetries
-	return c
+func (r LoopRetrier) MaxRetries(maxRetries int) LoopRetrier {
+	r.opts.MaxRetries = maxRetries
+	return r
 }
 
 // Options overrides all options.
-func (c LoopCall) Options(opts Options) LoopCall {
-	c.opts = opts
-	return c
+func (r LoopRetrier) Options(opts Options) LoopRetrier {
+	r.opts = opts
+	return r
 }
 
 // private
 
-func (c LoopCall) run(ctx async.Context, success *bool) (st status.Status) {
+func (r LoopRetrier) run(ctx async.Context, success *bool) (st status.Status) {
 	defer func() {
 		if e := recover(); e != nil {
 			st = status.Recover(e)
 		}
 	}()
 
-	return c.fn(ctx, success)
+	return r.fn(ctx, success)
 }

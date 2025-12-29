@@ -12,109 +12,124 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-type (
-	// VoidFunc is a procedure without arguments and results.
-	VoidFunc func(ctx async.Context) status.Status
+// VoidFunc is a function without arguments and results.
+type VoidFunc func(ctx async.Context) status.Status
 
-	// VoidCall retries a procedure, i.e. a function without results.
-	VoidCall struct {
-		call
-		fn VoidFunc
+// VoidRetrier retries a void function.
+type VoidRetrier struct {
+	retrier
+	fn VoidFunc
+}
+
+// RetryVoid returns a void function retrier.
+//
+// Example:
+//
+//	fn := func(ctx async.Context) status.Status {
+//	    // ...
+//	}
+//
+//	st := retry.RetryVoid(fn).
+//		MaxRetries(5).
+//		MinDelay(time.Second).
+//		MaxDelay(10 * time.Second).
+//		Error("operation failed").
+//		ErrorHandler(myErrorHandler).
+//		Run(ctx)
+func RetryVoid(fn VoidFunc) VoidRetrier {
+	return VoidRetrier{
+		retrier: newRetrier(),
+		fn:      fn,
 	}
-)
-
-// RetryVoid returns a new procedure call.
-func RetryVoid(fn VoidFunc) VoidCall {
-	return VoidCall{fn: fn}
 }
 
-var _ builder[VoidCall] = (*VoidCall)(nil)
-
-// Error sets the error message.
-func (c VoidCall) Error(message string) VoidCall {
-	c.opts.Error = message
-	return c
-}
-
-// ErrorFunc sets the error handler.
-func (c VoidCall) ErrorFunc(fn ErrorFunc) VoidCall {
-	c.opts.ErrorHandler = fn
-	return c
-}
-
-// ErrorHandler sets the error handler.
-func (c VoidCall) ErrorHandler(handler ErrorHandler) VoidCall {
-	c.opts.ErrorHandler = handler
-	return c
-}
-
-// Logger sets the default logger.
-func (c VoidCall) Logger(logger logging.Logger) VoidCall {
-	c.opts.Logger = logger
-	return c
-}
-
-// MinDelay sets the min delay.
-func (c VoidCall) MinDelay(minDelay time.Duration) VoidCall {
-	c.opts.MinDelay = minDelay
-	return c
-}
-
-// MaxDelay sets the max delay.
-func (c VoidCall) MaxDelay(maxDelay time.Duration) VoidCall {
-	c.opts.MaxDelay = maxDelay
-	return c
-}
-
-// MaxRetries sets the max retries.
-func (c VoidCall) MaxRetries(maxRetries int) VoidCall {
-	c.opts.MaxRetries = maxRetries
-	return c
-}
-
-// Options overrides all options.
-func (c VoidCall) Options(opts Options) VoidCall {
-	c.opts = opts
-	return c
-}
+var _ builder[VoidRetrier] = (*VoidRetrier)(nil)
 
 // Run retries the procedure.
-func (c VoidCall) Run(ctx async.Context) status.Status {
+func (r VoidRetrier) Run(ctx async.Context) status.Status {
 	for attempt := 0; ; attempt++ {
-		// VoidCall function
-		st := c.run(ctx)
+		// VoidRetrier function
+		st := r.run(ctx)
 		switch st.Code {
 		case status.CodeOK, status.CodeCancelled:
 			return st
 		}
 
 		// Check max retries
-		if c.opts.MaxRetries != 0 {
-			if attempt >= c.opts.MaxRetries {
+		if r.opts.MaxRetries != 0 {
+			if attempt >= r.opts.MaxRetries {
 				return st
 			}
 		}
 
 		// Handle error
-		if st := c.handleError(st, attempt); !st.OK() {
+		if st := r.handleError(st, attempt); !st.OK() {
 			return st
 		}
 
 		// Sleep
-		if st := c.sleep(ctx, attempt); !st.OK() {
+		if st := r.sleep(ctx, attempt); !st.OK() {
 			return st
 		}
 	}
 }
 
+// Error sets the error message.
+func (r VoidRetrier) Error(message string) VoidRetrier {
+	r.opts.Error = message
+	return r
+}
+
+// ErrorFunc sets the error handler.
+func (r VoidRetrier) ErrorFunc(fn ErrorFunc) VoidRetrier {
+	r.opts.ErrorHandler = fn
+	return r
+}
+
+// ErrorHandler sets the error handler.
+func (r VoidRetrier) ErrorHandler(handler ErrorHandler) VoidRetrier {
+	r.opts.ErrorHandler = handler
+	return r
+}
+
+// Logger sets the default logger.
+func (r VoidRetrier) Logger(logger logging.Logger) VoidRetrier {
+	r.opts.Logger = logger
+	return r
+}
+
+// MinDelay sets the min delay.
+func (r VoidRetrier) MinDelay(minDelay time.Duration) VoidRetrier {
+	r.opts.MinDelay = minDelay
+	return r
+}
+
+// MaxDelay sets the max delay.
+func (r VoidRetrier) MaxDelay(maxDelay time.Duration) VoidRetrier {
+	r.opts.MaxDelay = maxDelay
+	return r
+}
+
+// MaxRetries sets the max retries.
+func (r VoidRetrier) MaxRetries(maxRetries int) VoidRetrier {
+	r.opts.MaxRetries = maxRetries
+	return r
+}
+
+// Options overrides all options.
+func (r VoidRetrier) Options(opts Options) VoidRetrier {
+	r.opts = opts
+	return r
+}
+
 // private
 
-func (c VoidCall) run(ctx async.Context) (st status.Status) {
+func (r VoidRetrier) run(ctx async.Context) (st status.Status) {
 	defer func() {
 		if e := recover(); e != nil {
 			st = status.Recover(e)
 		}
 	}()
 
-	return c.fn(ctx)
+	return r.fn(ctx)
 }
