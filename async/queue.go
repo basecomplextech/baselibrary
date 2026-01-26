@@ -35,6 +35,16 @@ func NewQueue[T any](items ...T) Queue[T] {
 	return newQueue[T](items...)
 }
 
+// DrainQueue drains all events from the topic queue.
+func DrainQueue[T any](q Queue[T]) {
+	for {
+		_, ok := q.Poll()
+		if !ok {
+			return
+		}
+	}
+}
+
 // internal
 
 var _ Queue[int] = (*queue[int])(nil)
@@ -75,7 +85,6 @@ func (q *queue[T]) Clear() {
 		select {
 		case <-q.wait:
 		default:
-			break
 		}
 	}
 }
