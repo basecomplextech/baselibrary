@@ -8,11 +8,22 @@ import (
 	"github.com/basecomplextech/baselibrary/tests"
 )
 
-// Test returns a test context.
-func Test(t tests.T, vv ...any) Context {
-	tfn := func() tests.T { return t } // returns tests.T interface
+// Test returns a test context which eagerly initializes all dependencies.
+func Test(t tests.T, providers ...any) Context {
+	x := TestLazy(t, providers...).(*context)
 
-	x := New(t, tfn)
-	x.Add(vv...)
+	for typ := range x.providers {
+		x.get(typ)
+	}
+	return x
+}
+
+// TestLazy returns a lazy test context.
+func TestLazy(t tests.T, providers ...any) Context {
+	// testFn returns tests.T interface
+	testFn := func() tests.T { return t }
+
+	x := New(t, testFn)
+	x.Add(providers...)
 	return x
 }
