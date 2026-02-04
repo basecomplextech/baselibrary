@@ -31,6 +31,8 @@ func (t HLTimestamp) Compare(t1 HLTimestamp) int {
 	}
 }
 
+// Less
+
 // Less returns true if this timestamp is less than another.
 func (t HLTimestamp) Less(t1 HLTimestamp) bool {
 	return t.Compare(t1) < 0
@@ -39,6 +41,18 @@ func (t HLTimestamp) Less(t1 HLTimestamp) bool {
 // LessOrEqual returns true if this timestamp is less than or equal to another.
 func (t HLTimestamp) LessOrEqual(t1 HLTimestamp) bool {
 	return t.Compare(t1) <= 0
+}
+
+// Greater
+
+// Greater returns true if this timestamp is greater than another.
+func (t HLTimestamp) Greater(t1 HLTimestamp) bool {
+	return t.Compare(t1) > 0
+}
+
+// GreaterOrEqual returns true if this timestamp is greater than or equal to another.
+func (t HLTimestamp) GreaterOrEqual(t1 HLTimestamp) bool {
+	return t.Compare(t1) >= 0
 }
 
 // Min/Max
