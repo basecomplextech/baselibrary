@@ -64,6 +64,9 @@ type MutFlag interface {
 	// Set sets the flag and notifies the waiters.
 	Set()
 
+	// SetTo sets or unsets the flag depending on the value.
+	SetTo(v bool)
+
 	// Unset unsets the flag and replaces its wait channel with an open one.
 	Unset()
 }
@@ -128,6 +131,15 @@ func (f *flag) Set() {
 
 	for _, rf := range f.reverse {
 		rf.srcSet()
+	}
+}
+
+// SetTo sets or unsets the flag depending on the value.
+func (f *flag) SetTo(v bool) {
+	if v {
+		f.Set()
+	} else {
+		f.Unset()
 	}
 }
 
