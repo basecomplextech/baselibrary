@@ -15,18 +15,22 @@ import (
 // LoopFunc1 is a function with one argument that is retried in a loop.
 type LoopFunc1[A any] func(ctx async.Context, arg A, success *bool) status.Status
 
-// Loop1Retrier retries a single argument function in a loop.
+// Loop1Retrier retries a single-argument function containing a loop.
 type Loop1Retrier[A any] struct {
 	retrier
 	fn LoopFunc1[A]
 }
 
-// RetryLoop1 returns a loop retrier.
+// RetryLoop1 returns a retrier which retries a function containing a loop.
 //
 // Example:
 //
 //	fn := func(ctx async.Context, arg ArgType, success *bool) status.Status {
-//	    // ...
+//		for {
+//			if st := doSomething(arg, success); !st.OK() {
+//				return st
+//			}
+//		}
 //	}
 //
 //	st := retry.RetryLoop1(fn).

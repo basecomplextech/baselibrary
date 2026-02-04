@@ -15,31 +15,35 @@ import (
 // LoopFunc is a function without arguments that is retried in a loop.
 type LoopFunc func(ctx async.Context, success *bool) status.Status
 
-// LoopRetrier retries a loop function.
+// LoopRetrier retries a function containing a loop.
 type LoopRetrier struct {
 	retrier
 	fn LoopFunc
 }
 
-// RetryLoop returns a loop retrier.
+// RetryLoop returns a retrier which retries a function containing a loop.
 //
 // Example:
 //
-//	fn := func(ctx async.Context, success *bool) status.Status {
-//	    // ...
+//	loopFn := func(ctx async.Context, success *bool) status.Status {
+//		for {
+//			if st := doSomething(success); !st.OK() {
+//				return st
+//			}
+//		}
 //	}
 //
-//	st := retry.RetryLoop(fn).
+//	st := retry.RetryLoop(loopFn).
 //		MaxRetries(5).
 //		MinDelay(time.Second).
 //		MaxDelay(10 * time.Second).
 //		Error("operation failed").
 //		ErrorHandler(myErrorHandler).
 //		Run(ctx)
-func RetryLoop(fn LoopFunc) LoopRetrier {
+func RetryLoop(loopFn LoopFunc) LoopRetrier {
 	return LoopRetrier{
 		retrier: newRetrier(),
-		fn:      fn,
+		fn:      loopFn,
 	}
 }
 
