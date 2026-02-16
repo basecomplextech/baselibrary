@@ -24,6 +24,15 @@ func Sort128(vv []Bin128) {
 	})
 }
 
+// Sort192 sorts bin192 values.
+func Sort192(vv []Bin192) {
+	sort.Slice(vv, func(i, j int) bool {
+		a := vv[i]
+		b := vv[j]
+		return a.Less(b)
+	})
+}
+
 // Sort256 sorts bin256 values.
 func Sort256(vv []Bin256) {
 	sort.Slice(vv, func(i, j int) bool {

@@ -26,6 +26,17 @@ func Compare128(a, b Bin128) int {
 	return a.Compare(b)
 }
 
+// Compare192 compares two bin192 values.
+//
+// Returns:
+//
+//	-1 if a < b
+//	 0 if a == b
+//	 1 if a > b
+func Compare192(a, b Bin192) int {
+	return a.Compare(b)
+}
+
 // Compare256 compares two bin256 values.
 //
 // Returns:

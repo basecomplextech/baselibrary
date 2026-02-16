@@ -14,13 +14,21 @@ import (
 	"github.com/basecomplextech/baselibrary/buffer"
 )
 
-const Len64 = 8
-const Len64Char = (Len64 * 2) // 341a7d60bc5893a6
+const (
+	// Len64 is the length of a bin64 in bytes.
+	Len64 = 8
 
-var Max64 = Bin64{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
-var Regexp64 = regexp.MustCompile(`^[0-9A-Za-z]{16}$`)
+	// Len64Char is the length of a bin64 encoded encoded as a hex string.
+	Len64Char = (Len64 * 2)
+)
 
-// Bin64
+var (
+	// Max64 is the maximum value of a bin64.
+	Max64 = Bin64{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+
+	// Regexp64 is a regular expression for validating a hex-encoded bin64 string.
+	Regexp64 = regexp.MustCompile(`^[0-9A-Za-z]{16}$`)
+)
 
 // Bin64 is a binary 64-bit value.
 type Bin64 [8]byte

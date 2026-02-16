@@ -14,13 +14,21 @@ import (
 	"github.com/basecomplextech/baselibrary/buffer"
 )
 
-const Len256 = 32
-const Len256Char = (Len256 * 2) + 3
+const (
+	// Len256 is the length of a bin256 in bytes.
+	Len256 = 32
 
-var Max256 = Bin256{Max64, Max64, Max64, Max64}
-var Regexp256 = regexp.MustCompile(`^[0-9A-Za-z]{16}-[0-9A-Za-z]{16}-[0-9A-Za-z]{16}-[0-9A-Za-z]{16}$`)
+	// Len256Char is the length of a bin256 encoded as a hex string with dashes.
+	Len256Char = (Len256 * 2) + 3
+)
 
-// Bin256
+var (
+	// Max256 is the maximum value of a bin256.
+	Max256 = Bin256{Max64, Max64, Max64, Max64}
+
+	// Regexp256 is a regular expression for validating a hex-encoded bin256 string.
+	Regexp256 = regexp.MustCompile(`^[0-9A-Za-z]{16}-[0-9A-Za-z]{16}-[0-9A-Za-z]{16}-[0-9A-Za-z]{16}$`)
+)
 
 // Bin256 is a 32 byte value.
 type Bin256 [4]Bin64

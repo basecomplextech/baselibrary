@@ -13,13 +13,21 @@ import (
 	"github.com/basecomplextech/baselibrary/buffer"
 )
 
-const Len128 = 16
-const Len128Char = (Len128 * 2) + 1 // 341a7d60bc5893a6-4bda3de06721534c
+const (
+	// Len128 is the length of a bin128 in bytes.
+	Len128 = 16
 
-var Max128 = Bin128{Max64, Max64}
-var Regexp128 = regexp.MustCompile(`^[0-9A-Za-z]{16}-[0-9A-Za-z]{16}$`)
+	// Len128Char is the length of a bin128 encoded as a hex string with a dash.
+	Len128Char = (Len128 * 2) + 1 // 341a7d60bc5893a6-4bda3de06721534c
+)
 
-// Bin128
+var (
+	// Max128 is the maximum value of a bin128.
+	Max128 = Bin128{Max64, Max64}
+
+	// Regexp128 is a regular expression for validating a hex-encoded bin128 string.
+	Regexp128 = regexp.MustCompile(`^[0-9A-Za-z]{16}-[0-9A-Za-z]{16}$`)
+)
 
 // Bin128 is a 128-bit value.
 type Bin128 [2]Bin64

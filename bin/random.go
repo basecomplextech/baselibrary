@@ -44,6 +44,11 @@ func (p *randomPool) read128() [16]byte {
 	return p.readers[i].read128()
 }
 
+func (p *randomPool) read192() [24]byte {
+	i := int(fastrand()) % len(p.readers)
+	return p.readers[i].read192()
+}
+
 func (p *randomPool) read256() [32]byte {
 	i := int(fastrand()) % len(p.readers)
 	return p.readers[i].read256()
@@ -57,12 +62,6 @@ type randomReader struct {
 	buf []byte
 
 	_ [216]byte // pad to cache line
-}
-
-func newRandomReader2() *randomReader {
-	r := &randomReader{}
-	r.init(randomBuffer)
-	return r
 }
 
 func (r *randomReader) init(size int) {
@@ -110,7 +109,7 @@ func (r *randomReader) read128() (v [16]byte) {
 	defer r.mu.Unlock()
 
 	// Check again
-	end = int(r.pos.Add(8))
+	end = int(r.pos.Add(16))
 	if end <= len(r.buf) {
 		copy(v[:], r.buf[end-16:end])
 		return v
@@ -121,6 +120,33 @@ func (r *randomReader) read128() (v [16]byte) {
 	r.pos.Store(16)
 
 	copy(v[:], r.buf[0:16])
+	return v
+}
+
+func (r *randomReader) read192() (v [24]byte) {
+	// Fast path
+	end := int(r.pos.Add(24))
+	if end <= len(r.buf) {
+		copy(v[:], r.buf[end-24:end])
+		return v
+	}
+
+	// Slow path
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Check again
+	end = int(r.pos.Add(24))
+	if end <= len(r.buf) {
+		copy(v[:], r.buf[end-24:end])
+		return v
+	}
+
+	// Refill buffer
+	rand.Read(r.buf)
+	r.pos.Store(24)
+
+	copy(v[:], r.buf[0:24])
 	return v
 }
 
