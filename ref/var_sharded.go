@@ -19,18 +19,18 @@ import (
 // The sharded variable is optimized for high contention scenarios.
 // Internally it uses multiple shards to reduce contention.
 //
-// Fastrand is used to select a shard on access. The scalability of this approach is not linear,
-// but it is still faster than using a single mutex/atomic.
+// Unsafe procPin/procUnpin functions are used to select a shard to access.
+// This scales well with the number of CPUs.
 //
 // Benchmarks
 //
 //	cpu: Apple M1 Pro
-//	BenchmarkShardedVar-10                        	61101717	        19.77 ns/op	        50.58 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedVar_Parallel-10               	23703859	        51.03 ns/op	        19.60 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedVar_AcquireSet_Parallel-10    	19628034	        59.33 ns/op	        16.86 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedVar_Acquire-10                	74216665	        16.21 ns/op	        61.71 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedVar_Acquire_Parallel-10       	29167982	        42.29 ns/op	        23.64 mops	       0 B/op	       0 allocs/op
-//	BenchmarkShardedVar_SetRetain-10              	 2595574	       463.50 ns/op	         2.15 mops	     160 B/op	       1 allocs/op
+//	BenchmarkShardedVar-10    						71493033	        16.61 ns/op	        60.21 mops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedVar_Parallel-10    				587905798	         2.06 ns/op	       485.20 mops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedVar_AcquireSet_Parallel-10    	100000000	        13.73 ns/op	        72.83 mops	     12787 sets	       0 B/op	       0 allocs/op
+//	BenchmarkShardedVar_Acquire-10    				82076718	        14.38 ns/op	        69.56 mops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedVar_Acquire_Parallel-10    		541823913	         2.31 ns/op	       431.70 mops	       0 B/op	       0 allocs/op
+//	BenchmarkShardedVar_SetRetain-10    	 		2402602	           481.70 ns/op	         2.07 mops	     160 B/op	       1 allocs/op
 type ShardedVar[T any] interface {
 	Var[T]
 }
@@ -63,8 +63,13 @@ func newShardedVar[T any]() *shardedVar[T] {
 
 // Acquire acquires, retains and returns a value reference, or false.
 func (v *shardedVar[T]) Acquire() (R[T], bool) {
-	i := int(fastrand()) % len(v.shards)
-	return v.shards[i].acquire()
+	// Fastrand is left in case procPin/procUnpin functions are not available later.
+	// i := int(fastrand()) % len(v.shards)
+
+	i := procPin() % len(v.shards)
+	shard := &v.shards[i]
+	procUnpin()
+	return shard.acquire()
 }
 
 // Set sets a value, releases the previous reference.
@@ -133,3 +138,11 @@ func (v *shardedVar[T]) Unwrap() opt.Opt[T] {
 func (v *shardedVar[T]) UnwrapRef() opt.Opt[R[T]] {
 	return v.shards[0].unwrapRef()
 }
+
+// private
+
+//go:linkname procPin runtime.procPin
+func procPin() int
+
+//go:linkname procUnpin runtime.procUnpin
+func procUnpin()

@@ -34,7 +34,6 @@ func BenchmarkShardedVar_Parallel(b *testing.B) {
 	v.SetRetain(r)
 	r.Release()
 
-	b.SetParallelism(10)
 	b.ReportAllocs()
 
 	b.RunParallel(func(p *testing.PB) {
@@ -61,7 +60,7 @@ func BenchmarkShardedVar_AcquireSet_Parallel(b *testing.B) {
 	b.ReportAllocs()
 
 	stop := make(chan struct{})
-	var writes atomic.Int64
+	var sets atomic.Int64
 	go func() {
 		for {
 			select {
@@ -73,7 +72,7 @@ func BenchmarkShardedVar_AcquireSet_Parallel(b *testing.B) {
 			r := newDummyRef[int]()
 			v.SetRetain(r)
 
-			writes.Add(1)
+			sets.Add(1)
 		}
 	}()
 	defer close(stop)
@@ -92,7 +91,7 @@ func BenchmarkShardedVar_AcquireSet_Parallel(b *testing.B) {
 	ops := float64(b.N) / sec
 
 	b.ReportMetric(ops/1000_000, "mops")
-	b.ReportMetric(float64(writes.Load()), "writes")
+	b.ReportMetric(float64(sets.Load()), "sets")
 }
 
 // Acquire
