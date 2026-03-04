@@ -26,6 +26,12 @@ type node[K, V any] interface {
 	// get returns for an item by key, or false if not found.
 	get(key K, cmp CompareFunc[K]) (ref.R[V], bool)
 
+	// first returns the first item, or false when the node is empty.
+	first() (K, ref.R[V], bool)
+
+	// last returns the last item, or false when the node is empty.
+	last() (K, ref.R[V], bool)
+
 	// insert inserts or updates an item, returns true if inserted.
 	insert(key K, value ref.R[V], cmp CompareFunc[K]) bool
 

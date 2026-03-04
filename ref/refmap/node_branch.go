@@ -111,6 +111,16 @@ func (n *branchNode[K, V]) get(key K, compare CompareFunc[K]) (ref.R[V], bool) {
 	return node.get(key, compare)
 }
 
+// first returns the first item, or false when the node is empty.
+func (n *branchNode[K, V]) first() (K, ref.R[V], bool) {
+	return n.child(0).first()
+}
+
+// last returns the last item, or false when the node is empty.
+func (n *branchNode[K, V]) last() (K, ref.R[V], bool) {
+	return n.child(len(n.items) - 1).last()
+}
+
 // insert inserts or updates an item, returns true if inserted.
 func (n *branchNode[K, V]) insert(key K, value ref.R[V], compare CompareFunc[K]) bool {
 	if !n.mut {

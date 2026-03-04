@@ -36,6 +36,12 @@ type Map[K, V any] interface {
 	// Get returns an item by a key, does not retain the value.
 	Get(key K) (ref.R[V], bool)
 
+	// First returns the first item, does not retain the value.
+	First() (K, ref.R[V], bool)
+
+	// Last returns the last item, does not retain the value.
+	Last() (K, ref.R[V], bool)
+
 	// Contains returns true if the map contains a key.
 	Contains(key K) bool
 
@@ -175,6 +181,16 @@ func (t *btree[K, V]) Freeze() {
 // Get returns an item by a key, does not retain the value.
 func (t *btree[K, V]) Get(key K) (v ref.R[V], ok bool) {
 	return t.root.get(key, t.compare)
+}
+
+// First returns the first item, does not retain the value.
+func (t *btree[K, V]) First() (K, ref.R[V], bool) {
+	return t.root.first()
+}
+
+// Last returns the last item, does not retain the value.
+func (t *btree[K, V]) Last() (K, ref.R[V], bool) {
+	return t.root.last()
 }
 
 // Contains returns true if the map contains a key.
