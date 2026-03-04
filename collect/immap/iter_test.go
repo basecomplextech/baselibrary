@@ -86,11 +86,9 @@ func TestIterator_Next_Previous_Next__should_switch_directions(t *testing.T) {
 func TestIterator_Previous__should_iterate_items_in_reverse_order(t *testing.T) {
 	items := testItems()
 	m := testMap(t, items...)
-	it := m.Iterator()
 
-	if ok := it.SeekToEnd(); !ok {
-		t.Fatal(ok)
-	}
+	it := m.Iterator()
+	it.SeekToEnd()
 
 	items1 := testIterateBackward(t, it)
 	slices.Reverse(items)
@@ -99,11 +97,9 @@ func TestIterator_Previous__should_iterate_items_in_reverse_order(t *testing.T) 
 
 func TestIterator_Previous__should_end_when_empty(t *testing.T) {
 	m := testMap(t)
-	it := m.Iterator()
 
-	if ok := it.SeekToEnd(); !ok {
-		t.Fatal(ok)
-	}
+	it := m.Iterator()
+	it.SeekToEnd()
 
 	items0 := testItemsN(0)
 	items1 := testIterateBackward(t, it)
@@ -131,11 +127,9 @@ func TestIterator_Previous_SeekBefore__should_iterate_backward_from_key(t *testi
 func TestIterator_Previous_Next_Previous__should_switch_directions(t *testing.T) {
 	items := testItems()
 	m := testMap(t, items...)
-	it := m.Iterator()
 
-	if ok := it.SeekToEnd(); !ok {
-		t.Fatal(ok)
-	}
+	it := m.Iterator()
+	it.SeekToEnd()
 
 	n := len(items) / 2
 	items1 := testIterateBackwardN(t, it, n)
@@ -154,21 +148,16 @@ func TestIterator_Previous_Next_Previous__should_switch_directions(t *testing.T)
 func TestIterator_SeekBefore__should_position_before_key(t *testing.T) {
 	items := testItems()
 	m := testMap(t, items...)
-	it := m.Iterator().(*iterator[int, int64])
+	it := m.Iterator().(*iter[int, int64])
 
 	for _, item := range items {
 		if ok := it.SeekBefore(item.Key); !ok {
 			t.Fatal(ok)
 		}
+		require.Equal(t, positionBefore, it.pos, "key=%v", item.Key)
 
-		ok := it.OK()
-		assert.False(t, ok)
-		assert.Equal(t, positionBefore, it.pos, "key=%v", item.Key)
-
-		ok = it.Next()
+		key1, _, ok := it.Next()
 		require.True(t, ok, "key=%v", item.Key)
-
-		key1 := it.Key()
 		require.Equal(t, item.Key, key1, "key=%v", item.Key)
 	}
 }
@@ -176,25 +165,19 @@ func TestIterator_SeekBefore__should_position_before_key(t *testing.T) {
 func TestIterator_SeekBefore__should_position_at_start_when_first_key_greater_than_sought_key(t *testing.T) {
 	items := testItemsN(10)
 	m := testMap(t, items[1:]...)
-	it := m.Iterator().(*iterator[int, int64])
+	it := m.Iterator().(*iter[int, int64])
 
 	ok := it.SeekBefore(0)
 	assert.True(t, ok)
-
-	ok = it.OK()
-	assert.False(t, ok)
 	assert.Equal(t, positionBefore, it.pos)
 }
 
 func TestIterator_SeekBefore__should_position_at_end_when_all_keys_less_than_sought_key(t *testing.T) {
 	items := testItemsN(10)
 	m := testMap(t, items...)
-	it := m.Iterator().(*iterator[int, int64])
+	it := m.Iterator().(*iter[int, int64])
 
 	ok := it.SeekBefore(11)
-	assert.False(t, ok)
-
-	ok = it.OK()
 	assert.False(t, ok)
 	assert.Equal(t, positionEnd, it.pos)
 
@@ -208,10 +191,10 @@ func TestIterator_SeekBefore__should_position_at_end_when_all_keys_less_than_sou
 func TestIterator_Next__should_panic_on_concurrent_modification(t *testing.T) {
 	items := testItemsN(10)
 	m := testMap(t, items[:5]...)
-	it := m.Iterator().(*iterator[int, int64])
+	it := m.Iterator().(*iter[int, int64])
 
-	ok := it.Next()
-	assert.True(t, ok)
+	_, _, ok := it.Next()
+	require.True(t, ok)
 
 	m.Set(items[5].Key, items[5].Value)
 
@@ -223,11 +206,9 @@ func TestIterator_Next__should_panic_on_concurrent_modification(t *testing.T) {
 func TestIterator_Previous__should_panic_on_concurrent_modification(t *testing.T) {
 	items := testItemsN(10)
 	m := testMap(t, items[:5]...)
-	it := m.Iterator().(*iterator[int, int64])
+	it := m.Iterator().(*iter[int, int64])
 
-	ok := it.SeekToEnd()
-	assert.True(t, ok)
-
+	it.SeekToEnd()
 	m.Set(items[5].Key, items[5].Value)
 
 	assert.Panics(t, func() {

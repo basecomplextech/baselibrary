@@ -6,50 +6,29 @@ package immap
 
 import (
 	"github.com/basecomplextech/baselibrary/collect/slices2"
+	"github.com/basecomplextech/baselibrary/iterator"
 	"github.com/basecomplextech/baselibrary/pools"
-	"github.com/basecomplextech/baselibrary/status"
 )
 
-// Iterator sequentially iterates over sorted map items.
-//
-// Usage:
-//
-//	it := immap.Iterator()
-//	defer it.Free()
-//
-//	it.SeekToStart()
-//
-//	for it.Next() {
-//		key := it.Key()
-//		value := it.Value()
-//	}
+// Iterator iterates over an immutable map, extends MapIter with reverse iteration and seeking.
 type Iterator[K any, V any] interface {
-	// OK returns true when the iterator points to a valid item, or false on end.
-	OK() bool
+	iterator.MapIter[K, V]
 
-	// Key returns the current key or zero, the key is valid until the next iteration.
-	Key() K
+	// Next returns the next key-value pair, or false on the end.
+	Next() (K, V, bool)
 
-	// Value returns the current value or zero, the value is valid until the next iteration.
-	Value() V
-
-	// Iterating
-
-	// Next moves to the next item.
-	Next() bool
-
-	// Previous moves to the previous item.
-	Previous() bool
+	// Previous returns the previous key-value pair, or false on the end.
+	Previous() (K, V, bool)
 
 	// Seeking
 
 	// SeekToStart positions the iterator at the start.
-	SeekToStart() bool
+	SeekToStart()
 
 	// SeekToEnd positions the iterator at the end.
-	SeekToEnd() bool
+	SeekToEnd()
 
-	// SeekBefore positions the iterator before an item with key >= key.
+	// SeekBefore positions the iterator before an item with key >= key, or false on the end.
 	SeekBefore(key K) bool
 
 	// Internal
@@ -70,17 +49,16 @@ const (
 	positionEnd
 )
 
-var _ Iterator[int, int] = (*iterator[int, int])(nil)
+var _ Iterator[int, int] = (*iter[int, int])(nil)
 
-// iterator iterates over a btree, does not retain the values.
-type iterator[K, V any] struct {
+// iter iterates over a btree, does not retain the values.
+type iter[K, V any] struct {
 	*iterState[K, V]
 }
 
 type iterState[K, V any] struct {
 	tree *btree[K, V]
 
-	st    status.Status    // current iterator status
 	mod   int              // track concurrent modifications
 	pos   position         // current iterator position
 	stack []iterElem[K, V] // the last element is always a leaf node
@@ -92,77 +70,17 @@ type iterElem[K, V any] struct {
 	index int // index maybe == len(node.items) as in sort.Search
 }
 
-func newIterator[K, V any](tree *btree[K, V]) *iterator[K, V] {
-	it := &iterator[K, V]{acquireIterState[K, V]()}
+func newIterator[K, V any](tree *btree[K, V]) *iter[K, V] {
+	it := &iter[K, V]{acquireIterState[K, V]()}
 	it.tree = tree
-
-	it.st = status.None
 	it.mod = tree.mod
+	it.pos = positionUndefined
 	return it
 }
 
-// reset
-
-func (s *iterState[K, V]) reset() {
-	stack := slices2.Truncate(s.stack)
-
-	*s = iterState[K, V]{}
-	s.stack = stack
-}
-
-// State
-
-// OK returns true when the iterator points to a valid item, or false on end.
-func (it *iterator[K, V]) OK() bool {
-	return it.st.OK()
-}
-
-// Key returns the current key or zero, the key is valid until the next iteration.
-func (it *iterator[K, V]) Key() (key K) {
-	if !it.st.OK() {
-		return
-	}
-
-	elem := it.stack[len(it.stack)-1]
-	node := elem.node.(*leafNode[K, V])
-	index := elem.index
-
-	if index >= len(node.items) {
-		return
-	}
-	return node.items[index].key
-}
-
-// Value returns the current value or zero, the value is valid until the next iteration.
-func (it *iterator[K, V]) Value() (value V) {
-	if !it.st.OK() {
-		return
-	}
-
-	elem := it.stack[len(it.stack)-1]
-	node := elem.node.(*leafNode[K, V])
-	index := elem.index
-
-	if index >= len(node.items) {
-		return
-	}
-	return node.items[index].value
-}
-
-// Iterating
-
-// Next moves to the next item.
-func (it *iterator[K, V]) Next() bool {
-	switch it.st.Code {
-	case status.CodeOK,
-		status.CodeEnd,
-		status.CodeNone:
-	default:
-		return false
-	}
-
+// Next returns the next key-value pair, or false on the end.
+func (it *iter[K, V]) Next() (key K, value V, _ bool) {
 	if it.mod != it.tree.mod {
-		it.st = status.Errorf("immap concurrent modification error")
 		panic("immap concurrent modification error")
 	}
 
@@ -171,8 +89,6 @@ func (it *iterator[K, V]) Next() bool {
 		// Stack already points to the next item
 		// Just change the state
 		it.pos = positionItem
-		it.st = status.OK
-		return true
 
 	case positionStart:
 		// Recursively push first nodes
@@ -182,18 +98,14 @@ func (it *iterator[K, V]) Next() bool {
 
 		if len(it.stack) == 0 {
 			it.pos = positionEnd
-			it.st = status.End
-			return false
+			return key, value, false
 		}
 
 		it.pos = positionItem
-		it.st = status.OK
-		return true
 
 	case positionEnd:
 		// Cannot proceed
-		it.st = status.End
-		return false
+		return key, value, false
 
 	case positionItem:
 		// Move to the next item
@@ -226,39 +138,37 @@ func (it *iterator[K, V]) Next() bool {
 
 		if len(it.stack) == 0 {
 			it.pos = positionEnd
-			it.st = status.End
-			return false
+			return key, value, false
 		}
-
 		it.pos = positionItem
-		it.st = status.OK
-		return true
 	}
 
-	it.st = status.End
-	return false
+	if len(it.stack) == 0 {
+		it.pos = positionEnd
+		return key, value, false
+	}
+
+	// Return current item
+	elem := it.stack[len(it.stack)-1]
+	node := elem.node.(*leafNode[K, V])
+	if elem.index >= len(node.items) {
+		return key, value, false
+	}
+
+	item := &node.items[elem.index]
+	return item.key, item.value, true
 }
 
-// Previous moves to the previous item.
-func (it *iterator[K, V]) Previous() bool {
-	switch it.st.Code {
-	case status.CodeOK,
-		status.CodeEnd,
-		status.CodeNone:
-	default:
-		return false
-	}
-
+// Previous returns the previous key-value pair, or false on the end.
+func (it *iter[K, V]) Previous() (key K, value V, _ bool) {
 	if it.mod != it.tree.mod {
-		it.st = status.Errorf("immap concurrent modification error")
 		panic("immap concurrent modification error")
 	}
 
 	switch it.pos {
 	case positionStart:
 		// Cannot proceed
-		it.st = status.End
-		return false
+		return key, value, false
 
 	case positionEnd:
 		// Recursively push last nodes
@@ -268,13 +178,10 @@ func (it *iterator[K, V]) Previous() bool {
 
 		if len(it.stack) == 0 {
 			it.pos = positionStart
-			it.st = status.End
-			return false
+			return key, value, false
 		}
 
 		it.pos = positionItem
-		it.st = status.OK
-		return true
 
 	case positionBefore, positionItem:
 		// Move to the previous item
@@ -306,66 +213,45 @@ func (it *iterator[K, V]) Previous() bool {
 
 		if len(it.stack) == 0 {
 			it.pos = positionStart
-			it.st = status.End
-			return false
+			return key, value, false
 		}
-
 		it.pos = positionItem
-		it.st = status.OK
-		return true
 	}
 
-	it.st = status.End
-	return false
+	if len(it.stack) == 0 {
+		it.pos = positionStart
+		return key, value, false
+	}
+
+	// Return current item
+	elem := it.stack[len(it.stack)-1]
+	node := elem.node.(*leafNode[K, V])
+	if elem.index >= len(node.items) {
+		return key, value, false
+	}
+
+	item := &node.items[elem.index]
+	return item.key, item.value, true
 }
 
 // Seeking
 
 // SeekToStart positions the iterator at the start.
-func (it *iterator[K, V]) SeekToStart() bool {
-	switch it.st.Code {
-	case status.CodeOK,
-		status.CodeEnd,
-		status.CodeNone:
-	default:
-		return false
-	}
-
-	it.st = status.None
+func (it *iter[K, V]) SeekToStart() {
 	it.mod = it.tree.mod
 	it.pos = positionStart
 	it.stack = it.stack[:0]
-	return true
 }
 
 // SeekToEnd positions the iterator at the end.
-func (it *iterator[K, V]) SeekToEnd() bool {
-	switch it.st.Code {
-	case status.CodeOK,
-		status.CodeEnd,
-		status.CodeNone:
-	default:
-		return false
-	}
-
-	it.st = status.None
+func (it *iter[K, V]) SeekToEnd() {
 	it.mod = it.tree.mod
 	it.pos = positionEnd
 	it.stack = it.stack[:0]
-	return true
 }
 
-// SeekBefore positions the iterator before an item with key >= key, and returns ok/end/error.
-func (it *iterator[K, V]) SeekBefore(key K) bool {
-	switch it.st.Code {
-	case status.CodeOK,
-		status.CodeEnd,
-		status.CodeNone:
-	default:
-		return false
-	}
-
-	it.st = status.None
+// SeekBefore positions the iterator before an item with key >= key, or false on the end.
+func (it *iter[K, V]) SeekBefore(key K) bool {
 	it.stack = it.stack[:0]
 
 	// Recursively push nodes onto the stack
@@ -400,23 +286,20 @@ func (it *iterator[K, V]) SeekBefore(key K) bool {
 	}
 
 	if len(it.stack) == 0 {
-		it.st = status.End
 		it.mod = it.tree.mod
 		it.pos = positionEnd
 		return false
 	}
 
-	it.st = status.None
 	it.mod = it.tree.mod
 	it.pos = positionBefore
 	return true
-
 }
 
 // Internal
 
 // Free frees the iterator.
-func (it *iterator[K, V]) Free() {
+func (it *iter[K, V]) Free() {
 	state := it.iterState
 	it.iterState = nil
 	releaseIterState(state)
@@ -426,7 +309,7 @@ func (it *iterator[K, V]) Free() {
 
 // pushStart recursively pushes nodes onto the stack
 // and positions them at start elements.
-func (it *iterator[K, V]) pushStart(node node[K, V]) {
+func (it *iter[K, V]) pushStart(node node[K, V]) {
 	for node != nil {
 		if node.length() == 0 {
 			break
@@ -450,7 +333,7 @@ func (it *iterator[K, V]) pushStart(node node[K, V]) {
 
 // pushEnd recursively pushes nodes onto the stack
 // and positions them at end elements.
-func (it *iterator[K, V]) pushEnd(node node[K, V]) {
+func (it *iter[K, V]) pushEnd(node node[K, V]) {
 	for node != nil {
 		if node.length() == 0 {
 			break
@@ -487,4 +370,11 @@ func acquireIterState[K, V any]() *iterState[K, V] {
 func releaseIterState[K, V any](s *iterState[K, V]) {
 	s.reset()
 	pools.Release(iterStatePools, s)
+}
+
+func (s *iterState[K, V]) reset() {
+	stack := slices2.Truncate(s.stack)
+
+	*s = iterState[K, V]{}
+	s.stack = stack
 }

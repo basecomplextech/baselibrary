@@ -140,9 +140,33 @@ func BenchmarkMap_Iterator(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		it := m.Iterator()
-		it.SeekToStart()
 		it.Next()
 		it.Free()
+	}
+
+	sec := time.Since(t0).Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(ops/1000_000, "mops")
+}
+
+func BenchmarkIterator(b *testing.B) {
+	items := testItemsN(benchTableSize)
+	m := testMap(b, items...)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	t0 := time.Now()
+
+	it := m.Iterator()
+	defer it.Free()
+
+	for i := 0; i < b.N; i++ {
+		_, _, ok := it.Next()
+		if !ok {
+			it.SeekToStart()
+			continue
+		}
 	}
 
 	sec := time.Since(t0).Seconds()

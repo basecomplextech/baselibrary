@@ -6,6 +6,7 @@ package immap
 
 import (
 	"github.com/basecomplextech/baselibrary/compare"
+	"github.com/basecomplextech/baselibrary/iterator"
 	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 )
@@ -37,11 +38,16 @@ type Map[K, V any] interface {
 	// Contains returns true if a key exists.
 	Contains(key K) bool
 
+	// Iterator
+
+	// Keys returns a key iterator.
+	Keys() iterator.Iter[K]
+
+	// Values returns a value iterator.
+	Values() iterator.Iter[V]
+
 	// Iterator returns an iterator.
 	Iterator() Iterator[K, V]
-
-	// Keys returns all keys.
-	Keys() []K
 
 	// Write
 
@@ -159,7 +165,7 @@ func (t *btree[K, V]) Freeze() {
 	t.root.freeze()
 }
 
-// Items
+// Read
 
 // Get returns an item by a key.
 func (t *btree[K, V]) Get(key K) (v V, ok bool) {
@@ -171,29 +177,27 @@ func (t *btree[K, V]) Contains(key K) bool {
 	return t.root.contains(key, t.compare)
 }
 
+// Iterator
+
+// Keys returns a key iterator.
+func (t *btree[K, V]) Keys() iterator.Iter[K] {
+	it := newIterator(t)
+	it.SeekToStart()
+	return iterator.MapToKeys(it)
+}
+
+// Values returns a value iterator.
+func (t *btree[K, V]) Values() iterator.Iter[V] {
+	it := newIterator(t)
+	it.SeekToStart()
+	return iterator.MapToValues(it)
+}
+
 // Iterator returns an iterator.
 func (t *btree[K, V]) Iterator() Iterator[K, V] {
 	it := newIterator(t)
 	it.SeekToStart()
 	return it
-}
-
-// Keys returns all keys.
-func (t *btree[K, V]) Keys() []K {
-	n := t.length
-	if n == 0 {
-		return nil
-	}
-
-	it := t.Iterator()
-	defer it.Free()
-
-	keys := make([]K, 0, n)
-	for it.Next() {
-		key := it.Key()
-		keys = append(keys, key)
-	}
-	return keys
 }
 
 // Write
@@ -274,7 +278,7 @@ func (t *btree[K, V]) Free() {
 	// Release state
 	s := t.state
 	t.state = nil
-	releaseState[K, V](s)
+	releaseState(s)
 }
 
 // root
