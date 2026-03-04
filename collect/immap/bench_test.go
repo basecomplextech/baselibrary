@@ -6,7 +6,6 @@ package immap
 
 import (
 	"testing"
-	"time"
 )
 
 const benchTableSize = 100_000
@@ -17,8 +16,6 @@ func BenchmarkMap_Set(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-
-	t0 := time.Now()
 
 	j := 0
 	for i := 0; i < b.N; i++ {
@@ -32,7 +29,7 @@ func BenchmarkMap_Set(b *testing.B) {
 		j++
 	}
 
-	sec := time.Since(t0).Seconds()
+	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
 	b.ReportMetric(ops/1000_000, "mops")
 }
@@ -44,8 +41,6 @@ func BenchmarkMap_Clone(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-
-	t0 := time.Now()
 
 	j := 0
 	for i := 0; i < b.N; i++ {
@@ -62,7 +57,7 @@ func BenchmarkMap_Clone(b *testing.B) {
 		j++
 	}
 
-	sec := time.Since(t0).Seconds()
+	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
 	b.ReportMetric(ops/1000_000, "mops")
 }
@@ -74,8 +69,6 @@ func BenchmarkMap_Clone_Set(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-
-	t0 := time.Now()
 
 	j := 0
 	for i := 0; i < b.N; i++ {
@@ -94,7 +87,7 @@ func BenchmarkMap_Clone_Set(b *testing.B) {
 		j++
 	}
 
-	sec := time.Since(t0).Seconds()
+	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
 	b.ReportMetric(ops/1000_000, "mops")
 }
@@ -106,8 +99,6 @@ func BenchmarkMap_Clone_Set__small(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-
-	t0 := time.Now()
 
 	j := 0
 	for i := 0; i < b.N; i++ {
@@ -124,7 +115,7 @@ func BenchmarkMap_Clone_Set__small(b *testing.B) {
 		j++
 	}
 
-	sec := time.Since(t0).Seconds()
+	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
 	b.ReportMetric(ops/1000_000, "mops")
 }
@@ -136,15 +127,13 @@ func BenchmarkMap_Iterator(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	t0 := time.Now()
-
 	for i := 0; i < b.N; i++ {
 		it := m.Iterator()
 		it.Next()
 		it.Free()
 	}
 
-	sec := time.Since(t0).Seconds()
+	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
 	b.ReportMetric(ops/1000_000, "mops")
 }
@@ -153,13 +142,11 @@ func BenchmarkIterator(b *testing.B) {
 	items := testItemsN(benchTableSize)
 	m := testMap(b, items...)
 
-	b.ResetTimer()
-	b.ReportAllocs()
-
-	t0 := time.Now()
-
 	it := m.Iterator()
 	defer it.Free()
+
+	b.ResetTimer()
+	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
 		_, _, ok := it.Next()
@@ -169,7 +156,7 @@ func BenchmarkIterator(b *testing.B) {
 		}
 	}
 
-	sec := time.Since(t0).Seconds()
+	sec := b.Elapsed().Seconds()
 	ops := float64(b.N) / sec
 	b.ReportMetric(ops/1000_000, "mops")
 }
