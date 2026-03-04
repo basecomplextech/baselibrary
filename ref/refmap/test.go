@@ -11,9 +11,11 @@ import (
 func testIterate[K, V any](t tests.T, it Iterator[K, V]) []Item[K, V] {
 	result := []Item[K, V]{}
 
-	for it.Next() {
-		key := it.Key()
-		value := it.Value()
+	for {
+		key, value, ok := it.Next()
+		if !ok {
+			break
+		}
 
 		item := Item[K, V]{
 			Key:   key,
@@ -28,9 +30,11 @@ func testIterate[K, V any](t tests.T, it Iterator[K, V]) []Item[K, V] {
 func testIterateN[K, V any](t tests.T, it Iterator[K, V], n int) []Item[K, V] {
 	result := []Item[K, V]{}
 
-	for it.Next() {
-		key := it.Key()
-		value := it.Value()
+	for {
+		key, value, ok := it.Next()
+		if !ok {
+			break
+		}
 
 		item := Item[K, V]{
 			Key:   key,
@@ -49,9 +53,11 @@ func testIterateN[K, V any](t tests.T, it Iterator[K, V], n int) []Item[K, V] {
 func testIterateBackward[K, V any](t tests.T, it Iterator[K, V]) []Item[K, V] {
 	result := []Item[K, V]{}
 
-	for it.Previous() {
-		key := it.Key()
-		value := it.Value()
+	for {
+		key, value, ok := it.Previous()
+		if !ok {
+			break
+		}
 
 		item := Item[K, V]{
 			Key:   key,
@@ -66,9 +72,11 @@ func testIterateBackward[K, V any](t tests.T, it Iterator[K, V]) []Item[K, V] {
 func testIterateBackwardN[K, V any](t tests.T, it Iterator[K, V], n int) []Item[K, V] {
 	result := []Item[K, V]{}
 
-	for it.Previous() {
-		key := it.Key()
-		value := it.Value()
+	for {
+		key, value, ok := it.Previous()
+		if !ok {
+			break
+		}
 
 		item := Item[K, V]{
 			Key:   key,

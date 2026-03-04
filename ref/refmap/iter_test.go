@@ -102,11 +102,9 @@ func TestIterator_Next_Previous_Next__should_switch_directions(t *testing.T) {
 func TestIterator_Previous__should_iterate_items_in_reverse_order(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t, items...)
-	it := btree.Iterator()
 
-	if ok := it.SeekToEnd(); !ok {
-		t.Fatal(ok)
-	}
+	it := btree.Iterator()
+	it.SeekToEnd()
 
 	items1 := testIterateBackward(t, it)
 	slices.Reverse(items)
@@ -115,11 +113,9 @@ func TestIterator_Previous__should_iterate_items_in_reverse_order(t *testing.T) 
 
 func TestIterator_Previous__should_end_when_empty(t *testing.T) {
 	btree := testBtree(t)
-	it := btree.Iterator()
 
-	if ok := it.SeekToEnd(); !ok {
-		t.Fatal(ok)
-	}
+	it := btree.Iterator()
+	it.SeekToEnd()
 
 	items0 := testItemsN(0)
 	items1 := testIterateBackward(t, it)
@@ -147,11 +143,9 @@ func TestIterator_Previous_SeekBefore__should_iterate_backward_from_key(t *testi
 func TestIterator_Previous_Next_Previous__should_switch_directions(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t, items...)
-	it := btree.Iterator()
 
-	if ok := it.SeekToEnd(); !ok {
-		t.Fatal(ok)
-	}
+	it := btree.Iterator()
+	it.SeekToEnd()
 
 	n := len(items) / 2
 	items1 := testIterateBackwardN(t, it, n)
@@ -170,21 +164,17 @@ func TestIterator_Previous_Next_Previous__should_switch_directions(t *testing.T)
 func TestIterator_SeekBefore__should_position_before_key(t *testing.T) {
 	items := testItems()
 	btree := testBtree(t, items...)
-	it := btree.Iterator().(*iterator[int, *Value])
+	it := btree.Iterator().(*iter[int, *Value])
 
 	for _, item := range items {
 		if ok := it.SeekBefore(item.Key); !ok {
 			t.Fatal(ok)
 		}
 
-		ok := it.OK()
-		assert.False(t, ok)
-		assert.Equal(t, positionBefore, it.pos, "key=%v", item.Key)
+		require.Equal(t, positionBefore, it.pos, "key=%v", item.Key)
 
-		ok = it.Next()
+		key1, _, ok := it.Next()
 		require.True(t, ok, "key=%v", item.Key)
-
-		key1 := it.Key()
 		require.Equal(t, item.Key, key1, "key=%v", item.Key)
 	}
 }
@@ -192,27 +182,21 @@ func TestIterator_SeekBefore__should_position_before_key(t *testing.T) {
 func TestIterator_SeekBefore__should_position_at_start_when_first_key_greater_than_sought_key(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items[1:]...)
-	it := btree.Iterator().(*iterator[int, *Value])
+	it := btree.Iterator().(*iter[int, *Value])
 
 	ok := it.SeekBefore(0)
 	assert.True(t, ok)
-
-	ok = it.OK()
-	assert.False(t, ok)
 	assert.Equal(t, positionBefore, it.pos)
 }
 
 func TestIterator_SeekBefore__should_position_at_end_when_all_keys_less_than_sought_key(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items...)
-	it := btree.Iterator().(*iterator[int, *Value])
+	it := btree.Iterator().(*iter[int, *Value])
 
 	ok := it.SeekBefore(11)
-	assert.False(t, ok)
-
-	ok = it.OK()
-	assert.False(t, ok)
-	assert.Equal(t, positionEnd, it.pos)
+	require.False(t, ok)
+	require.Equal(t, positionEnd, it.pos)
 
 	items1 := testIterateBackward[int, *Value](t, it)
 	slices.Reverse(items1)
@@ -224,10 +208,10 @@ func TestIterator_SeekBefore__should_position_at_end_when_all_keys_less_than_sou
 func TestIterator_Next__should_panic_on_concurrent_modification(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items[:5]...)
-	it := btree.Iterator().(*iterator[int, *Value])
+	it := btree.Iterator().(*iter[int, *Value])
 
-	ok := it.Next()
-	assert.True(t, ok)
+	_, _, ok := it.Next()
+	require.True(t, ok)
 
 	btree.SetRetain(items[5].Key, items[5].Value)
 
@@ -239,11 +223,9 @@ func TestIterator_Next__should_panic_on_concurrent_modification(t *testing.T) {
 func TestIterator_Previous__should_panic_on_concurrent_modification(t *testing.T) {
 	items := testItemsN(10)
 	btree := testBtree(t, items[:5]...)
-	it := btree.Iterator().(*iterator[int, *Value])
+	it := btree.Iterator().(*iter[int, *Value])
 
-	ok := it.SeekToEnd()
-	assert.True(t, ok)
-
+	it.SeekToEnd()
 	btree.SetRetain(items[5].Key, items[5].Value)
 
 	assert.Panics(t, func() {
