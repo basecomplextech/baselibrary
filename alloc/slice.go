@@ -33,6 +33,12 @@ func Copy[S ~[]T, T any](a Arena, src S) S {
 }
 
 // Grow grows the slice to at least the given capacity.
+// TODO: Check that all usages of this function pass new capacity, not length.
+// TODO: Maybe split and rename to GrowTo and GrowBy.
+//
+// Example:
+//
+//	s := alloc.Grow[[]int](arena, s, len(s) + 16)
 func Grow[S ~[]T, T any](a Arena, s S, capacity int) S {
 	return growSlice(a, s, capacity)
 }
