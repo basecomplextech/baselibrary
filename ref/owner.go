@@ -39,6 +39,15 @@ func (o *Owner[T]) SetOwned() {
 	o.Owned = true
 }
 
+// Unowned returns a new owner with the same value and ownership set to false.
+func (o Owner[T]) Unowned() Owner[T] {
+	return Owner[T]{
+		Value: o.Value,
+		Valid: o.Valid,
+		Owned: false,
+	}
+}
+
 // Unwrap
 
 // Unwrap returns the underlying value and a boolean indicating whether the value is valid.
