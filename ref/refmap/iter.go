@@ -6,14 +6,14 @@ package refmap
 
 import (
 	"github.com/basecomplextech/baselibrary/collect/slices2"
-	"github.com/basecomplextech/baselibrary/iterator"
+	"github.com/basecomplextech/baselibrary/iterator/mapiter"
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
-// Iterator iterates over a refmap, extends MapIter with reverse iteration and seeking.
+// Iterator iterates over a refmap, extends mapiter.Iter with reverse iteration and seeking.
 // The iterator returns unwrapped values, not refs, as the most common use case.
 type Iterator[K, V any] interface {
-	iterator.MapIter[K, V]
+	mapiter.Iter[K, V]
 
 	// Next returns the next key-value pair, or false on the end.
 	Next() (K, V, bool)

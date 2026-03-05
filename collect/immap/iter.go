@@ -6,13 +6,13 @@ package immap
 
 import (
 	"github.com/basecomplextech/baselibrary/collect/slices2"
-	"github.com/basecomplextech/baselibrary/iterator"
+	"github.com/basecomplextech/baselibrary/iterator/mapiter"
 	"github.com/basecomplextech/baselibrary/pools"
 )
 
-// Iterator iterates over an immutable map, extends MapIter with reverse iteration and seeking.
+// Iterator iterates over an immutable map, extends mapiter.Iter with reverse iteration and seeking.
 type Iterator[K any, V any] interface {
-	iterator.MapIter[K, V]
+	mapiter.Iter[K, V]
 
 	// Next returns the next key-value pair, or false on the end.
 	Next() (K, V, bool)

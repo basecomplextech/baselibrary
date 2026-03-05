@@ -7,6 +7,7 @@ package immap
 import (
 	"github.com/basecomplextech/baselibrary/compare"
 	"github.com/basecomplextech/baselibrary/iterator"
+	"github.com/basecomplextech/baselibrary/iterator/mapiter"
 	"github.com/basecomplextech/baselibrary/pools"
 	"github.com/basecomplextech/baselibrary/ref"
 )
@@ -183,14 +184,14 @@ func (t *btree[K, V]) Contains(key K) bool {
 func (t *btree[K, V]) Keys() iterator.Iter[K] {
 	it := newIterator(t)
 	it.SeekToStart()
-	return iterator.MapToKeys(it)
+	return mapiter.Keys(it)
 }
 
 // Values returns a value iterator.
 func (t *btree[K, V]) Values() iterator.Iter[V] {
 	it := newIterator(t)
 	it.SeekToStart()
-	return iterator.MapToValues(it)
+	return mapiter.Values(it)
 }
 
 // Iterator returns an iterator.
