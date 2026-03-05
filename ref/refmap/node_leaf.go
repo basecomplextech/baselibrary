@@ -29,25 +29,11 @@ type leafItem[K, V any] struct {
 }
 
 // newLeafNode returns a new mutable node.
-func newLeafNode[K, V any](items ...Item[K, V]) *leafNode[K, V] {
-	// Make node
+func newLeafNode[K, V any]() *leafNode[K, V] {
 	n := acquireLeaf[K, V]()
 	n.items = n._items[:0]
 	n.mut = true
 	n.refs = 1
-
-	// Copy items
-	for _, item := range items {
-		n.items = append(n.items, leafItem[K, V]{
-			key:   item.Key,
-			value: item.Value,
-		})
-	}
-
-	// Retain items
-	for _, item := range n.items {
-		item.value.Retain()
-	}
 	return n
 }
 

@@ -8,18 +8,18 @@ import (
 	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/iterator"
 	"github.com/basecomplextech/baselibrary/pools"
-	"github.com/basecomplextech/baselibrary/ref"
 )
 
 // Iterator iterates over a refmap, extends MapIter with reverse iteration and seeking.
+// The iterator returns unwrapped values, not refs, as the most common use case.
 type Iterator[K, V any] interface {
-	iterator.MapIter[K, ref.R[V]]
+	iterator.MapIter[K, V]
 
 	// Next returns the next key-value pair, or false on the end.
-	Next() (K, ref.R[V], bool)
+	Next() (K, V, bool)
 
 	// Previous returns the previous key-value pair, or false on the end.
-	Previous() (K, ref.R[V], bool)
+	Previous() (K, V, bool)
 
 	// Seeking
 
@@ -80,7 +80,7 @@ func newIterator[K, V any](tree *btree[K, V]) *iter[K, V] {
 }
 
 // Next returns the next key-value pair, or false on the end.
-func (it *iter[K, V]) Next() (key K, _ ref.R[V], _ bool) {
+func (it *iter[K, V]) Next() (key K, val V, _ bool) {
 	if it.mod != it.tree.mod {
 		panic("refmap concurrent modification error")
 	}
@@ -99,14 +99,14 @@ func (it *iter[K, V]) Next() (key K, _ ref.R[V], _ bool) {
 
 		if len(it.stack) == 0 {
 			it.pos = positionEnd
-			return key, nil, false
+			return key, val, false
 		}
 
 		it.pos = positionItem
 
 	case positionEnd:
 		// Cannot proceed
-		return key, nil, false
+		return key, val, false
 
 	case positionItem:
 		// Move to the next item
@@ -139,29 +139,29 @@ func (it *iter[K, V]) Next() (key K, _ ref.R[V], _ bool) {
 
 		if len(it.stack) == 0 {
 			it.pos = positionEnd
-			return key, nil, false
+			return key, val, false
 		}
 		it.pos = positionItem
 	}
 
 	if len(it.stack) == 0 {
 		it.pos = positionEnd
-		return key, nil, false
+		return key, val, false
 	}
 
 	// Return current item
 	elem := it.stack[len(it.stack)-1]
 	node := elem.node.(*leafNode[K, V])
 	if elem.index >= len(node.items) {
-		return key, nil, false
+		return key, val, false
 	}
 
 	item := &node.items[elem.index]
-	return item.key, item.value, true
+	return item.key, item.value.Unwrap(), true
 }
 
 // Previous returns the previous key-value pair, or false on the end.
-func (it *iter[K, V]) Previous() (key K, _ ref.R[V], _ bool) {
+func (it *iter[K, V]) Previous() (key K, val V, _ bool) {
 	if it.mod != it.tree.mod {
 		panic("refmap concurrent modification error")
 	}
@@ -169,7 +169,7 @@ func (it *iter[K, V]) Previous() (key K, _ ref.R[V], _ bool) {
 	switch it.pos {
 	case positionStart:
 		// Cannot proceed
-		return key, nil, false
+		return key, val, false
 
 	case positionEnd:
 		// Recursively push last nodes
@@ -179,7 +179,7 @@ func (it *iter[K, V]) Previous() (key K, _ ref.R[V], _ bool) {
 
 		if len(it.stack) == 0 {
 			it.pos = positionStart
-			return key, nil, false
+			return key, val, false
 		}
 
 		it.pos = positionItem
@@ -214,25 +214,25 @@ func (it *iter[K, V]) Previous() (key K, _ ref.R[V], _ bool) {
 
 		if len(it.stack) == 0 {
 			it.pos = positionStart
-			return key, nil, false
+			return key, val, false
 		}
 		it.pos = positionItem
 	}
 
 	if len(it.stack) == 0 {
 		it.pos = positionStart
-		return key, nil, false
+		return key, val, false
 	}
 
 	// Return current item
 	elem := it.stack[len(it.stack)-1]
 	node := elem.node.(*leafNode[K, V])
 	if elem.index >= len(node.items) {
-		return key, nil, false
+		return key, val, false
 	}
 
 	item := &node.items[elem.index]
-	return item.key, item.value, true
+	return item.key, item.value.Unwrap(), true
 }
 
 // Seeking

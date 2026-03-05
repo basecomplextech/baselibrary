@@ -52,7 +52,7 @@ type Map[K, V any] interface {
 	Keys() iterator.Iter[K]
 
 	// Values returns a value iterator.
-	Values() iterator.Iter[ref.R[V]]
+	Values() iterator.Iter[V]
 
 	// Iterator returns a map iterator.
 	Iterator() Iterator[K, V]
@@ -78,12 +78,6 @@ type Map[K, V any] interface {
 
 	// Free frees the map, releases all values.
 	Free()
-}
-
-// Item is a map item.
-type Item[K, V any] struct {
-	Key   K
-	Value ref.R[V]
 }
 
 // CompareFunc compares two keys, and returns -1 if a < b, 0 if a == b, 1 if a > b.
@@ -214,7 +208,7 @@ func (t *btree[K, V]) Keys() iterator.Iter[K] {
 }
 
 // Values returns a value iterator.
-func (t *btree[K, V]) Values() iterator.Iter[ref.R[V]] {
+func (t *btree[K, V]) Values() iterator.Iter[V] {
 	it := newIterator(t)
 	it.SeekToStart()
 	return iterator.MapToValues(it)
@@ -372,97 +366,7 @@ func (t *btree[K, V]) maybeSplitRoot() {
 	return
 }
 
-// for tests
-
-// items returns items as a slice.
-func (t *btree[K, V]) items() []Item[K, V] {
-	result := make([]Item[K, V], 0, t.length)
-
-	// LIFO stack
-	stack := []node[K, V]{t.root}
-	for len(stack) > 0 {
-		// Pop node
-		node := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-
-		switch n := node.(type) {
-		case *branchNode[K, V]:
-			// Push in reverse order
-			for i := len(n.items) - 1; i >= 0; i-- {
-				item := n.items[i]
-				stack = append(stack, item.node)
-			}
-
-		case *leafNode[K, V]:
-			for _, item := range n.items {
-				item1 := Item[K, V]{
-					Key:   item.key,
-					Value: item.value,
-				}
-				result = append(result, item1)
-			}
-		}
-	}
-	return result
-}
-
-// keys returns item keys as a slice.
-func (t *btree[K, V]) keys() []K {
-	result := make([]K, 0, t.length)
-
-	// LIFO stack
-	stack := []node[K, V]{t.root}
-	for len(stack) > 0 {
-		// Pop node
-		node := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-
-		switch n := node.(type) {
-		case *branchNode[K, V]:
-			// Push in reverse order
-			for i := len(n.items) - 1; i >= 0; i-- {
-				item := n.items[i]
-				stack = append(stack, item.node)
-			}
-
-		case *leafNode[K, V]:
-			for _, item := range n.items {
-				result = append(result, item.key)
-			}
-		}
-	}
-	return result
-}
-
-// values returns item values as a slice.
-func (t *btree[K, V]) values() []ref.R[V] {
-	result := make([]ref.R[V], 0, t.length)
-
-	// LIFO stack
-	stack := []node[K, V]{t.root}
-	for len(stack) > 0 {
-		// Pop node
-		node := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-
-		switch n := node.(type) {
-		case *branchNode[K, V]:
-			// Push in reverse order
-			for i := len(n.items) - 1; i >= 0; i-- {
-				item := n.items[i]
-				stack = append(stack, item.node)
-			}
-
-		case *leafNode[K, V]:
-			for _, item := range n.items {
-				result = append(result, item.value)
-			}
-		}
-	}
-	return result
-}
-
-// state pool
+// pools
 
 var statePools = pools.NewPools()
 

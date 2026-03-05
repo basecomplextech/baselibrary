@@ -12,7 +12,7 @@ const benchTableSize = 100_000
 
 func BenchmarkMap_SetRetain(b *testing.B) {
 	btree := testBtree(b)
-	items := testItemsN(benchTableSize)
+	items := makeTestItemsN(benchTableSize)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -37,7 +37,7 @@ func BenchmarkMap_SetRetain(b *testing.B) {
 func BenchmarkMap_Clone(b *testing.B) {
 	btree := testBtree(b)
 	btree.Freeze()
-	items := testItemsN(benchTableSize)
+	items := makeTestItemsN(benchTableSize)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -65,7 +65,7 @@ func BenchmarkMap_Clone(b *testing.B) {
 func BenchmarkMap_Clone_Set(b *testing.B) {
 	btree := testBtree(b)
 	btree.Freeze()
-	items := testItemsN(benchTableSize)
+	items := makeTestItemsN(benchTableSize)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -95,7 +95,7 @@ func BenchmarkMap_Clone_Set(b *testing.B) {
 func BenchmarkMap_Clone_Set__small(b *testing.B) {
 	btree := testBtree(b)
 	btree.Freeze()
-	items := testItemsN(16)
+	items := makeTestItemsN(16)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -121,7 +121,7 @@ func BenchmarkMap_Clone_Set__small(b *testing.B) {
 }
 
 func BenchmarkMap_Iterator(b *testing.B) {
-	items := testItemsN(benchTableSize)
+	items := makeTestItemsN(benchTableSize)
 	btree := testBtree(b, items...)
 
 	b.ResetTimer()
@@ -140,7 +140,7 @@ func BenchmarkMap_Iterator(b *testing.B) {
 }
 
 func BenchmarkIterator(b *testing.B) {
-	items := testItemsN(benchTableSize)
+	items := makeTestItemsN(benchTableSize)
 	btree := testBtree(b, items...)
 	it := btree.Iterator()
 
