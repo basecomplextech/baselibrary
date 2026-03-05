@@ -7,14 +7,14 @@ package iterator
 import "github.com/basecomplextech/baselibrary/status"
 
 type (
-	// MapFunc maps an iterator element, or returns false to skip it.
-	MapFunc[T, V any] func(T) (V, bool)
+	// MapFunc maps an iterator element.
+	MapFunc[T, V any] func(T) V
 
-	// MapFuncError maps an iterator element, or returns false to skip it, or an error.
-	MapFuncError[T, V any] func(T) (V, bool, error)
+	// MapFuncError maps an iterator element.
+	MapFuncError[T, V any] func(T) (V, error)
 
-	// MapFuncStatus maps an iterator element, or returns false to skip it, or a status.
-	MapFuncStatus[T, V any] func(T) (V, bool, status.Status)
+	// MapFuncStatus maps an iterator element.
+	MapFuncStatus[T, V any] func(T) (V, status.Status)
 )
 
 // Map returns an iterator that maps elements from the input iterator.
@@ -54,18 +54,13 @@ type mapImpl[T any, V any] struct {
 }
 
 func (it *mapImpl[T, V]) Next() (v V, _ bool) {
-	for {
-		v0, ok := it.it.Next()
-		if !ok {
-			return v, false
-		}
-
-		v, ok := it.fn(v0)
-		if !ok {
-			continue
-		}
-		return v, true
+	v0, ok := it.it.Next()
+	if !ok {
+		return v, false
 	}
+
+	v = it.fn(v0)
+	return v, true
 }
 
 func (it *mapImpl[T, V]) Free() {
@@ -85,21 +80,16 @@ type mapError[T any, V any] struct {
 }
 
 func (it *mapError[T, V]) Next() (v V, _ bool, _ error) {
-	for {
-		v0, ok, err := it.it.Next()
-		if !ok || err != nil {
-			return v, false, err
-		}
-
-		v, ok, err := it.fn(v0)
-		if err != nil {
-			return v, false, err
-		}
-		if !ok {
-			continue
-		}
-		return v, true, nil
+	v0, ok, err := it.it.Next()
+	if !ok || err != nil {
+		return v, false, err
 	}
+
+	v, err = it.fn(v0)
+	if err != nil {
+		return v, false, err
+	}
+	return v, true, nil
 }
 
 func (it *mapError[T, V]) Free() {
@@ -119,21 +109,16 @@ type mapStatus[T any, V any] struct {
 }
 
 func (it *mapStatus[T, V]) Next() (v V, _ bool, _ status.Status) {
-	for {
-		v0, ok, st := it.it.Next()
-		if !ok || !st.OK() {
-			return v, false, st
-		}
-
-		v, ok, st := it.fn(v0)
-		if !st.OK() {
-			return v, false, st
-		}
-		if !ok {
-			continue
-		}
-		return v, true, status.OK
+	v0, ok, st := it.it.Next()
+	if !ok || !st.OK() {
+		return v, false, st
 	}
+
+	v, st = it.fn(v0)
+	if !st.OK() {
+		return v, false, st
+	}
+	return v, true, status.OK
 }
 
 func (it *mapStatus[T, V]) Free() {
