@@ -19,8 +19,8 @@ type (
 		Free()
 	}
 
-	// MapIterErr iterates over key-value pairs, and may return an error.
-	MapIterErr[K, V any] interface {
+	// MapIterErroror iterates over key-value pairs, and may return an error.
+	MapIterErroror[K, V any] interface {
 		// Next returns the next key-value pair, or false on the end, or an error.
 		Next() (K, V, bool, error)
 
@@ -28,8 +28,8 @@ type (
 		Free()
 	}
 
-	// MapIterStat iterates over key-value pairs, and may return an error status.
-	MapIterStat[K, V any] interface {
+	// MapIterStatusus iterates over key-value pairs, and may return an error status.
+	MapIterStatusus[K, V any] interface {
 		// Next returns the next key-value pair, or false on the end, or an error status.
 		Next() (K, V, bool, status.Status)
 
@@ -42,11 +42,11 @@ type (
 	// MapNextFunc yields the next key-value pair, or false on the end.
 	MapNextFunc[K, V any] func() (K, V, bool)
 
-	// MapNextFuncErr yields the next key-value pair, or false on the end, or an error.
-	MapNextFuncErr[K, V any] func() (K, V, bool, error)
+	// MapNextFuncErroror yields the next key-value pair, or false on the end, or an error.
+	MapNextFuncErroror[K, V any] func() (K, V, bool, error)
 
-	// MapNextFuncStat yields the next key-value pair, or false on the end, or an error status.
-	MapNextFuncStat[K, V any] func() (K, V, bool, status.Status)
+	// MapNextFuncStatusus yields the next key-value pair, or false on the end, or an error status.
+	MapNextFuncStatusus[K, V any] func() (K, V, bool, status.Status)
 )
 
 // NewMap returns a new map iterator.
@@ -54,14 +54,14 @@ func NewMap[K, V any](freer ref.Freer, next MapNextFunc[K, V]) MapIter[K, V] {
 	return &mapIter[K, V]{next: next, freer: freer}
 }
 
-// NewMapErr returns a new map iterator with an error.
-func NewMapErr[K, V any](next MapNextFuncErr[K, V], free func()) MapIterErr[K, V] {
-	return &mapIterErr[K, V]{next: next, free: free}
+// NewMapError returns a new map iterator with an error.
+func NewMapError[K, V any](next MapNextFuncErroror[K, V], free func()) MapIterErroror[K, V] {
+	return &mapIterErroror[K, V]{next: next, free: free}
 }
 
-// NewMapStat returns a new map iterator with a status.
-func NewMapStat[K, V any](next MapNextFuncStat[K, V], free func()) MapIterStat[K, V] {
-	return &mapIterStat[K, V]{next: next, free: free}
+// NewMapStatus returns a new map iterator with a status.
+func NewMapStatus[K, V any](next MapNextFuncStatusus[K, V], free func()) MapIterStatusus[K, V] {
+	return &mapIterStatusus[K, V]{next: next, free: free}
 }
 
 // private
@@ -86,18 +86,18 @@ func (it *mapIter[K, V]) Free() {
 
 // error
 
-var _ MapIterErr[any, any] = (*mapIterErr[any, any])(nil)
+var _ MapIterErroror[any, any] = (*mapIterErroror[any, any])(nil)
 
-type mapIterErr[K, V any] struct {
-	next MapNextFuncErr[K, V]
+type mapIterErroror[K, V any] struct {
+	next MapNextFuncErroror[K, V]
 	free func()
 }
 
-func (it *mapIterErr[K, V]) Next() (K, V, bool, error) {
+func (it *mapIterErroror[K, V]) Next() (K, V, bool, error) {
 	return it.next()
 }
 
-func (it *mapIterErr[K, V]) Free() {
+func (it *mapIterErroror[K, V]) Free() {
 	if it.free != nil {
 		it.free()
 		it.free = nil
@@ -106,18 +106,18 @@ func (it *mapIterErr[K, V]) Free() {
 
 // status
 
-var _ MapIterStat[any, any] = (*mapIterStat[any, any])(nil)
+var _ MapIterStatusus[any, any] = (*mapIterStatusus[any, any])(nil)
 
-type mapIterStat[K, V any] struct {
-	next MapNextFuncStat[K, V]
+type mapIterStatusus[K, V any] struct {
+	next MapNextFuncStatusus[K, V]
 	free func()
 }
 
-func (it *mapIterStat[K, V]) Next() (K, V, bool, status.Status) {
+func (it *mapIterStatusus[K, V]) Next() (K, V, bool, status.Status) {
 	return it.next()
 }
 
-func (it *mapIterStat[K, V]) Free() {
+func (it *mapIterStatusus[K, V]) Free() {
 	if it.free != nil {
 		it.free()
 		it.free = nil

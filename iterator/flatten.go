@@ -9,32 +9,32 @@ import "github.com/basecomplextech/baselibrary/status"
 // Flatten returns an iterator that flattens an iterator of iterators.
 // The returned iterator owns the input iterator and the sub-iterators and frees them.
 func Flatten[T any](it Iter[Iter[T]]) Iter[T] {
-	return &flattenIter[T]{it: it}
+	return &flatten[T]{it: it}
 }
 
-// FlattenErr returns an iterator that flattens an iterator of iterators.
+// FlattenError returns an iterator that flattens an iterator of iterators.
 // The returned iterator owns the input iterator and the sub-iterators and frees them.
-func FlattenErr[T any](it IterErr[IterErr[T]]) IterErr[T] {
-	return &flattenIterErr[T]{it: it}
+func FlattenError[T any](it IterError[IterError[T]]) IterError[T] {
+	return &flattenError[T]{it: it}
 }
 
-// FlattenStat returns an iterator that flattens an iterator of iterators.
+// FlattenStatus returns an iterator that flattens an iterator of iterators.
 // The returned iterator owns the input iterator and the sub-iterators and frees them.
-func FlattenStat[T any](it IterStat[IterStat[T]]) IterStat[T] {
-	return &flattenIterStat[T]{it: it}
+func FlattenStatus[T any](it IterStatus[IterStatus[T]]) IterStatus[T] {
+	return &flattenStatus[T]{it: it}
 }
 
 // internal
 
-var _ Iter[any] = (*flattenIter[any])(nil)
+var _ Iter[any] = (*flatten[any])(nil)
 
-type flattenIter[T any] struct {
+type flatten[T any] struct {
 	it  Iter[Iter[T]]
 	cur Iter[T]
 }
 
 // Next returns the next item, or false on an end, or an error.
-func (it *flattenIter[T]) Next() (v T, ok bool) {
+func (it *flatten[T]) Next() (v T, ok bool) {
 	for {
 		if it.cur != nil {
 			v, ok := it.cur.Next()
@@ -59,7 +59,7 @@ func (it *flattenIter[T]) Next() (v T, ok bool) {
 }
 
 // Free frees the iterator.
-func (it *flattenIter[T]) Free() {
+func (it *flatten[T]) Free() {
 	if it.cur != nil {
 		it.cur.Free()
 		it.cur = nil
@@ -72,15 +72,15 @@ func (it *flattenIter[T]) Free() {
 
 // error
 
-var _ IterErr[any] = (*flattenIterErr[any])(nil)
+var _ IterError[any] = (*flattenError[any])(nil)
 
-type flattenIterErr[T any] struct {
-	it  IterErr[IterErr[T]]
-	cur IterErr[T]
+type flattenError[T any] struct {
+	it  IterError[IterError[T]]
+	cur IterError[T]
 }
 
 // Next returns the next item, or false on an end, or an error.
-func (it *flattenIterErr[T]) Next() (v T, ok bool, _ error) {
+func (it *flattenError[T]) Next() (v T, ok bool, _ error) {
 	for {
 		if it.cur != nil {
 			v, ok, err := it.cur.Next()
@@ -105,7 +105,7 @@ func (it *flattenIterErr[T]) Next() (v T, ok bool, _ error) {
 }
 
 // Free frees the iterator.
-func (it *flattenIterErr[T]) Free() {
+func (it *flattenError[T]) Free() {
 	if it.cur != nil {
 		it.cur.Free()
 		it.cur = nil
@@ -118,15 +118,15 @@ func (it *flattenIterErr[T]) Free() {
 
 // status
 
-var _ IterStat[any] = (*flattenIterStat[any])(nil)
+var _ IterStatus[any] = (*flattenStatus[any])(nil)
 
-type flattenIterStat[T any] struct {
-	it  IterStat[IterStat[T]]
-	cur IterStat[T]
+type flattenStatus[T any] struct {
+	it  IterStatus[IterStatus[T]]
+	cur IterStatus[T]
 }
 
 // Next returns the next item, or false on an end, or an error.
-func (it *flattenIterStat[T]) Next() (v T, ok bool, _ status.Status) {
+func (it *flattenStatus[T]) Next() (v T, ok bool, _ status.Status) {
 	for {
 		if it.cur != nil {
 			v, ok, st := it.cur.Next()
@@ -151,7 +151,7 @@ func (it *flattenIterStat[T]) Next() (v T, ok bool, _ status.Status) {
 }
 
 // Free frees the iterator.
-func (it *flattenIterStat[T]) Free() {
+func (it *flattenStatus[T]) Free() {
 	if it.cur != nil {
 		it.cur.Free()
 		it.cur = nil

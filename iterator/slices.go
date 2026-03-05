@@ -21,7 +21,7 @@ func ToSlice[T any](it Iter[T]) []T {
 }
 
 // ToSliceErr converts an iterator to a slice.
-func ToSliceErr[T any](it IterErr[T]) ([]T, error) {
+func ToSliceErr[T any](it IterError[T]) ([]T, error) {
 	var items []T
 	for {
 		item, ok, err := it.Next()
@@ -38,7 +38,7 @@ func ToSliceErr[T any](it IterErr[T]) ([]T, error) {
 }
 
 // ToSliceStat converts an iterator to a slice.
-func ToSliceStat[T any](it IterStat[T]) ([]T, status.Status) {
+func ToSliceStat[T any](it IterStatus[T]) ([]T, status.Status) {
 	var items []T
 	for {
 		item, ok, st := it.Next()

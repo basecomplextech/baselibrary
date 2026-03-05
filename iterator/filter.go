@@ -10,26 +10,26 @@ type (
 	// FilterFunc returns true if the element should be included.
 	FilterFunc[T any] func(T) bool
 
-	// FilterFuncErr returns true if the element should be included, or an error.
-	FilterFuncErr[T any] func(T) (bool, error)
+	// FilterFuncError returns true if the element should be included, or an error.
+	FilterFuncError[T any] func(T) (bool, error)
 
-	// FilterFuncStat returns true if the element should be included, and an error status.
-	FilterFuncStat[T any] func(T) (bool, status.Status)
+	// FilterFuncStatus returns true if the element should be included, and an error status.
+	FilterFuncStatus[T any] func(T) (bool, status.Status)
 )
 
 // Filter returns an iterator that filters elements from the input iterator.
 // The returned iterator owns the input iterator and frees it when done.
 func Filter[T any](it Iter[T], fn FilterFunc[T]) Iter[T] {
-	return &filterIter[T]{
+	return &filter[T]{
 		it: it,
 		fn: fn,
 	}
 }
 
-// FilterErr returns an iterator that filters elements from the input iterator.
+// FilterError returns an iterator that filters elements from the input iterator.
 // The returned iterator owns the input iterator and frees it when done.
-func FilterErr[T any](it IterErr[T], fn FilterFuncErr[T]) IterErr[T] {
-	return &filterIterErr[T]{
+func FilterError[T any](it IterError[T], fn FilterFuncError[T]) IterError[T] {
+	return &filterError[T]{
 		it: it,
 		fn: fn,
 	}
@@ -37,8 +37,8 @@ func FilterErr[T any](it IterErr[T], fn FilterFuncErr[T]) IterErr[T] {
 
 // FilterStat returns an iterator that filters elements from the input iterator.
 // The returned iterator owns the input iterator and frees it when done.
-func FilterStat[T any](it IterStat[T], fn FilterFuncStat[T]) IterStat[T] {
-	return &filterIterStat[T]{
+func FilterStat[T any](it IterStatus[T], fn FilterFuncStatus[T]) IterStatus[T] {
+	return &filterStatus[T]{
 		it: it,
 		fn: fn,
 	}
@@ -46,14 +46,14 @@ func FilterStat[T any](it IterStat[T], fn FilterFuncStat[T]) IterStat[T] {
 
 // private
 
-var _ Iter[any] = (*filterIter[any])(nil)
+var _ Iter[any] = (*filter[any])(nil)
 
-type filterIter[T any] struct {
+type filter[T any] struct {
 	it Iter[T]
 	fn FilterFunc[T]
 }
 
-func (it *filterIter[T]) Next() (v T, _ bool) {
+func (it *filter[T]) Next() (v T, _ bool) {
 	for {
 		v, ok := it.it.Next()
 		if !ok {
@@ -68,7 +68,7 @@ func (it *filterIter[T]) Next() (v T, _ bool) {
 	}
 }
 
-func (it *filterIter[T]) Free() {
+func (it *filter[T]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil
@@ -77,14 +77,14 @@ func (it *filterIter[T]) Free() {
 
 // error
 
-var _ IterErr[any] = (*filterIterErr[any])(nil)
+var _ IterError[any] = (*filterError[any])(nil)
 
-type filterIterErr[T any] struct {
-	it IterErr[T]
-	fn FilterFuncErr[T]
+type filterError[T any] struct {
+	it IterError[T]
+	fn FilterFuncError[T]
 }
 
-func (it *filterIterErr[T]) Next() (v T, _ bool, _ error) {
+func (it *filterError[T]) Next() (v T, _ bool, _ error) {
 	for {
 		v, ok, err := it.it.Next()
 		if !ok || err != nil {
@@ -102,7 +102,7 @@ func (it *filterIterErr[T]) Next() (v T, _ bool, _ error) {
 	}
 }
 
-func (it *filterIterErr[T]) Free() {
+func (it *filterError[T]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil
@@ -111,14 +111,14 @@ func (it *filterIterErr[T]) Free() {
 
 // status
 
-var _ IterStat[any] = (*filterIterStat[any])(nil)
+var _ IterStatus[any] = (*filterStatus[any])(nil)
 
-type filterIterStat[T any] struct {
-	it IterStat[T]
-	fn FilterFuncStat[T]
+type filterStatus[T any] struct {
+	it IterStatus[T]
+	fn FilterFuncStatus[T]
 }
 
-func (it *filterIterStat[T]) Next() (v T, _ bool, _ status.Status) {
+func (it *filterStatus[T]) Next() (v T, _ bool, _ status.Status) {
 	for {
 		v, ok, st := it.it.Next()
 		if !ok || !st.OK() {
@@ -136,7 +136,7 @@ func (it *filterIterStat[T]) Next() (v T, _ bool, _ status.Status) {
 	}
 }
 
-func (it *filterIterStat[T]) Free() {
+func (it *filterStatus[T]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil

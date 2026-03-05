@@ -19,8 +19,8 @@ type (
 		Free()
 	}
 
-	// IterErr iterates over items of type T, and may return an error.
-	IterErr[T any] interface {
+	// IterError iterates over items of type T, and may return an error.
+	IterError[T any] interface {
 		// Next returns the next item, or false on the end, or an error.
 		Next() (T, bool, error)
 
@@ -28,8 +28,8 @@ type (
 		Free()
 	}
 
-	// IterStat iterates over items of type T, and may return an error status.
-	IterStat[T any] interface {
+	// IterStatus iterates over items of type T, and may return an error status.
+	IterStatus[T any] interface {
 		// Next returns the next item, or false on the end, or an error status.
 		Next() (T, bool, status.Status)
 
@@ -42,11 +42,11 @@ type (
 	// NextFunc yields the next item, or false on the end.
 	NextFunc[T any] func() (T, bool)
 
-	// NextFuncErr yields the next item, or false on the end, or an error.
-	NextFuncErr[T any] func() (T, bool, error)
+	// NextFuncError yields the next item, or false on the end, or an error.
+	NextFuncError[T any] func() (T, bool, error)
 
-	// NextFuncStat yields the next item, or false on the end, or an error status.
-	NextFuncStat[T any] func() (T, bool, status.Status)
+	// NextFuncStatus yields the next item, or false on the end, or an error status.
+	NextFuncStatus[T any] func() (T, bool, status.Status)
 )
 
 // New
@@ -67,40 +67,40 @@ func NewNoop[T any](next NextFunc[T]) Iter[T] {
 	return &iter[T]{next, nil}
 }
 
-// NewErr
+// NewError
 
-// NewErr returns a new iterator.
-func NewErr[T any](freer ref.Freer, next NextFuncErr[T]) IterErr[T] {
-	return &iterErr[T]{next, freer}
+// NewError returns a new iterator.
+func NewError[T any](freer ref.Freer, next NextFuncError[T]) IterError[T] {
+	return &iterError[T]{next, freer}
 }
 
-// NewFreeErr returns a new iterator with a free function.
-func NewFreeErr[T any](next NextFuncErr[T], free func()) IterErr[T] {
+// NewFreeError returns a new iterator with a free function.
+func NewFreeError[T any](next NextFuncError[T], free func()) IterError[T] {
 	freer := ref.FreeFunc(free)
-	return &iterErr[T]{next, freer}
+	return &iterError[T]{next, freer}
 }
 
-// NewNoopErr returns a new iterator with and without a freer.
-func NewNoopErr[T any](next NextFuncErr[T]) IterErr[T] {
-	return &iterErr[T]{next, nil}
+// NewNoopError returns a new iterator with and without a freer.
+func NewNoopError[T any](next NextFuncError[T]) IterError[T] {
+	return &iterError[T]{next, nil}
 }
 
-// NewStat
+// NewStatus
 
-// NewStat returns a new iterator.
-func NewStat[T any](freer ref.Freer, next NextFuncStat[T]) IterStat[T] {
-	return &iterStat[T]{next, freer}
+// NewStatus returns a new iterator.
+func NewStatus[T any](freer ref.Freer, next NextFuncStatus[T]) IterStatus[T] {
+	return &iterStatus[T]{next, freer}
 }
 
-// NewFreeStat returns a new iterator with a free function.
-func NewFreeStat[T any](next NextFuncStat[T], free func()) IterStat[T] {
+// NewFreeStatus returns a new iterator with a free function.
+func NewFreeStatus[T any](next NextFuncStatus[T], free func()) IterStatus[T] {
 	freer := ref.FreeFunc(free)
-	return &iterStat[T]{next, freer}
+	return &iterStatus[T]{next, freer}
 }
 
-// NewNoopStat returns a new iterator without a freer.
-func NewNoopStat[T any](next NextFuncStat[T]) IterStat[T] {
-	return &iterStat[T]{next, nil}
+// NewNoopStatus returns a new iterator without a freer.
+func NewNoopStatus[T any](next NextFuncStatus[T]) IterStatus[T] {
+	return &iterStatus[T]{next, nil}
 }
 
 // internal
@@ -125,18 +125,18 @@ func (it *iter[T]) Free() {
 
 // error
 
-var _ IterErr[any] = (*iterErr[any])(nil)
+var _ IterError[any] = (*iterError[any])(nil)
 
-type iterErr[T any] struct {
-	next  NextFuncErr[T]
+type iterError[T any] struct {
+	next  NextFuncError[T]
 	freer ref.Freer // maybe nil
 }
 
-func (it *iterErr[T]) Next() (T, bool, error) {
+func (it *iterError[T]) Next() (T, bool, error) {
 	return it.next()
 }
 
-func (it *iterErr[T]) Free() {
+func (it *iterError[T]) Free() {
 	if it.freer != nil {
 		it.freer.Free()
 		it.freer = nil
@@ -145,18 +145,18 @@ func (it *iterErr[T]) Free() {
 
 // status
 
-var _ IterStat[any] = (*iterStat[any])(nil)
+var _ IterStatus[any] = (*iterStatus[any])(nil)
 
-type iterStat[T any] struct {
-	next  NextFuncStat[T]
+type iterStatus[T any] struct {
+	next  NextFuncStatus[T]
 	freer ref.Freer // maybe nil
 }
 
-func (it *iterStat[T]) Next() (T, bool, status.Status) {
+func (it *iterStatus[T]) Next() (T, bool, status.Status) {
 	return it.next()
 }
 
-func (it *iterStat[T]) Free() {
+func (it *iterStatus[T]) Free() {
 	if it.freer != nil {
 		it.freer.Free()
 		it.freer = nil

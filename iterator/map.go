@@ -10,17 +10,17 @@ type (
 	// MapFunc maps an iterator element, or returns false to skip it.
 	MapFunc[T, V any] func(T) (V, bool)
 
-	// MapFuncErr maps an iterator element, or returns false to skip it, or an error.
-	MapFuncErr[T, V any] func(T) (V, bool, error)
+	// MapFuncError maps an iterator element, or returns false to skip it, or an error.
+	MapFuncError[T, V any] func(T) (V, bool, error)
 
-	// MapFuncStat maps an iterator element, or returns false to skip it, or a status.
-	MapFuncStat[T, V any] func(T) (V, bool, status.Status)
+	// MapFuncStatus maps an iterator element, or returns false to skip it, or a status.
+	MapFuncStatus[T, V any] func(T) (V, bool, status.Status)
 )
 
 // Map returns an iterator that maps elements from the input iterator.
 // The returned iterator owns the input iterator and frees it.
 func Map[T any, V any](it Iter[T], fn MapFunc[T, V]) Iter[V] {
-	return &mapper[T, V]{
+	return &mapImpl[T, V]{
 		it: it,
 		fn: fn,
 	}
@@ -28,8 +28,8 @@ func Map[T any, V any](it Iter[T], fn MapFunc[T, V]) Iter[V] {
 
 // MapErr returns an iterator that maps elements from the input iterator.
 // The returned iterator owns the input iterator and frees it.
-func MapErr[T any, V any](it IterErr[T], fn MapFuncErr[T, V]) IterErr[V] {
-	return &mapperErr[T, V]{
+func MapErr[T any, V any](it IterError[T], fn MapFuncError[T, V]) IterError[V] {
+	return &mapError[T, V]{
 		it: it,
 		fn: fn,
 	}
@@ -37,8 +37,8 @@ func MapErr[T any, V any](it IterErr[T], fn MapFuncErr[T, V]) IterErr[V] {
 
 // MapStat returns an iterator that maps elements from the input iterator.
 // The returned iterator owns the input iterator and frees it.
-func MapStat[T any, V any](it IterStat[T], fn MapFuncStat[T, V]) IterStat[V] {
-	return &mapperStat[T, V]{
+func MapStat[T any, V any](it IterStatus[T], fn MapFuncStatus[T, V]) IterStatus[V] {
+	return &mapStatus[T, V]{
 		it: it,
 		fn: fn,
 	}
@@ -46,14 +46,14 @@ func MapStat[T any, V any](it IterStat[T], fn MapFuncStat[T, V]) IterStat[V] {
 
 // private
 
-var _ Iter[any] = (*mapper[any, any])(nil)
+var _ Iter[any] = (*mapImpl[any, any])(nil)
 
-type mapper[T any, V any] struct {
+type mapImpl[T any, V any] struct {
 	it Iter[T]
 	fn MapFunc[T, V]
 }
 
-func (it *mapper[T, V]) Next() (v V, _ bool) {
+func (it *mapImpl[T, V]) Next() (v V, _ bool) {
 	for {
 		v0, ok := it.it.Next()
 		if !ok {
@@ -68,7 +68,7 @@ func (it *mapper[T, V]) Next() (v V, _ bool) {
 	}
 }
 
-func (it *mapper[T, V]) Free() {
+func (it *mapImpl[T, V]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil
@@ -77,14 +77,14 @@ func (it *mapper[T, V]) Free() {
 
 // error
 
-var _ IterErr[any] = (*mapperErr[any, any])(nil)
+var _ IterError[any] = (*mapError[any, any])(nil)
 
-type mapperErr[T any, V any] struct {
-	it IterErr[T]
-	fn MapFuncErr[T, V]
+type mapError[T any, V any] struct {
+	it IterError[T]
+	fn MapFuncError[T, V]
 }
 
-func (it *mapperErr[T, V]) Next() (v V, _ bool, _ error) {
+func (it *mapError[T, V]) Next() (v V, _ bool, _ error) {
 	for {
 		v0, ok, err := it.it.Next()
 		if !ok || err != nil {
@@ -102,7 +102,7 @@ func (it *mapperErr[T, V]) Next() (v V, _ bool, _ error) {
 	}
 }
 
-func (it *mapperErr[T, V]) Free() {
+func (it *mapError[T, V]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil
@@ -111,14 +111,14 @@ func (it *mapperErr[T, V]) Free() {
 
 // status
 
-var _ IterStat[any] = (*mapperStat[any, any])(nil)
+var _ IterStatus[any] = (*mapStatus[any, any])(nil)
 
-type mapperStat[T any, V any] struct {
-	it IterStat[T]
-	fn MapFuncStat[T, V]
+type mapStatus[T any, V any] struct {
+	it IterStatus[T]
+	fn MapFuncStatus[T, V]
 }
 
-func (it *mapperStat[T, V]) Next() (v V, _ bool, _ status.Status) {
+func (it *mapStatus[T, V]) Next() (v V, _ bool, _ status.Status) {
 	for {
 		v0, ok, st := it.it.Next()
 		if !ok || !st.OK() {
@@ -136,7 +136,7 @@ func (it *mapperStat[T, V]) Next() (v V, _ bool, _ status.Status) {
 	}
 }
 
-func (it *mapperStat[T, V]) Free() {
+func (it *mapStatus[T, V]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil

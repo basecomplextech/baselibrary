@@ -9,33 +9,33 @@ import "github.com/basecomplextech/baselibrary/status"
 // MapToKeys converts a map iterator to a key-only iterator.
 // The returned iterator owns the input iterator and frees it.
 func MapToKeys[K, V any](it MapIter[K, V]) Iter[K] {
-	return &mapToKeysIter[K, V]{it: it}
+	return &mapToKeys[K, V]{it: it}
 }
 
-// MapToKeysErr converts a map iterator to a key-only iterator.
+// MapToKeysError converts a map iterator to a key-only iterator.
 // The returned iterator owns the input iterator and frees it.
-func MapToKeysErr[K, V any](it MapIterErr[K, V]) IterErr[K] {
-	return &mapToKeysErrIter[K, V]{it: it}
+func MapToKeysError[K, V any](it MapIterErroror[K, V]) IterError[K] {
+	return &mapToKeysError[K, V]{it: it}
 }
 
-// MapToKeysStat converts a map iterator to a key-only iterator.
+// MapToKeysStatus converts a map iterator to a key-only iterator.
 // The returned iterator owns the input iterator and frees it.
-func MapToKeysStat[K, V any](it MapIterStat[K, V]) IterStat[K] {
-	return &mapToKeysStatIter[K, V]{it: it}
+func MapToKeysStatus[K, V any](it MapIterStatusus[K, V]) IterStatus[K] {
+	return &mapToKeysStatus[K, V]{it: it}
 }
 
 // internal
 
-type mapToKeysIter[K, V any] struct {
+type mapToKeys[K, V any] struct {
 	it MapIter[K, V]
 }
 
-func (it *mapToKeysIter[K, V]) Next() (K, bool) {
+func (it *mapToKeys[K, V]) Next() (K, bool) {
 	k, _, ok := it.it.Next()
 	return k, ok
 }
 
-func (it *mapToKeysIter[K, V]) Free() {
+func (it *mapToKeys[K, V]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil
@@ -44,16 +44,16 @@ func (it *mapToKeysIter[K, V]) Free() {
 
 // error
 
-type mapToKeysErrIter[K, V any] struct {
-	it MapIterErr[K, V]
+type mapToKeysError[K, V any] struct {
+	it MapIterErroror[K, V]
 }
 
-func (it *mapToKeysErrIter[K, V]) Next() (K, bool, error) {
+func (it *mapToKeysError[K, V]) Next() (K, bool, error) {
 	k, _, ok, err := it.it.Next()
 	return k, ok, err
 }
 
-func (it *mapToKeysErrIter[K, V]) Free() {
+func (it *mapToKeysError[K, V]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil
@@ -62,16 +62,16 @@ func (it *mapToKeysErrIter[K, V]) Free() {
 
 // status
 
-type mapToKeysStatIter[K, V any] struct {
-	it MapIterStat[K, V]
+type mapToKeysStatus[K, V any] struct {
+	it MapIterStatusus[K, V]
 }
 
-func (it *mapToKeysStatIter[K, V]) Next() (K, bool, status.Status) {
+func (it *mapToKeysStatus[K, V]) Next() (K, bool, status.Status) {
 	k, _, ok, stat := it.it.Next()
 	return k, ok, stat
 }
 
-func (it *mapToKeysStatIter[K, V]) Free() {
+func (it *mapToKeysStatus[K, V]) Free() {
 	if it.it != nil {
 		it.it.Free()
 		it.it = nil
