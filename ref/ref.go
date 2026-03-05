@@ -21,6 +21,7 @@ type R[T any] interface {
 	Release()
 
 	// Unwrap returns the object or panics if the refcount is 0.
+	// The caller must hold the reference before calling Unwrap.
 	Unwrap() T
 }
 
@@ -48,6 +49,12 @@ func New[T Freer](obj T) R[T] {
 	r := &ref[T]{obj: obj}
 	r.refs.Init(1)
 	return r
+}
+
+// NewNoop returns a new reference with no freer.
+func NewNoop[T any](obj T) R[T] {
+	freer := newNoopFreer()
+	return NewFreer(obj, freer)
 }
 
 // internal

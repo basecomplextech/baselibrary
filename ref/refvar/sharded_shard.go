@@ -2,21 +2,22 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"sync"
 
 	"github.com/basecomplextech/baselibrary/opt"
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 type shardedVarShard[T any] struct {
 	mu  sync.RWMutex
-	ref R[T]
+	ref ref.R[T]
 	_   [216]byte
 }
 
-func (s *shardedVarShard[T]) acquire() (R[T], bool) {
+func (s *shardedVarShard[T]) acquire() (ref.R[T], bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -29,7 +30,7 @@ func (s *shardedVarShard[T]) acquire() (R[T], bool) {
 	return ref, true
 }
 
-func (s *shardedVarShard[T]) set(ref R[T]) {
+func (s *shardedVarShard[T]) set(ref ref.R[T]) {
 	s.mu.Lock()
 	prev := s.ref
 	s.ref = ref
@@ -63,13 +64,13 @@ func (s *shardedVarShard[T]) unwrap() opt.Opt[T] {
 	return opt.New(value)
 }
 
-func (s *shardedVarShard[T]) unwrapRef() opt.Opt[R[T]] {
+func (s *shardedVarShard[T]) unwrapRef() opt.Opt[ref.R[T]] {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if s.ref == nil {
-		return opt.None[R[T]]()
+		return opt.None[ref.R[T]]()
 	}
 
-	return opt.New[R[T]](s.ref)
+	return opt.New[ref.R[T]](s.ref)
 }

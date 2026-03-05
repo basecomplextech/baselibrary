@@ -30,3 +30,15 @@ type freeFunc func()
 func (f freeFunc) Free() {
 	f()
 }
+
+// noop
+
+var _ Freer = noopFreer{}
+
+type noopFreer struct{}
+
+func newNoopFreer() Freer {
+	return noopFreer{}
+}
+
+func (noopFreer) Free() {}

@@ -2,20 +2,22 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"fmt"
+
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
-var _ R[any] = (*varRef[any])(nil)
+var _ ref.R[any] = (*varRef[any])(nil)
 
 type varRef[T any] struct {
-	refs Atomic64
-	ref  R[T]
+	refs ref.Atomic64
+	ref  ref.R[T]
 }
 
-func newVarRef[T any](ref R[T]) *varRef[T] {
+func newVarRef[T any](ref ref.R[T]) *varRef[T] {
 	r := &varRef[T]{}
 	r.refs.Init(1)
 	r.ref = ref

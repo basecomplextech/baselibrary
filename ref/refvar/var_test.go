@@ -2,18 +2,19 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"testing"
 
+	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/stretchr/testify/assert"
 )
 
 // Acquire
 
 func TestVar_Acquire__should_acquire_current_reference(t *testing.T) {
-	r := NewNoop(1)
+	r := ref.NewNoop(1)
 
 	v := NewVar[int]()
 	v.SetRetain(r)
@@ -38,7 +39,7 @@ func TestVar_Acquire__should_acquire_current_reference(t *testing.T) {
 // SetRetain
 
 func TestVar_SetRetain__should_retain_new_reference(t *testing.T) {
-	r := NewNoop(1)
+	r := ref.NewNoop(1)
 
 	v := NewVar[int]()
 	v.SetRetain(r)
@@ -49,8 +50,8 @@ func TestVar_SetRetain__should_retain_new_reference(t *testing.T) {
 }
 
 func TestVar_SetRetain__should_release_previous_reference(t *testing.T) {
-	r0 := NewNoop(1)
-	r1 := NewNoop(2)
+	r0 := ref.NewNoop(1)
+	r1 := ref.NewNoop(2)
 
 	v := NewVar[int]()
 	v.SetRetain(r0)

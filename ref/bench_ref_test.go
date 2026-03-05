@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func BenchmarkR(b *testing.B) {
+func BenchmarkRef_RetainRelease(b *testing.B) {
 	r := NewNoop(1)
 	b.SetParallelism(10)
 
@@ -22,7 +22,7 @@ func BenchmarkR(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkR_Parallel(b *testing.B) {
+func BenchmarkRef_RetainRelease_Parallel(b *testing.B) {
 	r := NewNoop(1)
 	b.SetParallelism(10)
 

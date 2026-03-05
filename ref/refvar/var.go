@@ -2,13 +2,14 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"sync"
 	"sync/atomic"
 
 	"github.com/basecomplextech/baselibrary/opt"
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 // Var is an atomic non-blocking variable which holds a value reference.
@@ -21,13 +22,13 @@ import (
 //	BenchmarkVar_SetRetain-10    	31419198	        37.71 ns/op	        26.52 mops	      24 B/op	       1 allocs/op
 type Var[T any] interface {
 	// Acquire acquires, retains and returns a value reference, or false.
-	Acquire() (R[T], bool)
+	Acquire() (ref.R[T], bool)
 
 	// Set sets a value, releases the previous reference.
 	Set(T)
 
 	// SetRetain sets a value reference, retains the new one and releases the old one.
-	SetRetain(R[T])
+	SetRetain(ref.R[T])
 
 	// Unset clears the value.
 	Unset()
@@ -40,7 +41,7 @@ type Var[T any] interface {
 
 	// UnwrapRef returns the current reference.
 	// The method must be externally synchronized.
-	UnwrapRef() opt.Opt[R[T]]
+	UnwrapRef() opt.Opt[ref.R[T]]
 }
 
 // NewVar returns a new empty atomic variable.
@@ -62,7 +63,7 @@ func newVar[T any]() *varImpl[T] {
 }
 
 // Acquire acquires, retains and returns a value reference, or false.
-func (v *varImpl[T]) Acquire() (R[T], bool) {
+func (v *varImpl[T]) Acquire() (ref.R[T], bool) {
 	for {
 		ref := v.cur.Load()
 		if ref == nil {
@@ -77,14 +78,14 @@ func (v *varImpl[T]) Acquire() (R[T], bool) {
 
 // Set sets a value, releases the previous reference.
 func (v *varImpl[T]) Set(value T) {
-	ref := NewNoop(value)
+	ref := ref.NewNoop(value)
 	defer ref.Release()
 
 	v.SetRetain(ref)
 }
 
 // SetRetain sets a value reference, retains the new one and releases the old one.
-func (v *varImpl[T]) SetRetain(ref R[T]) {
+func (v *varImpl[T]) SetRetain(ref ref.R[T]) {
 	v.wmu.Lock()
 	defer v.wmu.Unlock()
 
@@ -129,11 +130,11 @@ func (v *varImpl[T]) Unwrap() opt.Opt[T] {
 
 // UnwrapRef returns the current reference.
 // The method must be externally synchronized.
-func (v *varImpl[T]) UnwrapRef() opt.Opt[R[T]] {
-	ref := v.cur.Load()
-	if ref == nil {
-		return opt.Opt[R[T]]{}
+func (v *varImpl[T]) UnwrapRef() opt.Opt[ref.R[T]] {
+	r := v.cur.Load()
+	if r == nil {
+		return opt.Opt[ref.R[T]]{}
 	}
 
-	return opt.New[R[T]](ref)
+	return opt.New[ref.R[T]](r)
 }

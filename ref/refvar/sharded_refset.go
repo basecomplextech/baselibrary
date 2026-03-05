@@ -2,24 +2,27 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"slices"
 
 	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/pools"
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 type shardedVarRefset[T any] struct {
-	refs   Atomic64
-	ref    R[T]
+	refs   ref.Atomic64
+	ref    ref.R[T]
 	counts []varRefCount
 
 	pool pools.Pool[*shardedVarRefset[T]]
 }
 
-func newShardedVarRefset[T any](pool pools.Pool[*shardedVarRefset[T]], r R[T], n int) *shardedVarRefset[T] {
+func newShardedVarRefset[T any](pool pools.Pool[*shardedVarRefset[T]], r ref.R[T],
+	n int) *shardedVarRefset[T] {
+
 	s := acquireShardedVarRefset(pool)
 	s.ref = r
 	s.counts = slices.Grow(s.counts, n)
@@ -27,7 +30,7 @@ func newShardedVarRefset[T any](pool pools.Pool[*shardedVarRefset[T]], r R[T], n
 	return s
 }
 
-func (s *shardedVarRefset[T]) add() *Atomic64 {
+func (s *shardedVarRefset[T]) add() *ref.Atomic64 {
 	s.refs.Acquire()
 	s.counts = append(s.counts, varRefCount{})
 
@@ -53,7 +56,7 @@ func (s *shardedVarRefset[T]) unwrap() T {
 // refcount
 
 type varRefCount struct {
-	count Atomic64
+	count ref.Atomic64
 	_     [256 - 8]byte
 }
 

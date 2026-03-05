@@ -2,20 +2,22 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"fmt"
+
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
-var _ R[any] = (*shardedVarRef[any])(nil)
+var _ ref.R[any] = (*shardedVarRef[any])(nil)
 
 type shardedVarRef[T any] struct {
-	refs *Atomic64
+	refs *ref.Atomic64
 	set  *shardedVarRefset[T]
 }
 
-func (r *shardedVarRef[T]) init(refs *Atomic64, set *shardedVarRefset[T]) {
+func (r *shardedVarRef[T]) init(refs *ref.Atomic64, set *shardedVarRefset[T]) {
 	r.set = set
 	r.refs = refs
 	r.refs.Init(1)

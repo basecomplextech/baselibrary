@@ -2,11 +2,13 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"sync/atomic"
 	"testing"
+
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 func BenchmarkVar(b *testing.B) {
@@ -56,7 +58,7 @@ func BenchmarkVar_Parallel(b *testing.B) {
 // AcquireSet
 
 func BenchmarkVar_AcquireSet_Parallel(b *testing.B) {
-	r := NewNoop(1)
+	r := ref.NewNoop(1)
 	v := newVar[int]()
 	v.SetRetain(r)
 	r.Release()
@@ -66,6 +68,8 @@ func BenchmarkVar_AcquireSet_Parallel(b *testing.B) {
 	stop := make(chan struct{})
 	var writes atomic.Int64
 	go func() {
+		r := ref.NewNoop[int](123)
+
 		for {
 			select {
 			case <-stop:
@@ -73,7 +77,6 @@ func BenchmarkVar_AcquireSet_Parallel(b *testing.B) {
 			default:
 			}
 
-			r := newDummyRef[int]()
 			v.SetRetain(r)
 
 			writes.Add(1)
@@ -102,9 +105,9 @@ func BenchmarkVar_AcquireSet_Parallel(b *testing.B) {
 
 func BenchmarkVar_SetRetain(b *testing.B) {
 	v := NewVar[int]()
+	r := ref.NewNoop[int](123)
 
 	for i := 0; i < b.N; i++ {
-		r := newDummyRef[int]()
 		v.SetRetain(r)
 	}
 

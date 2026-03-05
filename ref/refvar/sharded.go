@@ -2,7 +2,7 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"runtime"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/basecomplextech/baselibrary/opt"
 	"github.com/basecomplextech/baselibrary/pools"
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
 // ShardedVar is a sharded rwmutex-based variable which holds a value reference.
@@ -62,7 +63,7 @@ func newShardedVar[T any]() *shardedVar[T] {
 }
 
 // Acquire acquires, retains and returns a value reference, or false.
-func (v *shardedVar[T]) Acquire() (R[T], bool) {
+func (v *shardedVar[T]) Acquire() (ref.R[T], bool) {
 	// Fastrand is left in case procPin/procUnpin functions are not available later.
 	// i := int(fastrand()) % len(v.shards)
 
@@ -74,14 +75,14 @@ func (v *shardedVar[T]) Acquire() (R[T], bool) {
 
 // Set sets a value, releases the previous reference.
 func (v *shardedVar[T]) Set(value T) {
-	ref := NewNoop(value)
+	ref := ref.NewNoop(value)
 	defer ref.Release()
 
 	v.SetRetain(ref)
 }
 
 // SetRetain sets a value reference, retains the new one and releases the old one.
-func (v *shardedVar[T]) SetRetain(ref R[T]) {
+func (v *shardedVar[T]) SetRetain(ref ref.R[T]) {
 	v.wmu.Lock()
 	defer v.wmu.Unlock()
 
@@ -135,7 +136,7 @@ func (v *shardedVar[T]) Unwrap() opt.Opt[T] {
 
 // UnwrapRef returns the current reference.
 // The method must be externally synchronized.
-func (v *shardedVar[T]) UnwrapRef() opt.Opt[R[T]] {
+func (v *shardedVar[T]) UnwrapRef() opt.Opt[ref.R[T]] {
 	return v.shards[0].unwrapRef()
 }
 

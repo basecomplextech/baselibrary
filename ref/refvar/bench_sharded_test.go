@@ -2,15 +2,17 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"sync/atomic"
 	"testing"
+
+	"github.com/basecomplextech/baselibrary/ref"
 )
 
-func BenchmarkShardedVar(b *testing.B) {
-	r := NewNoop(1)
+func BenchmarkSharded(b *testing.B) {
+	r := ref.NewNoop(1)
 	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
@@ -28,8 +30,8 @@ func BenchmarkShardedVar(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkShardedVar_Parallel(b *testing.B) {
-	r := NewNoop(1)
+func BenchmarkSharded_Parallel(b *testing.B) {
+	r := ref.NewNoop(1)
 	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
@@ -51,8 +53,8 @@ func BenchmarkShardedVar_Parallel(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkShardedVar_AcquireSet_Parallel(b *testing.B) {
-	r := NewNoop(1)
+func BenchmarkSharded_AcquireSet_Parallel(b *testing.B) {
+	r := ref.NewNoop(1)
 	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
@@ -62,6 +64,8 @@ func BenchmarkShardedVar_AcquireSet_Parallel(b *testing.B) {
 	stop := make(chan struct{})
 	var sets atomic.Int64
 	go func() {
+		r := ref.NewNoop(1)
+
 		for {
 			select {
 			case <-stop:
@@ -69,9 +73,7 @@ func BenchmarkShardedVar_AcquireSet_Parallel(b *testing.B) {
 			default:
 			}
 
-			r := newDummyRef[int]()
 			v.SetRetain(r)
-
 			sets.Add(1)
 		}
 	}()
@@ -96,8 +98,8 @@ func BenchmarkShardedVar_AcquireSet_Parallel(b *testing.B) {
 
 // Acquire
 
-func BenchmarkShardedVar_Acquire(b *testing.B) {
-	r := NewNoop(1)
+func BenchmarkSharded_Acquire(b *testing.B) {
+	r := ref.NewNoop(1)
 	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
@@ -115,8 +117,8 @@ func BenchmarkShardedVar_Acquire(b *testing.B) {
 	b.ReportMetric(ops/1000_000, "mops")
 }
 
-func BenchmarkShardedVar_Acquire_Parallel(b *testing.B) {
-	r := NewNoop(1)
+func BenchmarkSharded_Acquire_Parallel(b *testing.B) {
+	r := ref.NewNoop(1)
 	v := newShardedVar[int]()
 	v.SetRetain(r)
 	r.Release()
@@ -141,11 +143,11 @@ func BenchmarkShardedVar_Acquire_Parallel(b *testing.B) {
 
 // SetRetain
 
-func BenchmarkShardedVar_SetRetain(b *testing.B) {
+func BenchmarkSharded_SetRetain(b *testing.B) {
 	v := newShardedVar[int]()
+	r := ref.NewNoop(1)
 
 	for i := 0; i < b.N; i++ {
-		r := newDummyRef[int]()
 		v.SetRetain(r)
 	}
 

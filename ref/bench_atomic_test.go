@@ -10,7 +10,21 @@ import (
 	"testing"
 )
 
-func BenchmarkAtomic_Parallel(b *testing.B) {
+func BenchmarkAtomicLoad_Parallel(b *testing.B) {
+	v := int64(0)
+
+	b.RunParallel(func(p *testing.PB) {
+		for p.Next() {
+			_ = atomic.LoadInt64(&v)
+		}
+	})
+
+	sec := b.Elapsed().Seconds()
+	ops := float64(b.N) / sec
+	b.ReportMetric(ops/1000_000, "mops")
+}
+
+func BenchmarkAtomicAdd_Parallel(b *testing.B) {
 	v := int64(0)
 
 	b.RunParallel(func(p *testing.PB) {
@@ -23,6 +37,8 @@ func BenchmarkAtomic_Parallel(b *testing.B) {
 	ops := float64(b.N) / sec
 	b.ReportMetric(ops/1000_000, "mops")
 }
+
+// Mutex
 
 func BenchmarkMutex_Parallel(b *testing.B) {
 	v := int64(0)

@@ -2,12 +2,13 @@
 // Use of this software is governed by the MIT License
 // that can be found in the LICENSE file.
 
-package ref
+package refvar
 
 import (
 	"testing"
 	"unsafe"
 
+	"github.com/basecomplextech/baselibrary/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +16,7 @@ import (
 // Acquire
 
 func TestShardedVar_Acquire__should_acquire_current_reference(t *testing.T) {
-	r := NewNoop(1)
+	r := ref.NewNoop(1)
 
 	v := newShardedVar[int]()
 	v.SetRetain(r)
@@ -48,7 +49,7 @@ func TestShardedVar_Acquire__should_return_false_when_unset(t *testing.T) {
 // SetRetain
 
 func TestShardedVar_SetRetain__should_retain_new_reference(t *testing.T) {
-	r := NewNoop(1)
+	r := ref.NewNoop(1)
 
 	v := newShardedVar[int]()
 	v.SetRetain(r)
@@ -59,8 +60,8 @@ func TestShardedVar_SetRetain__should_retain_new_reference(t *testing.T) {
 }
 
 func TestShardedVar_SetRetain__should_release_previous_reference(t *testing.T) {
-	r0 := NewNoop(1)
-	r1 := NewNoop(2)
+	r0 := ref.NewNoop(1)
+	r1 := ref.NewNoop(2)
 
 	v := newShardedVar[int]()
 	v.SetRetain(r0)

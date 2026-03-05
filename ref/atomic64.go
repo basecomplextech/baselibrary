@@ -30,11 +30,16 @@ type Atomic64 struct {
 
 // Init initializes the reference counter.
 func (r *Atomic64) Init(refs int64) {
-	r.refs.Store(refs)
+	old := r.refs.Swap(refs)
+	if old != 0 {
+		panic("atomic reference counter is already initialized")
+	}
 }
 
 // Acquire increments the refcount and returs true if the reference has been acquired,
 // or false if the reference has been released already.
+//
+// TODO: Rename into TryRetain, move Release from ref.Acquire.
 func (r *Atomic64) Acquire() (acquired bool) {
 	v := r.refs.Add(1)
 
@@ -82,6 +87,7 @@ func (r *Atomic64) Refcount() int64 {
 
 // private
 
+// bit 63 is not used since it is the sign bit of int64.
 const releasedBit64 = int64(1 << 62)
 
 func unpackAtomic64(r int64) (refs int64, released bool) {
