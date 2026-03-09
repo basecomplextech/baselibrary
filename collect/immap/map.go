@@ -41,6 +41,9 @@ type Map[K, V any] interface {
 
 	// Iterator
 
+	// Items returns an item iterator.
+	Items() iterator.Iter[Item[K, V]]
+
 	// Keys returns a key iterator.
 	Keys() iterator.Iter[K]
 
@@ -179,6 +182,26 @@ func (t *btree[K, V]) Contains(key K) bool {
 }
 
 // Iterator
+
+// Items returns an item iterator.
+func (t *btree[K, V]) Items() iterator.Iter[Item[K, V]] {
+	it := newIterator(t)
+	it.SeekToStart()
+
+	it1 := iterator.New(it, func() (Item[K, V], bool) {
+		key, value, ok := it.Next()
+		if !ok {
+			return Item[K, V]{}, false
+		}
+
+		item := Item[K, V]{
+			Key:   key,
+			Value: value,
+		}
+		return item, true
+	})
+	return it1
+}
 
 // Keys returns a key iterator.
 func (t *btree[K, V]) Keys() iterator.Iter[K] {
