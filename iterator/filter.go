@@ -35,9 +35,9 @@ func FilterError[T any](it IterError[T], fn FilterFuncError[T]) IterError[T] {
 	}
 }
 
-// FilterStat returns an iterator that filters elements from the input iterator.
+// FilterStatus returns an iterator that filters elements from the input iterator.
 // The returned iterator owns the input iterator and frees it when done.
-func FilterStat[T any](it IterStatus[T], fn FilterFuncStatus[T]) IterStatus[T] {
+func FilterStatus[T any](it IterStatus[T], fn FilterFuncStatus[T]) IterStatus[T] {
 	return &filterStatus[T]{
 		it: it,
 		fn: fn,

@@ -14,13 +14,13 @@ func FlatMap[T any, V any](it Iter[T], fn MapFunc[T, Iter[V]]) Iter[V] {
 // FlatMapError returns an iterator that maps elements from the input iterator to sub-iterators
 // and flattens them. The returned iterator owns the sub-iterators and frees them when done.
 func FlatMapError[T any, V any](it IterError[T], fn MapFuncError[T, IterError[V]]) IterError[V] {
-	it1 := MapErr(it, fn)
+	it1 := MapError(it, fn)
 	return FlattenError(it1)
 }
 
-// FlatMap returns an iterator that maps elements from the input iterator to sub-iterators
+// FlatMapStatus returns an iterator that maps elements from the input iterator to sub-iterators
 // and flattens them. The returned iterator owns the sub-iterators and frees them when done.
-func FlatMapStat[T any, V any](it IterStatus[T], fn MapFuncStatus[T, IterStatus[V]]) IterStatus[V] {
-	it1 := MapStat(it, fn)
+func FlatMapStatus[T any, V any](it IterStatus[T], fn MapFuncStatus[T, IterStatus[V]]) IterStatus[V] {
+	it1 := MapStatus(it, fn)
 	return FlattenStatus(it1)
 }

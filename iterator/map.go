@@ -26,18 +26,18 @@ func Map[T any, V any](it Iter[T], fn MapFunc[T, V]) Iter[V] {
 	}
 }
 
-// MapErr returns an iterator that maps elements from the input iterator.
+// MapError returns an iterator that maps elements from the input iterator.
 // The returned iterator owns the input iterator and frees it.
-func MapErr[T any, V any](it IterError[T], fn MapFuncError[T, V]) IterError[V] {
+func MapError[T any, V any](it IterError[T], fn MapFuncError[T, V]) IterError[V] {
 	return &mapError[T, V]{
 		it: it,
 		fn: fn,
 	}
 }
 
-// MapStat returns an iterator that maps elements from the input iterator.
+// MapStatus returns an iterator that maps elements from the input iterator.
 // The returned iterator owns the input iterator and frees it.
-func MapStat[T any, V any](it IterStatus[T], fn MapFuncStatus[T, V]) IterStatus[V] {
+func MapStatus[T any, V any](it IterStatus[T], fn MapFuncStatus[T, V]) IterStatus[V] {
 	return &mapStatus[T, V]{
 		it: it,
 		fn: fn,
