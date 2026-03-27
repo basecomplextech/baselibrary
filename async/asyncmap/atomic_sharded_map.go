@@ -36,11 +36,19 @@ func NewAtomicShardedMap[K comparable, V any]() AtomicShardedMap[K, V] {
 	return newAtomicShardedMap[K, V](0)
 }
 
+// NewAtomicShardedMapHasher returns a new atomic sharded map with a custom hasher.
+func NewAtomicShardedMapHasher[K comparable, V any](hasher hashing.Hasher[K]) AtomicShardedMap[K, V] {
+	m := newAtomicShardedMap[K, V](0)
+	m.hasher = hasher
+	return m
+}
+
 // internal
 
 var _ Map[int, int] = (*atomicShardedMap[int, int])(nil)
 
 type atomicShardedMap[K comparable, V any] struct {
+	hasher hashing.Hasher[K]
 	pool   pools.Pool[*atomicMapEntry[K, V]]
 	shards []atomicMapShard[K, V] // always power of two
 
@@ -57,8 +65,10 @@ func newAtomicShardedMap[K comparable, V any](size int) *atomicShardedMap[K, V] 
 
 	// Make map
 	m := &atomicShardedMap[K, V]{
-		pool:     pool,
-		shards:   make([]atomicMapShard[K, V], shardNum),
+		hasher: hashing.NewHasher[K](),
+		pool:   pool,
+		shards: make([]atomicMapShard[K, V], shardNum),
+
 		bitWidth: bitWidth,
 	}
 
@@ -164,7 +174,7 @@ func (m *atomicShardedMap[K, V]) LockMap() LockedMap[K, V] {
 
 // hashes returns two hierarchical key hashes, one for map and one for shard.
 func (m *atomicShardedMap[K, V]) hashes(key K) (uint32, uint32) {
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	h1 := h
 
 	// Right shift to get shard hash

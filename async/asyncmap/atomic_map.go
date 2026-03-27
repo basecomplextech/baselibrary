@@ -49,6 +49,13 @@ func NewAtomicMap[K comparable, V any]() AtomicMap[K, V] {
 	return newAtomicMap[K, V](0)
 }
 
+// NewAtomicMapHasher returns a new atomic map with a custom hasher.
+func NewAtomicMapHasher[K comparable, V any](hasher hashing.Hasher[K]) AtomicMap[K, V] {
+	m := newAtomicMap[K, V](0)
+	m.hasher = hasher
+	return m
+}
+
 // internal
 
 const (
@@ -62,7 +69,8 @@ const (
 var _ Map[int, int] = (*atomicMap[int, int])(nil)
 
 type atomicMap[K comparable, V any] struct {
-	pool pools.Pool[*atomicMapEntry[K, V]]
+	hasher hashing.Hasher[K]
+	pool   pools.Pool[*atomicMapEntry[K, V]]
 
 	wmu   sync.RWMutex                         // resize mutex
 	state atomic.Pointer[atomicMapState[K, V]] // current state
@@ -74,8 +82,10 @@ func newAtomicMap[K comparable, V any](size int) *atomicMap[K, V] {
 	num := int(float64(size) / atomicMapThreshold)
 	num = max(num, atomicMapMinSize)
 
-	s := newAtomicMapState(num, pool)
 	m := &atomicMap[K, V]{pool: pool}
+	m.hasher = hashing.NewHasher[K]()
+
+	s := newAtomicMapState(num, pool)
 	m.state.Store(s)
 	return m
 }
@@ -100,14 +110,14 @@ func (m *atomicMap[K, V]) Clear() {
 
 // Contains returns true if a key exists.
 func (m *atomicMap[K, V]) Contains(key K) bool {
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	s := m.state.Load()
 	return s.contains(h, key)
 }
 
 // Get returns a value by key, or false.
 func (m *atomicMap[K, V]) Get(key K) (V, bool) {
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	s := m.state.Load()
 	return s.get(h, key)
 }
@@ -128,7 +138,7 @@ func (m *atomicMap[K, V]) Delete(key K) (V, bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	s := m.state.Load()
 	return s.delete(h, key)
 }
@@ -185,7 +195,7 @@ func (m *atomicMap[K, V]) getOrSet(key K, value V, resize *bool) (V, bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	s := m.state.Load()
 	v, ok := s.getOrSet(h, key, value)
 
@@ -198,7 +208,7 @@ func (m *atomicMap[K, V]) set(key K, value V, resize *bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	s := m.state.Load()
 	s.set(h, key, value)
 
@@ -210,7 +220,7 @@ func (m *atomicMap[K, V]) setAbsent(key K, value V, resize *bool) bool {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	s := m.state.Load()
 	ok := s.setAbsent(h, key, value)
 
@@ -223,7 +233,7 @@ func (m *atomicMap[K, V]) swap(key K, value V, resize *bool) (V, bool) {
 	m.wmu.RLock()
 	defer m.wmu.RUnlock()
 
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	s := m.state.Load()
 	v, ok := s.swap(h, key, value)
 
@@ -259,7 +269,7 @@ func (m *atomicMap[K, V]) resize() {
 
 	// Copy all items
 	s.rangeLocked(func(k K, v V) bool {
-		h := hashing.Hash(k)
+		h := m.hasher.Hash32(k)
 		next.set(h, k, v)
 		return true
 	})

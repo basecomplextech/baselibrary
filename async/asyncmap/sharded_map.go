@@ -35,11 +35,19 @@ func NewShardedMap[K comparable, V any]() Map[K, V] {
 	return newShardedMap[K, V]()
 }
 
+// NewShardedMapHasher returns a new sharded map with a custom hasher.
+func NewShardedMapHasher[K comparable, V any](hasher hashing.Hasher[K]) Map[K, V] {
+	m := newShardedMap[K, V]()
+	m.hasher = hasher
+	return m
+}
+
 // internal
 
 var _ Map[int, int] = &shardedMap[int, int]{}
 
 type shardedMap[K comparable, V any] struct {
+	hasher hashing.Hasher[K]
 	shards []shardedMapShard[K, V]
 }
 
@@ -47,6 +55,7 @@ func newShardedMap[K comparable, V any]() *shardedMap[K, V] {
 	cpus := runtime.NumCPU()
 
 	return &shardedMap[K, V]{
+		hasher: hashing.NewHasher[K](),
 		shards: make([]shardedMapShard[K, V], cpus),
 	}
 }
@@ -132,7 +141,7 @@ func (m *shardedMap[K, V]) Range(fn func(K, V) bool) {
 // private
 
 func (m *shardedMap[K, V]) shard(key K) *shardedMapShard[K, V] {
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	i := int(h) % len(m.shards)
 	return &m.shards[i]
 }

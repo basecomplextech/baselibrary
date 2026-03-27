@@ -14,11 +14,14 @@ import (
 	"github.com/basecomplextech/baselibrary/status"
 )
 
-// LockMap holds locks for different keys.
+// LockMap is a sharded map which allows to lock keys.
 //
 // The map uses multiple buckets (shards) each with its own mutex.
 // Buckets are stored in multiple cache lines to try to avoid false sharing.
 // The number of cache lines is equal to the number of CPUs.
+//
+// Buckets are packed into a single cache line, not padded to the cache line size.
+// Benchmarks show that this approach is faster than padding each bucket to the cache line size.
 //
 // # Benchmarks
 //
@@ -87,11 +90,19 @@ func NewLockMap[K comparable]() LockMap[K] {
 	return newLockMap[K]()
 }
 
+// NewLockMapHasher returns a new lock map with a custom hasher.
+func NewLockMapHasher[K comparable](hasher hashing.Hasher[K]) LockMap[K] {
+	m := newLockMap[K]()
+	m.hasher = hasher
+	return m
+}
+
 // internal
 
 var _ LockMap[any] = (*lockMap[any])(nil)
 
 type lockMap[K comparable] struct {
+	hasher  hashing.Hasher[K]
 	pool    pools.Pool[*lockMapItem[K]]
 	buckets []lockMapBucket[K]
 }
@@ -109,6 +120,7 @@ func newLockMap[K comparable]() *lockMap[K] {
 
 	// Make map
 	m := &lockMap[K]{
+		hasher:  hashing.NewHasher[K](),
 		pool:    pool,
 		buckets: make([]lockMapBucket[K], bucketNum),
 	}
@@ -204,7 +216,7 @@ func (m *lockMap[K]) unlockMap() {
 }
 
 func (m *lockMap[K]) bucket(key K) *lockMapBucket[K] {
-	h := hashing.Hash(key)
+	h := m.hasher.Hash32(key)
 	i := int(h) % len(m.buckets)
 	return &m.buckets[i]
 }
