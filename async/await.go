@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/basecomplextech/baselibrary/async/internal/context"
+	"github.com/basecomplextech/baselibrary/collect/slices2"
 	"github.com/basecomplextech/baselibrary/status"
 )
 
@@ -130,8 +131,7 @@ func AwaitError[F FutureDyn](ctx context.Context, futures ...F) (int, status.Sta
 	// Await error or all completion
 	cases := make([]reflect.SelectCase, 0, len(current)+1)
 	for len(current) > 0 {
-		clear(cases)
-		cases = cases[:0]
+		cases = slices2.Truncate(cases)
 
 		// Add context case
 		{
