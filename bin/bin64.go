@@ -45,6 +45,13 @@ func Int64(v int64) Bin64 {
 	return b
 }
 
+// Uint64 returns a bin64 from a uint64, encoded as big-endian.
+func Uint64(v uint64) Bin64 {
+	b := Bin64{}
+	binary.BigEndian.PutUint64(b[:], v)
+	return b
+}
+
 // Size returns 8 bytes.
 func (b Bin64) Size() int {
 	return Len64
