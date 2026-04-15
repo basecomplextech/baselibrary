@@ -111,16 +111,16 @@ func (b Bin192) Uint64() [3]uint64 {
 
 // Hash
 
-// Hash24 returns a 24-bit hash.
+// Hash32 returns a 32-bit hash.
 // The method decodes the value as three big-endian uint64s and then xors their halves.
-func (b Bin192) Hash24() uint32 {
+func (b Bin192) Hash32() uint32 {
 	v0 := b[0].Hash64()
 	v1 := b[1].Hash64()
 	v2 := b[2].Hash64()
 
-	v0 = v0 ^ (v0 >> 24)
-	v1 = v1 ^ (v1 >> 24)
-	v2 = v2 ^ (v2 >> 24)
+	v0 = v0 ^ (v0 >> 32)
+	v1 = v1 ^ (v1 >> 32)
+	v2 = v2 ^ (v2 >> 32)
 
 	v := v0 ^ v1 ^ v2
 	return uint32(v)
