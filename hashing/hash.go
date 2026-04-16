@@ -102,6 +102,7 @@ func HashFloat64(f float64) uint32 {
 // HashBin returns a hash of a bin value.
 func HashBin64(b bin.Bin64) uint32   { return b.Hash32() }
 func HashBin128(b bin.Bin128) uint32 { return b.Hash32() }
+func HashBin192(b bin.Bin192) uint32 { return b.Hash32() }
 func HashBin256(b bin.Bin256) uint32 { return b.Hash32() }
 
 // HashBytes returns a hash of a byte slice value.

@@ -55,6 +55,8 @@ func NewHasher[T any]() Hasher[T] {
 		return (any)(bin64Hasher{}).(Hasher[T])
 	case bin.Bin128:
 		return (any)(bin128Hasher{}).(Hasher[T])
+	case bin.Bin192:
+		return (any)(bin192Hasher{}).(Hasher[T])
 	case bin.Bin256:
 		return (any)(bin256Hasher{}).(Hasher[T])
 
@@ -92,6 +94,7 @@ type (
 
 	bin64Hasher  struct{}
 	bin128Hasher struct{}
+	bin192Hasher struct{}
 	bin256Hasher struct{}
 
 	bytesHasher  struct{}
@@ -119,6 +122,7 @@ func (float64Hasher) Hash32(v float64) uint32 { return HashFloat64(v) }
 
 func (bin64Hasher) Hash32(v bin.Bin64) uint32   { return HashBin64(v) }
 func (bin128Hasher) Hash32(v bin.Bin128) uint32 { return HashBin128(v) }
+func (bin192Hasher) Hash32(v bin.Bin192) uint32 { return HashBin192(v) }
 func (bin256Hasher) Hash32(v bin.Bin256) uint32 { return HashBin256(v) }
 
 func (bytesHasher) Hash32(v []byte) uint32  { return HashBytes(v) }
