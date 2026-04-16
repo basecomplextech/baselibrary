@@ -48,7 +48,7 @@ var _ builder[VoidRetrier] = (*VoidRetrier)(nil)
 // Run retries the procedure.
 func (r VoidRetrier) Run(ctx async.Context) status.Status {
 	for attempt := 0; ; attempt++ {
-		// VoidRetrier function
+		// Call function
 		st := r.run(ctx)
 		switch st.Code {
 		case status.CodeOK, status.CodeCancelled:
